@@ -24,6 +24,8 @@ namespace SudokuSolver
         CheckBox[] tecniques;           //кнопки включения техник
         GroupBox highlightingPanel;     //панель подсветки
         Button[] highlightingButtons;   //кнопки включения подсветки
+        GroupBox linksPanel;            //панель отображения связей
+        Button[] linksButtons;          //кнопки включения отображения связей
 
         
         MenuStrip menu;
@@ -35,6 +37,7 @@ namespace SudokuSolver
         Loader loader;                  //Форма загрузчика судоку
 
         bool needRefresh;
+        bool[] shownLinks;
 
         public Form1()
         {
@@ -91,6 +94,9 @@ namespace SudokuSolver
 
             //панель подсветки
             CreateHighlightingPanel();
+
+            //панель связей
+            CreateLinksPanel();
 
             //панель выбора техник
             CreateTecniquesPanel();
@@ -183,6 +189,7 @@ namespace SudokuSolver
                             needRefresh = true;
                         }
                     }
+                    
 
                     break;
             }
@@ -270,6 +277,65 @@ namespace SudokuSolver
             {
                 tecniques[i].Checked = all.Checked;
             }
+        }
+        
+        //----------------------------------------------------------------------------------------------------------------------
+        //создание панели связей
+        private void CreateLinksPanel()
+        {
+            shownLinks = new bool[9];
+
+            linksPanel = new GroupBox();
+            linksPanel.Location = new Point(highlightingPanel.Location.X + highlightingPanel.Width + 20, highlightingPanel.Location.Y);
+            linksPanel.Text = "Связи";
+            linksPanel.Visible = true;
+
+            linksButtons = new Button[9];
+            for (int i = 0; i < linksButtons.Length; i++)
+            {
+                linksButtons[i] = new Button();
+                linksButtons[i].Text = (i + 1).ToString();
+                linksButtons[i].Size = new Size(25, 20);
+                linksButtons[i].Location = new Point(10 + (i % 3) * (linksButtons[i].Size.Width + 5), 15 + (i / 3) * (linksButtons[i].Size.Height + 5));
+                linksButtons[i].Visible = true;
+                linksButtons[i].Click += linksButtonClick;
+
+                linksPanel.Controls.Add(linksButtons[i]);
+            }
+
+            linksPanel.Size = new Size(10 * 2 + 3 * (linksButtons[0].Width + 5) - 5, 10 * 2 + 3 * (linksButtons[0].Height + 5));
+            this.Controls.Add(linksPanel);
+        }
+
+        //включение связей
+        private void linksButtonClick(object sender, EventArgs e)
+        {
+            Button b = sender as Button;
+            int digit = Convert.ToInt32(b.Text);
+            
+            shownLinks[digit-1] = !shownLinks[digit-1];
+            int counter = 0;
+            for(int i = 0; i < shownLinks.Length; i++)
+            {
+                if (shownLinks[i])
+                {
+                    counter++;
+                }
+            }
+            int[] links = new int[counter];
+            counter = 0;
+            for (int i = 0; i < shownLinks.Length; i++)
+            {
+                if (shownLinks[i])
+                {
+                    links[counter]=i;
+                    counter++;
+                }
+            }
+
+            Logic.FindLinks(ref field, links);
+            this.Refresh();
+
         }
 
         //----------------------------------------------------------------------------------------------------------------------

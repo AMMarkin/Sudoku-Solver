@@ -110,8 +110,24 @@ namespace SudokuSolver
             }
 
             //если цепь не null и не пустая то отмечаем звенья
-            
-
+            if(Logic.ON!=null && Logic.ON.Count != 0)
+            {
+                foreach (int[] unit in Logic.ON)
+                {
+                    int i1 = unit[0] / 9;
+                    int j1 = unit[0] % 9;
+                    cells[i1][j1].HighlighteUnit(unit[1], true);
+                }
+            }
+            if (Logic.OFF != null && Logic.OFF.Count != 0)
+            {
+                foreach (int[] unit in Logic.OFF)
+                {
+                    int i1 = unit[0] / 9;
+                    int j1 = unit[0] % 9;
+                    cells[i1][j1].HighlighteUnit(unit[1], false);
+                }
+            }
         }
 
         //обновить сетку
@@ -248,6 +264,53 @@ namespace SudokuSolver
                     gr.DrawLine(p, X1,Y1,X2,Y2);
 
                 }
+
+                if (Logic.weak != null)
+                {
+                    p.Color = Color.FromArgb(170,Color.Gray);
+                    for (int i = 0; i < Logic.weak.Count; i++)
+                    {
+                        i1 = Logic.weak[i][0] / 9;
+                        j1 = Logic.weak[i][0] % 9;
+                        k1 = Logic.weak[i][1];
+                        i2 = Logic.weak[i][2] / 9;
+                        j2 = Logic.weak[i][2] % 9;
+                        k2 = Logic.weak[i][3];
+
+                        X1 = cells[i1][j1].centers[k1].X - Xshift;
+                        Y1 = cells[i1][j1].centers[k1].Y - Yshift;
+                        X2 = cells[i2][j2].centers[k2].X - Xshift;
+                        Y2 = cells[i2][j2].centers[k2].Y - Yshift;
+
+
+                        //если линия сверху вниз
+                        if (Y1 > Y2)
+                        {
+                            Y1 -= mer;
+                            Y2 += mer;
+                        }
+                        else if (Y1 < Y2)
+                        {
+                            Y1 += mer;
+                            Y2 -= mer;
+                        }
+
+                        if (X1 > X2)
+                        {
+                            X1 -= mer;
+                            X2 += mer;
+                        }
+                        else if (X1 < X2)
+                        {
+                            X1 += mer;
+                            X2 -= mer;
+                        }
+
+                        gr.DrawLine(p, X1, Y1, X2, Y2);
+
+                    }
+
+                }
             }
         }
 
@@ -272,9 +335,10 @@ namespace SudokuSolver
             Color clueColor = Color.FromArgb(255, 255, 0);
             Color removingColor = Color.FromArgb(255, 215, 0);
             Color clueDigitColor = Color.FromArgb(154, 205, 50);
+            Color chainColorON = Color.FromArgb(173, 255, 47);
+            Color chainColorOFF = Color.FromArgb(0, 0, 255);
 
-
-
+            //конструктор
             public Cell(int x, int y, Form f, Grid grid)
             {
                 this.grid = grid; 
@@ -329,6 +393,23 @@ namespace SudokuSolver
                 }
             }
 
+            //подсветка цепи
+            internal void HighlighteUnit(int digit, bool flag)
+            {
+                //если ON то 
+                if (flag)
+                {
+                    candidates[digit].BackColor = chainColorON;
+                }
+
+                //если OFF то
+                if (!flag)
+                {
+                    candidates[digit].BackColor = chainColorOFF;
+                }
+
+            }
+
             //подсветка кандидатов
             internal void HighlighteCell(bool[] flags)
             {
@@ -352,14 +433,16 @@ namespace SudokuSolver
 
                     if (flags[i])
                     {
-                        if (candidates[i].BackColor != clueDigitColor && candidates[i].BackColor != removingColor)
+                        if (candidates[i].BackColor != clueDigitColor && candidates[i].BackColor != removingColor &&
+                            candidates[i].BackColor != chainColorON && candidates[i].BackColor != chainColorOFF)
                         {
                             candidates[i].BackColor = highlightedColor;
                         }
                     }
                     else
                     {
-                        if (candidates[i].BackColor != clueDigitColor && candidates[i].BackColor != removingColor)
+                        if (candidates[i].BackColor != clueDigitColor && candidates[i].BackColor != removingColor &&
+                            candidates[i].BackColor != chainColorON   && candidates[i].BackColor != chainColorOFF)
                         {
                             candidates[i].BackColor = p.BackColor;
 

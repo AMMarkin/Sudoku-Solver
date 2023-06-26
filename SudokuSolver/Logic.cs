@@ -29,21 +29,77 @@ namespace SudokuSolver
 
         //для цепных техник
         //список связей и звеньев цепи
-        public static List<int[]> chain;        //ind, k => ind, k
+        public static List<int[]> chain;        //ind, k => ind, k    сильные связи !A =>  B
+        public static List<int[]> weak;         //ind, k => ind, k     слабые связи  A => !B
         public static List<int[]> chainUnits;   //ind, k
 
-        
+        public static List<int[]> ON;           //цепи по двум цветам
+        public static List<int[]> OFF;
+
+
         public static string findElimination(ref Field field, bool[] tecFlags)
         {
 
             string answer = noFound;
 
-
+            //очистка переменных
             string tmp = "";
-            clues = new List<int[]>();
-            removed = new List<int[]>();
-            chain = new List<int[]>();
-            chainUnits = new List<int[]>();
+            if (clues != null)
+            {
+                clues.Clear();
+            }
+            else
+            {
+                clues = new List<int[]>();
+            }
+            if (removed != null)
+            {
+                removed.Clear();
+            }
+            else
+            {
+                removed = new List<int[]>();
+            }
+            if (chain != null)
+            {
+                chain.Clear();
+            }
+            else
+            {
+                chain = new List<int[]>();
+            }
+            if (weak != null)
+            {
+                weak.Clear();
+            }
+            else
+            {
+                weak = new List<int[]>();
+            }
+            if (chainUnits != null)
+            {
+                chainUnits.Clear();
+            }
+            else
+            {
+                chainUnits = new List<int[]>();
+            }
+            if (ON != null)
+            {
+                ON.Clear();
+            }
+            else
+            {
+                ON = new List<int[]>();
+            }
+            if (OFF != null)
+            {
+                OFF.Clear();
+            }
+            else
+            {
+                OFF = new List<int[]>();
+            }
 
             //открытые одиночки
             if (tecFlags[0])
@@ -190,6 +246,14 @@ namespace SudokuSolver
                 {
                     return tmp;
                 }
+                else
+                {
+                    //return "ON содержит " + ON.Count+" элементов";
+
+                    ON.Clear();
+                    OFF.Clear();
+                    chain.Clear();
+                }
             }
 
 
@@ -204,13 +268,14 @@ namespace SudokuSolver
         }
 
         //Simple Coloring
+        //только по сильным связям
         //не готово
-        private static string SimpleColoring(ref Field field)
+
+        public static void FindLinks(ref Field field, int[] kArray)
         {
-            string answer = "";
             int[][] matrix = new int[9][];
 
-            for(int i = 0; i < 9; i++)
+            for (int i = 0; i < 9; i++)
             {
                 matrix[i] = new int[9];
             }
@@ -219,15 +284,13 @@ namespace SudokuSolver
             int a = -1;
             int b = -1;
 
-            List<int[]> ON;
-            List<int[]> OFF;
-
-
-            //для теста ищем только по единицам
-            for (int k = 2; k < 3; k++)
+            chain = new List<int[]>();
+            chainUnits = new List<int[]>();
+            weak = new List<int[]>();
+            //заполняем цепи для каждого числа отдельно
+            foreach (int k in kArray)
             {
-                chain = new List<int[]>();
-                chainUnits = new List<int[]>();
+
                 //переписываю матрицу
                 for (int i = 0; i < 9; i++)
                 {
@@ -238,13 +301,14 @@ namespace SudokuSolver
                     }
                 }
 
-                //создание цепи
+                //создание цепи 
+                //сильные связи
                 //----------------------------------------------------------------------------------------------------------------------------
                 //обхожу все строки
-                for(int i = 0; i < 9; i++)
+                for (int i = 0; i < 9; i++)
                 {
                     counter = 0;
-                    for(int j = 0; j < 9; j++)
+                    for (int j = 0; j < 9; j++)
                     {
                         if (matrix[i][j] != 0)
                         {
@@ -259,17 +323,17 @@ namespace SudokuSolver
                         a = -1;
                         b = -1;
                         //записал индексы
-                        for(int j=0; j < 9; j++)
+                        for (int j = 0; j < 9; j++)
                         {
-                            if(matrix[i][j] != 0)
+                            if (matrix[i][j] != 0)
                             {
                                 if (a < 0)
                                 {
-                                    a = 9*i+j;
+                                    a = 9 * i + j;
                                 }
                                 else
                                 {
-                                    b = 9*i+j;
+                                    b = 9 * i + j;
                                 }
                             }
                         }
@@ -282,11 +346,11 @@ namespace SudokuSolver
                 }
 
                 //столбцы
-                for(int j = 0; j < 9; j++)
+                for (int j = 0; j < 9; j++)
                 {
 
                     counter = 0;
-                    for(int i = 0; i < 9; i++)
+                    for (int i = 0; i < 9; i++)
                     {
                         if (matrix[i][j] != 0)
                         {
@@ -299,7 +363,7 @@ namespace SudokuSolver
                         //записал индексы
                         a = -1;
                         b = -1;
-                        for(int i = 0; i < 9; i++)
+                        for (int i = 0; i < 9; i++)
                         {
                             if (matrix[i][j] != 0)
                             {
@@ -325,7 +389,7 @@ namespace SudokuSolver
                 }
 
                 //регионы
-                for(int y = 0; y < 3; y++)
+                for (int y = 0; y < 3; y++)
                 {
                     for (int x = 0; x < 3; x++)
                     {
@@ -377,83 +441,651 @@ namespace SudokuSolver
                     }
                 }
                 //----------------------------------------------------------------------------------------------------------------------------
+                //слабые связи
+                fillWeakLinks();
+
+            }
+
+
+        }
+
+        private static string SimpleColoring(ref Field field)
+        {
+            string answer = "";
+
+
+            int[] subChains = null;
+            int subChainCounter = 0;
+
+
+            for (int k = 0; k < 9; k++)
+            {
+                FindLinks(ref field, new int[] { k });
+
 
                 //поиск исключений
 
                 //раскрашиваем цепь в 2 цвета
 
                 //списки цветов
-                ON = new List<int[]>();
-                OFF = new List<int[]>();
+                ON.Clear();
+                OFF.Clear();
 
                 //нахожу компоненты связности
-
-                int[] subChains = new int[chainUnits.Count];
-                int subChainCounter = 0;
+                subChains = new int[chainUnits.Count];
+                subChainCounter = 0;
 
                 bool[] visited = new bool[chainUnits.Count];
 
-                for(int v = 0; v < chainUnits.Count; v++)
+                for (int v = 0; v < chainUnits.Count; v++)
                 {
                     if (!visited[v])
                     {
-                        dfs(ref visited,ref subChains, ref subChainCounter, v);
+                        dfsStrong(ref visited, ref subChains, ref subChainCounter, v);
                         subChainCounter++;
                     }
                 }
-                answer += "\nКОЛЛИЧЕСТВО КОМПОНЕНТ : " + subChainCounter+"\n";
-                answer += "\nКОЛЛИЧЕСТВО ЭЛЕМЕНТОВ : " + chainUnits.Count+"\n";
-                answer += printSubchains(subChainCounter,subChains);
-                return answer;
+                //для всех кусков
+                for (int i = 0; i < subChainCounter; i++)
+                {
 
+                    //раскрашиваю
+                    SubChainColoring(i, subChains);
 
+                    //поиск исключений
 
+                    //ищу повторения цвета
 
-                //если исключения есть то исключаем и формируем ответ
+                    answer = chainLogicRepeatRule(ref field);
 
+                    if (!answer.Equals(""))
+                    {
+                        return ("Simple Coloring: " + answer);
+                    }
+
+                    //ячейки видимые двумя цветами
+                    answer = TwoColorsElsewhere(ref field, k);
+                    if (!answer.Equals(""))
+                    {
+                        return ("Simple Coloring: " + answer);
+                    }
+
+                }
             }
 
-            if (chain.Count!=0)
-                foreach (int[] item in chain)
-                {
-                    int i1 = item[0] / 9;
-                    int j1 = item[0] % 9;
-                    int i2 = item[2] / 9;
-                    int j2 = item[2] % 9;
+            return answer;
+        }
+        //ячейки видимые двумя цветами
+        private static string TwoColorsElsewhere(ref Field field, int k)
+        {
+            string answer = "";
 
-                    answer += (item[1] + 1) + " в (" + (i1 + 1) + ";" + (j1 + 1) + ") => " + (item[3] + 1) + " в (" + (i2 + 1) + ";" + (j2 + 1) + ")\n";
+            //обходим все поле
+            for (int i = 0; i < 9; i++)
+            {
+                for (int j = 0; j < 9; j++)
+                {
+                    //если ячейка уже заполнена пропускаем
+                    if (field[i, j].value != -1)
+                    {
+                        continue;
+                    }
+
+                    //если в ячейке нет искомого числа пропускаем
+                    if (!field[i, j].candidates[k])
+                    {
+                        continue;
+                    }
+                    bool contains = false;
+
+                    //если ячейка есть в цепи пропускаем
+                    foreach (int[] unit in chainUnits)
+                    {
+                        if ((unit[0] / 9) == i && (unit[0] % 9) == j && unit[1] == k)
+                        {
+                            contains = true;
+                            break;
+                        }
+                    }
+                    if (contains)
+                    {
+                        continue;
+                    }
+
+                    bool seenByON = false;
+                    bool seenByOFF = false;
+
+
+                    //проверяю видно ли текущюю ячейку из
+                    //ON
+                    int i1, i2;
+                    int j1, j2;
+
+                    bool founted = false;
+
+                    //для каждого элемента первого цвета
+                    foreach (int[] unit in ON)
+                    {
+                        if (founted)
+                        {
+                            break;
+                        }
+                        i1 = unit[0] / 9;
+                        j1 = unit[0] % 9;
+
+                        //проверяю не видит ли он текущую ячейку
+                        for (int n = 0; n < field[i, j].seenInd[0].Length; n++)
+                        {
+                            i2 = field[i, j].seenInd[0][n];
+                            j2 = field[i, j].seenInd[1][n];
+
+                            if (i1 == i2 && j1 == j2)
+                            {
+                                founted = true;
+                                seenByON = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    //если не видно из первого цвета
+                    //то второй не проверяем
+                    if (!seenByON)
+                    {
+                        continue;
+                    }
+
+                    founted = false;
+                    //для каждого элемента второго цвета
+                    foreach (int[] unit in OFF)
+                    {
+                        if (founted)
+                        {
+                            break;
+                        }
+                        i1 = unit[0] / 9;
+                        j1 = unit[0] % 9;
+
+                        //проверяю не видит ли он текущую ячейку
+                        for (int n = 0; n < field[i, j].seenInd[0].Length; n++)
+                        {
+                            i2 = field[i, j].seenInd[0][n];
+                            j2 = field[i, j].seenInd[1][n];
+
+                            if (i1 == i2 && j1 == j2)
+                            {
+                                founted = true;
+                                seenByOFF = true;
+                                break;
+                            }
+                        }
+                    }
+                    //если видно из двух цветов
+                    //исключаем
+                    //формируем ответ
+                    if (seenByON && seenByOFF)
+                    {
+                        answer = (k + 1) + " в (" + (i + 1) + ";" + (j + 1) + ") видно из двух цветов";
+                        field[i, j].RemoveCandidat(k + 1);
+                        removed.Add(new int[] { i, j, k });
+                        return answer;
+                    }
+
                 }
+            }
+
+
             return answer;
         }
 
-        private static string printSubchains(int SCC, int[] subChains)
+        //повторение цвета 
+        private static string chainLogicRepeatRule(ref Field field)
         {
-            string ans = "";
+            string answer = "";
 
-            //по всем компонентам
-            for(int i = 0; i < SCC+1; i++)
+            bool repeat = false;
+            bool[] flags = new bool[9];
+
+            int i1, j1;
+
+            //в строках
+            //------------------------------------------------------------------------------
+            //для ON
+            int row;
+            for (int j = 0; j < 9; j++)
             {
-                ans += "\n----------" + (i + 1) + "---------\n";
-                for(int j = 0; j < chainUnits.Count; j++)
+                flags[j] = false;
+            }
+            row = -1;
+            foreach (int[] unit in ON)
+            {
+                row = unit[0] / 9;
+                if (!flags[row])
                 {
-                    if (subChains[j] == i)
+                    flags[row] = true;
+                }
+                else
+                {
+                    repeat = true;
+                    //Все ON удаляются
+                    foreach (int[] rem in ON)
                     {
-                        ans += "(" + (chainUnits[j][0] / 9 + 1) + ";" + (chainUnits[j][0] % 9 + 1) + ") ";
+                        i1 = rem[0] / 9;
+                        j1 = rem[0] % 9;
+                        field[i1, j1].RemoveCandidat(rem[1] + 1);
+                        removed.Add(new int[] { i1, j1, rem[1] });
+                    }
+                    //для красоты перекидываем оставшееся в ON
+                    ON.Clear();
+                    ON.AddRange(OFF);
+                    OFF.Clear();
+                    break;
+                }
+            }
+
+
+            //для OFF
+            for (int j = 0; j < 9; j++)
+            {
+                flags[j] = false;
+            }
+            row = -1;
+            foreach (int[] unit in OFF)
+            {
+                row = unit[0] / 9;
+                if (!flags[row])
+                {
+                    flags[row] = true;
+                }
+                else
+                {
+
+                    repeat = true;
+                    //Все ON удаляются
+                    foreach (int[] rem in OFF)
+                    {
+                        i1 = rem[0] / 9;
+                        j1 = rem[0] % 9;
+                        field[i1, j1].RemoveCandidat(rem[1] + 1);
+                        removed.Add(new int[] { i1, j1, rem[1] });
+                    }
+                    OFF.Clear();
+                    break;
+                }
+            }
+            if (repeat)
+            {
+                answer = "повторение цвета в строке " + (row + 1);
+                return answer;
+            }
+            //------------------------------------------------------------------------------
+            //в столбцах
+            int col;
+            //для ON
+            for (int j = 0; j < 9; j++)
+            {
+                flags[j] = false;
+            }
+            col = -1;
+            foreach (int[] unit in ON)
+            {
+                col = unit[0] / 9;
+                if (!flags[col])
+                {
+                    flags[col] = true;
+                }
+                else
+                {
+                    repeat = true;
+                    //Все ON исключаются
+                    foreach (int[] rem in ON)
+                    {
+                        i1 = rem[0] / 9;
+                        j1 = rem[0] % 9;
+                        field[i1, j1].RemoveCandidat(rem[1] + 1);
+                        removed.Add(new int[] { i1, j1, rem[1] });
+                    }
+                    //для красоты перекидываем оставшееся в ON
+                    ON.Clear();
+                    ON.AddRange(OFF);
+                    OFF.Clear();
+                    break;
+                }
+            }
+
+
+            //для OFF
+            for (int j = 0; j < 9; j++)
+            {
+                flags[j] = false;
+            }
+            col = -1;
+            foreach (int[] unit in OFF)
+            {
+                col = unit[0] / 9;
+                if (!flags[col])
+                {
+                    flags[col] = true;
+                }
+                else
+                {
+                    repeat = true;
+                    //Все ON исключаются
+                    foreach (int[] rem in OFF)
+                    {
+                        i1 = rem[0] / 9;
+                        j1 = rem[0] % 9;
+                        field[i1, j1].RemoveCandidat(rem[1] + 1);
+                        removed.Add(new int[] { i1, j1, rem[1] });
+                    }
+                    //для красоты перекидываем оставшееся в ON
+                    OFF.Clear();
+                    break;
+                }
+            }
+            //если повторение в столбцах то 
+            if (repeat)
+            {
+                answer = "повторение цвета в столбце " + (col + 1);
+                return answer;
+            }
+            //------------------------------------------------------------------------------
+            //в регионах
+            int reg;
+            //для ON
+            for (int j = 0; j < 9; j++)
+            {
+                flags[j] = false;
+            }
+            reg = -1;
+            foreach (int[] unit in ON)
+            {
+                int x = unit[0] / 9;
+                int y = unit[0] % 9;
+                reg = 3 * (x / 3) + (y / 3);
+
+                if (!flags[reg])
+                {
+                    flags[reg] = true;
+                }
+                else
+                {
+                    repeat = true;
+                    //Все ON исключаются
+                    foreach (int[] rem in ON)
+                    {
+                        i1 = rem[0] / 9;
+                        j1 = rem[0] % 9;
+                        field[i1, j1].RemoveCandidat(rem[1] + 1);
+                        removed.Add(new int[] { i1, j1, rem[1] });
+                    }
+                    //для красоты перекидываем оставшееся в ON
+                    ON.Clear();
+                    ON.AddRange(OFF);
+                    OFF.Clear();
+                    break;
+                }
+            }
+
+            //для OFF
+            if (!repeat)
+            {
+                for (int j = 0; j < 9; j++)
+                {
+                    flags[j] = false;
+                }
+                col = -1;
+                foreach (int[] unit in OFF)
+                {
+                    int x = unit[0] / 9;
+                    int y = unit[0] % 9;
+                    reg = 3 * (x / 3) + (y / 3);
+                    if (!flags[reg])
+                    {
+                        flags[reg] = true;
+                    }
+                    else
+                    {
+                        repeat = true;
+                        //Все OFF исключаются
+                        foreach (int[] rem in OFF)
+                        {
+                            i1 = rem[0] / 9;
+                            j1 = rem[0] % 9;
+                            field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            removed.Add(new int[] { i1, j1, rem[1] });
+                        }
+                        //для красоты перекидываем оставшееся в ON
+                        OFF.Clear();
+                        break;
                     }
                 }
             }
+
+            //если повторение в регионе
+            if (repeat)
+            {
+                answer = "повторение цвета в регионе " + (reg + 1);
+                return answer;
+            }
+
+
+            return answer;
+        }
+
+        //раскраска
+        private static void SubChainColoring(int i, int[] subchains)
+        {
+            //переписываю кусок в массив для удобной работы
+            int counter = 0;
+            for (int j = 0; j < subchains.Length; j++)
+            {
+                if (subchains[j] == i)
+                {
+                    counter++;
+                }
+            }
+            if (counter == 0)
+            {
+                return;
+            }
+
+
+            int[][] subChain = new int[counter][];
+            counter = 0;
+            for (int j = 0; j < subchains.Length; j++)
+            {
+                if (subchains[j] == i)
+                {
+                    subChain[counter] = new int[3];
+                    subChain[counter][0] = chainUnits[j][0];
+                    subChain[counter][1] = chainUnits[j][1];
+                    counter++;
+                }
+            }
+
+            //раскрашиваю начиная с ON
+            subChain[0][2] = 1;
+
+            int[][] links = findStrongLinksInChain(subChain[0][0], subChain[0][1]);
+
+            //ON  - true
+            //OFF - false
+
+            coloring(ref subChain, links, false);
+
+
+
+            ON = new List<int[]>();
+            OFF = new List<int[]>();
+            for (int j = 0; j < subChain.Length; j++)
+            {
+                if (subChain[j][2] == 1)
+                {
+                    ON.Add(new int[] { subChain[j][0], subChain[j][1] });
+                }
+                if (subChain[j][2] == -1)
+                {
+                    OFF.Add(new int[] { subChain[j][0], subChain[j][1] });
+                }
+            }
+        }
+
+        //рекурсивный метод для раскраски цепи
+        private static void coloring(ref int[][] subChain, int[][] links, bool OnOff)
+        {
+            //для каждого ребра 
+            for (int i = 0; i < links.Length; i++)
+            {
+                //ищем вторую вершину в цепи
+                for (int j = 0; j < subChain.Length; j++)
+                {
+                    //если не раскрашена 
+                    if (subChain[j][2] == 0 && subChain[j][0] == links[i][0] && subChain[j][1] == links[1][1])
+                    {
+                        subChain[j][2] = OnOff ? 1 : -1;
+                        coloring(ref subChain, findStrongLinksInChain(subChain[j][0], subChain[j][1]), !OnOff);
+                        break;
+                    }
+                }
+
+            }
+        }
+
+        private static string pringLinks(int ind, int k, int[][] links)
+        {
+            string ans = "(" + (ind / 9 + 1) + ";" + (ind % 9 + 1) + ") => "
+                ;
+            for (int i = 0; i < links.Length; i++)
+            {
+                ans += "(" + (links[i][0] / 9 + 1) + ";" + (links[i][0] % 9 + 1) + ") ";
+            }
+
+
 
             return ans;
         }
 
-        private static void dfs(ref bool[] visited, ref int[] component,ref int components, int v)
+        //найти все связи в цепи
+        private static int[][] findStrongLinksInChain(int ind, int k)
+        {
+            //считаю колличество связей
+            int counter = 0;
+            foreach (int[] link in chain)
+            {
+                if ((link[0] == ind && link[1] == k) || (link[2] == ind && link[3] == k))
+                {
+                    counter++;
+                }
+            }
+
+            //записываю связи
+            int[][] links = new int[counter][];
+            counter = 0;
+            foreach (int[] link in chain)
+            {
+                if ((link[0] == ind && link[1] == k) || (link[2] == ind && link[3] == k))
+                {
+                    links[counter] = new int[2];
+                    if (link[0] == ind && link[1] == k)
+                    {
+                        links[counter][0] = link[2];
+                        links[counter][1] = link[3];
+                    }
+                    else
+                    {
+                        links[counter][0] = link[0];
+                        links[counter][1] = link[1];
+                    }
+                    counter++;
+                }
+            }
+
+
+
+            return links;
+        }
+
+        //DEBUG
+        private static string printSubChains(int subChainCounter, int[] subChains)
+        {
+            string ans = "";
+            for (int i = 0; i < subChainCounter; i++)
+            {
+                ans += "\n---------------" + (i + 1) + "---------------\n";
+                for (int j = 0; j < chainUnits.Count; j++)
+                {
+                    if (i == subChains[j])
+                    {
+                        int x = chainUnits[j][0] / 9;
+                        int y = chainUnits[j][0] % 9;
+                        ans += "(" + (x + 1) + ";" + (y + 1) + ") ";
+
+                    }
+                }
+
+            }
+            return ans;
+        }
+
+        //заполняем слабые связи
+        private static void fillWeakLinks()
+        {
+            //полный перебор
+
+            foreach (int[] unit1 in chainUnits)
+            {
+                foreach (int[] unit2 in chainUnits)
+                {
+                    if (!unit1.Equals(unit2))
+                    {
+                        bool linked = false;
+                        foreach (int[] link in chain)
+                        {
+                            //если сильно связаны то пропускаем
+                            if ((link[0] == unit1[0] && link[1] == unit1[1] && link[2] == unit2[0] && link[3] == unit2[1])
+                                ||
+                                (link[0] == unit2[0] && link[1] == unit2[1] && link[2] == unit1[0] && link[3] == unit1[1]))
+                            {
+                                linked = true;
+                                break;
+                            }
+                        }
+                        //если не связаны сильно то проверяем видят ли они друг друга
+                        if (!linked)
+                        {
+
+                            int i1 = unit1[0] / 9;
+                            int j1 = unit1[0] % 9;
+                            int i2 = unit2[0] / 9;
+                            int j2 = unit2[0] % 9;
+
+
+                            if (((i1 == i2) ||                                    //по строкам
+                               (j1 == j2) ||                                     //по столбцам
+                               (3 * (i1 / 3) + (j1 / 3) == 3 * (i2 / 3) + (j2 / 3)))     //по регионам
+                               && (unit1[1] == unit2[1])                         //одинаковые кандидаты
+                                )
+                            {
+                                weak.Add(new int[] { unit1[0], unit1[1], unit2[0], unit2[1] });
+                            }
+
+                        }
+                    }
+                }
+            }
+        }
+
+
+        //дфс по сильным и слабым связям
+        private static void dfsWeakStrong(ref bool[] visited, ref int[] component, ref int components, int v)
         {
             visited[v] = true;
             component[v] = components;
             foreach (int[] link in chain)
             {
                 //нашли ребро
-                
+
                 if (chainUnits[v][0] == link[0] && chainUnits[v][1] == link[1])
                 {
                     //нахожу номер конца ребра в chainUnits
@@ -464,7 +1096,65 @@ namespace SudokuSolver
                         {
                             if (!visited[count])
                             {
-                                dfs(ref visited,ref component,ref components,count);
+                                dfsWeakStrong(ref visited, ref component, ref components, count);
+                            }
+                        }
+                        else
+                        {
+                            count++;
+                        }
+
+                    }
+                }
+            }
+
+            foreach (int[] link in weak)
+            {
+                //нашли ребро
+
+                if (chainUnits[v][0] == link[0] && chainUnits[v][1] == link[1])
+                {
+                    //нахожу номер конца ребра в chainUnits
+                    int count = 0;
+                    foreach (int[] unit in chainUnits)
+                    {
+                        if (unit[0] == link[2] && unit[1] == link[3])
+                        {
+                            if (!visited[count])
+                            {
+                                dfsWeakStrong(ref visited, ref component, ref components, count);
+                            }
+                        }
+                        else
+                        {
+                            count++;
+                        }
+
+                    }
+                }
+            }
+        }
+
+        //дфс только по сильным связям
+        private static void dfsStrong(ref bool[] visited, ref int[] component, ref int components, int v)
+        {
+            visited[v] = true;
+            component[v] = components;
+            foreach (int[] link in chain)
+            {
+                //нашли ребро
+
+                if (chainUnits[v][0] == link[0] && chainUnits[v][1] == link[1])
+                {
+                    //нахожу номер конца ребра в chainUnits
+                    int count = 0;
+                    foreach (int[] unit in chainUnits)
+                    {
+                        if (unit[0] == link[2] && unit[1] == link[3])
+                        {
+                            if (!visited[count])
+                            {
+                                dfsStrong(ref visited, ref component, ref components, count);
                             }
                         }
                         else
@@ -478,12 +1168,12 @@ namespace SudokuSolver
         }
 
         //добавляем в цепь новую связь
-        private static void AddLinkToChain(int ind1,int ind2,int k)
+        private static void AddLinkToChain(int ind1, int ind2, int k)
         {
             bool contains = false;
             foreach (int[] item in chain)
             {
-                if (item[0] == ind1 && item[1] == k && item[2]==ind2 && item[3] == k)
+                if (item[0] == ind1 && item[1] == k && item[2] == ind2 && item[3] == k)
                 {
                     contains = true;
                     break;
@@ -491,7 +1181,7 @@ namespace SudokuSolver
             }
             if (!contains)
             {
-                chain.Add(new int[] {ind1,k,ind2,k});
+                chain.Add(new int[] { ind1, k, ind2, k });
             }
             contains = false;
             foreach (int[] item in chain)
@@ -509,24 +1199,23 @@ namespace SudokuSolver
         }
 
         //добавление в цепь нового звена
-        private static void AddUnitToChain(int ind,int k)
+        private static void AddUnitToChain(int ind, int k)
         {
             bool contains = false;
             foreach (int[] unit in chainUnits)
             {
-                if(unit[0] == ind && unit[1] == k)
+                if (unit[0] == ind && unit[1] == k)
                 {
                     contains = true;
                     break;
                 }
             }
-
             if (!contains)
             {
                 chainUnits.Add(new int[] { ind, k });
             }
         }
-        
+
 
         //Y-Wings
         private static string Y_Wings(ref Field field)
@@ -540,12 +1229,12 @@ namespace SudokuSolver
             int counter = 0;
 
 
-            for(int i = 0; i < 9; i++)
+            for (int i = 0; i < 9; i++)
             {
-                for(int j = 0; j < 9; j++)
+                for (int j = 0; j < 9; j++)
                 {
                     counter = 0;
-                    for(int k = 0; k < 9; k++)
+                    for (int k = 0; k < 9; k++)
                     {
                         if (field[i, j].candidates[k])
                         {
@@ -583,7 +1272,7 @@ namespace SudokuSolver
                 c = 0;
 
                 //записываем кандидатов в a и b
-                for(int k = 0; k < 9; k++)
+                for (int k = 0; k < 9; k++)
                 {
                     if (Y.candidates[k])
                     {
@@ -602,7 +1291,7 @@ namespace SudokuSolver
                 //крыло у которого только a или только b
 
                 bool flag = false;
-                for(int j = 0; j < Y.seenCell.Length; j++)
+                for (int j = 0; j < Y.seenCell.Length; j++)
                 {
                     if (foundet)
                         break;
@@ -611,7 +1300,7 @@ namespace SudokuSolver
                     X1 = Y.seenCell[j];
 
                     counter = 0;
-                    for(int k = 0; k < 9; k++)
+                    for (int k = 0; k < 9; k++)
                     {
                         if (X1.candidates[k])
                         {
@@ -625,9 +1314,9 @@ namespace SudokuSolver
                     //если 1 совпадение то flag=true   -- то что нужно
                     //если 2 совпадения то flag=false  -- пропускаем
 
-                    for(int k = 0; k < 9; k++)
+                    for (int k = 0; k < 9; k++)
                     {
-                        if(X1.candidates[k] && (k== a || k == b))
+                        if (X1.candidates[k] && (k == a || k == b))
                         {
                             flag = !flag;
                         }
@@ -637,7 +1326,7 @@ namespace SudokuSolver
                     {
                         //нужно чтобы совпало именно a
                         flag = false;
-                        for(int k=0; k< 9; k++)
+                        for (int k = 0; k < 9; k++)
                         {
                             if (X1.candidates[k] && k == a)
                             {
@@ -651,7 +1340,7 @@ namespace SudokuSolver
                         }
 
                         //запоминаем c
-                        for(int k = 0; k < 9; k++)
+                        for (int k = 0; k < 9; k++)
                         {
                             if (X1.candidates[k] && k != a)
                             {
@@ -660,7 +1349,7 @@ namespace SudokuSolver
                         }
 
                         //ищем второе "крыло"
-                        for(int j2=0; j2 < Y.seenCell.Length; j2++)
+                        for (int j2 = 0; j2 < Y.seenCell.Length; j2++)
                         {
                             if (j2 == j)
                                 continue;
@@ -668,7 +1357,7 @@ namespace SudokuSolver
                             X2 = Y.seenCell[j2];
 
                             counter = 0;
-                            for(int k = 0; k < 9; k++)
+                            for (int k = 0; k < 9; k++)
                             {
                                 if (X2.candidates[k])
                                 {
@@ -682,7 +1371,7 @@ namespace SudokuSolver
 
                             flag = false;
                             //считаем совпадения
-                            for(int k = 0; k < 9; k++)
+                            for (int k = 0; k < 9; k++)
                             {
                                 if (X2.candidates[k] && k == a)
                                 {
@@ -708,16 +1397,16 @@ namespace SudokuSolver
                             //если совпало и b и с
                             //то ищем ячейки которая видна из X1 и X2
 
-                            for(int n = 0; n < X1.seenCell.Length; n++)
+                            for (int n = 0; n < X1.seenCell.Length; n++)
                             {
-                                for(int m=0; m < X2.seenCell.Length; m++)
+                                for (int m = 0; m < X2.seenCell.Length; m++)
                                 {
                                     //если нашли ячейку видимую из двух крыльев
                                     //ищем есть ли в ней c
                                     if (X1.seenCell[n].Equals(X2.seenCell[m]))
                                     {
                                         bool flagC = false;
-                                        for(int k = 0; k < 9; k++)
+                                        for (int k = 0; k < 9; k++)
                                         {
                                             if (X1.seenCell[n].candidates[k] && k == c)
                                             {
@@ -732,9 +1421,9 @@ namespace SudokuSolver
                                         {
                                             foundet = true;
 
-                                            removed.Add(new int[] { X1.seenCell[n].row, X1.seenCell[n].column,c });
+                                            removed.Add(new int[] { X1.seenCell[n].row, X1.seenCell[n].column, c });
                                             X1.seenCell[n].RemoveCandidat(c + 1);
-                                            
+
                                         }
 
                                     }
@@ -750,10 +1439,10 @@ namespace SudokuSolver
                                 clues.Add(new int[] { X2.row, X2.column, b });
                                 clues.Add(new int[] { X2.row, X2.column, c });
 
-                                answer = "Y-Wings по "+(c+1) +" : " +
-                                         "(" + (Y.row+1)+";"+(Y.column+1)+") => "+
-                                         "(" + (X1.row+1)+";"+(X1.column+1)+") - "+
-                                         "(" + (X2.row+1)+";"+(X2.column+1)+")"
+                                answer = "Y-Wings по " + (c + 1) + " : " +
+                                         "(" + (Y.row + 1) + ";" + (Y.column + 1) + ") => " +
+                                         "(" + (X1.row + 1) + ";" + (X1.column + 1) + ") - " +
+                                         "(" + (X2.row + 1) + ";" + (X2.column + 1) + ")"
                                          ;
                                 return answer;
 
@@ -765,7 +1454,7 @@ namespace SudokuSolver
 
                 }
             }
-            
+
 
 
             return answer;
@@ -820,10 +1509,10 @@ namespace SudokuSolver
                             field[i, shape[1][2]].RemoveCandidat(k + 1);
                             field[i, shape[1][3]].RemoveCandidat(k + 1);
 
-                            removed.Add(new int[] { i, shape[1][0],k });
-                            removed.Add(new int[] { i, shape[1][1],k });
-                            removed.Add(new int[] { i, shape[1][2],k });
-                            removed.Add(new int[] { i, shape[1][3],k });
+                            removed.Add(new int[] { i, shape[1][0], k });
+                            removed.Add(new int[] { i, shape[1][1], k });
+                            removed.Add(new int[] { i, shape[1][2], k });
+                            removed.Add(new int[] { i, shape[1][3], k });
                         }
                     }
 
@@ -879,10 +1568,10 @@ namespace SudokuSolver
                             field[shape[1][2], i].RemoveCandidat(k + 1);
                             field[shape[1][3], i].RemoveCandidat(k + 1);
 
-                            removed.Add(new int[] { shape[1][0],i,k });
-                            removed.Add(new int[] { shape[1][1],i,k });
-                            removed.Add(new int[] { shape[1][2],i,k });
-                            removed.Add(new int[] { shape[1][3],i,k });
+                            removed.Add(new int[] { shape[1][0], i, k });
+                            removed.Add(new int[] { shape[1][1], i, k });
+                            removed.Add(new int[] { shape[1][2], i, k });
+                            removed.Add(new int[] { shape[1][3], i, k });
                         }
                     }
 
@@ -1244,7 +1933,7 @@ namespace SudokuSolver
                     {
                         for (int h = l + 1; h < digits.Length; h++)
                         {
-                            for(int g = h+1; g < digits.Length; g++) 
+                            for (int g = h + 1; g < digits.Length; g++)
                             {
                                 sums = new int[a.Length];
                                 //подсчитываю колличество вхождений в выбранные строки
@@ -1370,9 +2059,9 @@ namespace SudokuSolver
                             field[i, shape[1][1]].RemoveCandidat(k + 1);
                             field[i, shape[1][2]].RemoveCandidat(k + 1);
 
-                            removed.Add(new int[] { i, shape[1][0],k });
-                            removed.Add(new int[] { i, shape[1][1],k });
-                            removed.Add(new int[] { i, shape[1][2],k });
+                            removed.Add(new int[] { i, shape[1][0], k });
+                            removed.Add(new int[] { i, shape[1][1], k });
+                            removed.Add(new int[] { i, shape[1][2], k });
                         }
                     }
 
@@ -1384,8 +2073,8 @@ namespace SudokuSolver
                         }
                     }
 
-                    answer = "Swordfish по " + (k + 1) + 
-                            " в (" + (shape[0][0] + 1) + "-" + (shape[0][1] + 1) + "-" + (shape[0][2] + 1) + ";" 
+                    answer = "Swordfish по " + (k + 1) +
+                            " в (" + (shape[0][0] + 1) + "-" + (shape[0][1] + 1) + "-" + (shape[0][2] + 1) + ";"
                                    + (shape[1][0] + 1) + "-" + (shape[1][1] + 1) + "-" + (shape[1][2] + 1) + ")"
                             ;
                     return answer;
@@ -1441,8 +2130,8 @@ namespace SudokuSolver
                         }
                     }
 
-                    answer = "Swordfish по" + (k + 1) + 
-                             " в (" + (shape[1][0] + 1) + "-" + (shape[1][1] + 1) + "-" + (shape[1][2] + 1) + ";" 
+                    answer = "Swordfish по" + (k + 1) +
+                             " в (" + (shape[1][0] + 1) + "-" + (shape[1][1] + 1) + "-" + (shape[1][2] + 1) + ";"
                                     + (shape[0][0] + 1) + "-" + (shape[0][1] + 1) + "-" + (shape[0][2] + 1) + ")";
                     return answer;
 
@@ -1557,9 +2246,9 @@ namespace SudokuSolver
             //если была найдена фигура то проводим исключения и формируем ответ
             if (shape != null)
             {
-                for(int i = 0; i < 9; i++)
+                for (int i = 0; i < 9; i++)
                 {
-                    if(i != shape[0][0] && i != shape[0][1] && i != shape[0][2])
+                    if (i != shape[0][0] && i != shape[0][1] && i != shape[0][2])
                     {
                         group[shape[1][0]].RemoveCandidat(i + 1);
                         group[shape[1][1]].RemoveCandidat(i + 1);
@@ -1707,17 +2396,17 @@ namespace SudokuSolver
                     }
                 }
 
-                for(int x = 0; x < shape[1].Length; x++)
+                for (int x = 0; x < shape[1].Length; x++)
                 {
                     clues.Add(new int[] { group[shape[0][0]].row, group[shape[0][0]].column, shape[1][x] });
                     clues.Add(new int[] { group[shape[0][1]].row, group[shape[0][1]].column, shape[1][x] });
                     clues.Add(new int[] { group[shape[0][2]].row, group[shape[0][2]].column, shape[1][x] });
                 }
 
-                answer = "Открытая тройка " + (shape[1][0] + 1) + "/" + (shape[1][1] + 1) + "/"+ (shape[1][2] + 1) +
+                answer = "Открытая тройка " + (shape[1][0] + 1) + "/" + (shape[1][1] + 1) + "/" + (shape[1][2] + 1) +
                          " в (" + (group[shape[0][0]].row + 1) + ";" + (group[shape[0][0]].column + 1) +
-                         ") и (" + (group[shape[0][1]].row + 1) + ";" + (group[shape[0][1]].column + 1)+
-                         ") и (" + (group[shape[0][2]].row + 1) + ";" + (group[shape[0][2]].column + 1)+")"
+                         ") и (" + (group[shape[0][1]].row + 1) + ";" + (group[shape[0][1]].column + 1) +
+                         ") и (" + (group[shape[0][2]].row + 1) + ";" + (group[shape[0][2]].column + 1) + ")"
                          ;
             }
 
@@ -1806,13 +2495,13 @@ namespace SudokuSolver
                             counter = 0;
                             for (int j = 0; j < a.Length; j++)
                             {
-                                if (sums[j] >0 )
+                                if (sums[j] > 0)
                                 {
                                     counter++;
                                 }
                             }
 
-                            if (counter!=n)
+                            if (counter != n)
                             {
                                 continue;
                             }
@@ -1902,8 +2591,8 @@ namespace SudokuSolver
                             field[i, shape[1][0]].RemoveCandidat(k + 1);
                             field[i, shape[1][1]].RemoveCandidat(k + 1);
 
-                            removed.Add(new int[] { i, shape[1][0],k });
-                            removed.Add(new int[] { i, shape[1][1],k });
+                            removed.Add(new int[] { i, shape[1][0], k });
+                            removed.Add(new int[] { i, shape[1][1], k });
                         }
                     }
                     for (int x = 0; x < 2; x++)
@@ -1958,9 +2647,9 @@ namespace SudokuSolver
                         }
                     }
 
-                    for(int x = 0; x < 2; x++)
+                    for (int x = 0; x < 2; x++)
                     {
-                        for(int y = 0; y < 2; y++)
+                        for (int y = 0; y < 2; y++)
                         {
                             clues.Add(new int[] { shape[1][x], shape[0][y], k });
                         }
@@ -2086,8 +2775,8 @@ namespace SudokuSolver
                         group[shape[1][0]].RemoveCandidat(i + 1);
                         group[shape[1][1]].RemoveCandidat(i + 1);
 
-                        removed.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column,i });
-                        removed.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column,i });
+                        removed.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, i });
+                        removed.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, i });
                     }
                 }
 
@@ -2303,14 +2992,14 @@ namespace SudokuSolver
                                             field[startY + y, startX + x].RemoveCandidat(k + 1);
                                             impact = true;
 
-                                            
+
                                             removed.Add(new int[] { startY + y, startX + x, k });
                                         }
                                         if (impact)
                                         {
-                                            for(int n = 0; n < cluesInd.Length; n++)
+                                            for (int n = 0; n < cluesInd.Length; n++)
                                             {
-                                                clues.Add(new int[] { i, cluesInd[n],k });
+                                                clues.Add(new int[] { i, cluesInd[n], k });
                                             }
                                         }
                                     }
@@ -2405,7 +3094,7 @@ namespace SudokuSolver
                                         {
                                             for (int n = 0; n < cluesInd.Length; n++)
                                             {
-                                                clues.Add(new int[] {cluesInd[n],j,k });
+                                                clues.Add(new int[] { cluesInd[n], j, k });
                                             }
                                         }
                                     }
@@ -2485,7 +3174,7 @@ namespace SudokuSolver
                         //номер региона x,y
                         //номер строки лежит в indexes[0]
 
-                        
+
 
                         //исключение из строки
                         if (flag)
@@ -2514,9 +3203,9 @@ namespace SudokuSolver
                             //если было исключение то формируем ответ
                             if (impact)
                             {
-                                for(int n = 0; n < cluesInd.Length; n++)
+                                for (int n = 0; n < cluesInd.Length; n++)
                                 {
-                                    clues.Add(new int[] { indexes[0], cluesInd[n],k });
+                                    clues.Add(new int[] { indexes[0], cluesInd[n], k });
                                 }
                                 answer = "Регион  " + (y * 3 + x + 1) + ": виртуальная одиночка " + (k + 1) + " в строке " + (indexes[0] + 1) + "";
                                 return answer;
@@ -2585,9 +3274,9 @@ namespace SudokuSolver
                             //если было исключение то формируем ответ
                             if (impact)
                             {
-                                for(int n = 0; n < cluesInd.Length; n++)
+                                for (int n = 0; n < cluesInd.Length; n++)
                                 {
-                                    clues.Add(new int[] { cluesInd[n], indexes[0],k });
+                                    clues.Add(new int[] { cluesInd[n], indexes[0], k });
                                 }
                                 answer = "Регион " + (y * 3 + x + 1) + ": виртуальная одиночка " + (k + 1) + " в столбце " + (indexes[0] + 1) + "";
                                 return answer;
@@ -2823,7 +3512,7 @@ namespace SudokuSolver
                 {
                     v = k + 1;
                     group[index].SetValue(v);
-                    clues.Add(new int[] { group[index].row, group[index].column, v-1});
+                    clues.Add(new int[] { group[index].row, group[index].column, v - 1 });
                     answer = "Найдена скрытая одиночка: " + v.ToString() + " в (" + (group[index].row + 1).ToString() + ";" + (group[index].column + 1).ToString() + ")";
                     return answer;
                 }
@@ -2868,7 +3557,7 @@ namespace SudokuSolver
 
                         field[i, j].SetValue(v);
 
-                        clues.Add(new int[] {i,j,v-1});
+                        clues.Add(new int[] { i, j, v - 1 });
 
                         answer = "Найдена открытая одиночка: " + v.ToString() + " в (" + (i + 1).ToString() + ";" + (j + 1).ToString() + ")";
                         return answer;
@@ -2884,20 +3573,20 @@ namespace SudokuSolver
         {
             int value = 0;
             //обход всего поля
-            for(int i = 0; i < 9; i++)
+            for (int i = 0; i < 9; i++)
             {
-                for(int j = 0; j < 9; j++)
+                for (int j = 0; j < 9; j++)
                 {
                     value = field[i, j].value;
                     //если известно число
-                    if(value > 0)
+                    if (value > 0)
                     {
                         //обходим все видимые ячейки
-                        for(int k = 0; k < field[i, j].seenCell.Length;k++) 
+                        for (int k = 0; k < field[i, j].seenCell.Length; k++)
                         {
 
                             //если есть исключение то исключаем
-                            if(field[i, j].seenCell[k].candidates[value-1])
+                            if (field[i, j].seenCell[k].candidates[value - 1])
                             {
                                 field[i, j].seenCell[k].RemoveCandidat(value);
                             }
@@ -2982,7 +3671,7 @@ namespace SudokuSolver
 
             return answer;
         }
-        
+
 
         public static string makeAnswer(int i, int j, int v, ref Field field)
         {
