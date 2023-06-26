@@ -22,12 +22,15 @@ namespace SudokuSolver
             "Simple Coloring"
         };
 
-        //simple coloring
+        //список ключей и исключенных кандидатов
+        public static List<int[]> clues;        //i,j -- где ключ,         k -- что ключ
+        public static List<int[]> removed;      //i,j -- откуда исключаем, k -- что исключаем
 
-        public static List<int[]> clues;    //i,j -- где ключ,         k -- что ключ
-        public static List<int[]> removed;  //i,j -- откуда исключаем, k -- что исключаем
 
-        public static List<int[]> chain;    //ind, k => ind, k
+        //для цепных техник
+        //список связей и звеньев цепи
+        public static List<int[]> chain;        //ind, k => ind, k
+        public static List<int[]> chainUnits;   //ind, k
 
         
         public static string findElimination(ref Field field, bool[] tecFlags)
@@ -40,6 +43,7 @@ namespace SudokuSolver
             clues = new List<int[]>();
             removed = new List<int[]>();
             chain = new List<int[]>();
+            chainUnits = new List<int[]>();
 
             //открытые одиночки
             if (tecFlags[0])
@@ -200,6 +204,7 @@ namespace SudokuSolver
         }
 
         //Simple Coloring
+        //не готово
         private static string SimpleColoring(ref Field field)
         {
             string answer = "";
@@ -214,11 +219,15 @@ namespace SudokuSolver
             int a = -1;
             int b = -1;
 
+            List<int[]> ON;
+            List<int[]> OFF;
+
 
             //для теста ищем только по единицам
-            for (int k = 0; k < 1; k++)
+            for (int k = 2; k < 3; k++)
             {
                 chain = new List<int[]>();
+                chainUnits = new List<int[]>();
                 //переписываю матрицу
                 for (int i = 0; i < 9; i++)
                 {
@@ -266,7 +275,9 @@ namespace SudokuSolver
                         }
 
                         //добавил в цепь
-                        AddToChain(a, b, k);
+                        AddLinkToChain(a, b, k);
+                        AddUnitToChain(a, k);
+                        AddUnitToChain(b, k);
                     }
                 }
 
@@ -303,7 +314,9 @@ namespace SudokuSolver
                             }
                         }
                         //добавил в цепь
-                        AddToChain(a, b, k);
+                        AddLinkToChain(a, b, k);
+                        AddUnitToChain(a, k);
+                        AddUnitToChain(b, k);
 
                     }
 
@@ -357,13 +370,44 @@ namespace SudokuSolver
                             }
 
                             //добавил в цепь
-                            AddToChain(a, b, k);
+                            AddLinkToChain(a, b, k);
+                            AddUnitToChain(a, k);
+                            AddUnitToChain(b, k);
                         }
                     }
                 }
                 //----------------------------------------------------------------------------------------------------------------------------
 
                 //поиск исключений
+
+                //раскрашиваем цепь в 2 цвета
+
+                //списки цветов
+                ON = new List<int[]>();
+                OFF = new List<int[]>();
+
+                //нахожу компоненты связности
+
+                int[] subChains = new int[chainUnits.Count];
+                int subChainCounter = 0;
+
+                bool[] visited = new bool[chainUnits.Count];
+
+                for(int v = 0; v < chainUnits.Count; v++)
+                {
+                    if (!visited[v])
+                    {
+                        dfs(ref visited,ref subChains, ref subChainCounter, v);
+                        subChainCounter++;
+                    }
+                }
+                answer += "\nКОЛЛИЧЕСТВО КОМПОНЕНТ : " + subChainCounter+"\n";
+                answer += "\nКОЛЛИЧЕСТВО ЭЛЕМЕНТОВ : " + chainUnits.Count+"\n";
+                answer += printSubchains(subChainCounter,subChains);
+                return answer;
+
+
+
 
                 //если исключения есть то исключаем и формируем ответ
 
@@ -377,15 +421,64 @@ namespace SudokuSolver
                     int i2 = item[2] / 9;
                     int j2 = item[2] % 9;
 
-                    answer += (item[1] + 1) + "в (" + (i1 + 1) + ";" + (j1 + 1) + ") => " + (item[3] + 1) + " в (" + (i2 + 1) + ";" + (j2 + 1) + ")\n";
+                    answer += (item[1] + 1) + " в (" + (i1 + 1) + ";" + (j1 + 1) + ") => " + (item[3] + 1) + " в (" + (i2 + 1) + ";" + (j2 + 1) + ")\n";
                 }
-
-
             return answer;
         }
 
+        private static string printSubchains(int SCC, int[] subChains)
+        {
+            string ans = "";
+
+            //по всем компонентам
+            for(int i = 0; i < SCC+1; i++)
+            {
+                ans += "\n----------" + (i + 1) + "---------\n";
+                for(int j = 0; j < chainUnits.Count; j++)
+                {
+                    if (subChains[j] == i)
+                    {
+                        ans += "(" + (chainUnits[j][0] / 9 + 1) + ";" + (chainUnits[j][0] % 9 + 1) + ") ";
+                    }
+                }
+            }
+
+            return ans;
+        }
+
+        private static void dfs(ref bool[] visited, ref int[] component,ref int components, int v)
+        {
+            visited[v] = true;
+            component[v] = components;
+            foreach (int[] link in chain)
+            {
+                //нашли ребро
+                
+                if (chainUnits[v][0] == link[0] && chainUnits[v][1] == link[1])
+                {
+                    //нахожу номер конца ребра в chainUnits
+                    int count = 0;
+                    foreach (int[] unit in chainUnits)
+                    {
+                        if (unit[0] == link[2] && unit[1] == link[3])
+                        {
+                            if (!visited[count])
+                            {
+                                dfs(ref visited,ref component,ref components,count);
+                            }
+                        }
+                        else
+                        {
+                            count++;
+                        }
+
+                    }
+                }
+            }
+        }
+
         //добавляем в цепь новую связь
-        private static void AddToChain(int ind1,int ind2,int k)
+        private static void AddLinkToChain(int ind1,int ind2,int k)
         {
             bool contains = false;
             foreach (int[] item in chain)
@@ -400,7 +493,40 @@ namespace SudokuSolver
             {
                 chain.Add(new int[] {ind1,k,ind2,k});
             }
+            contains = false;
+            foreach (int[] item in chain)
+            {
+                if (item[0] == ind2 && item[1] == k && item[2] == ind1 && item[3] == k)
+                {
+                    contains = true;
+                    break;
+                }
+            }
+            if (!contains)
+            {
+                chain.Add(new int[] { ind2, k, ind1, k });
+            }
         }
+
+        //добавление в цепь нового звена
+        private static void AddUnitToChain(int ind,int k)
+        {
+            bool contains = false;
+            foreach (int[] unit in chainUnits)
+            {
+                if(unit[0] == ind && unit[1] == k)
+                {
+                    contains = true;
+                    break;
+                }
+            }
+
+            if (!contains)
+            {
+                chainUnits.Add(new int[] { ind, k });
+            }
+        }
+        
 
         //Y-Wings
         private static string Y_Wings(ref Field field)

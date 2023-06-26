@@ -56,9 +56,6 @@
     <Compile Include="Constructor.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="DrawingPanel.cs">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Include="Field.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>

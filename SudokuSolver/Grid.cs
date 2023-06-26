@@ -109,7 +109,8 @@ namespace SudokuSolver
                 cells[removed[i][0]][removed[i][1]].HighlighteRemoving(removed[i][2]);
             }
 
-
+            //если цепь не null и не пустая то отмечаем звенья
+            
 
         }
 
@@ -197,9 +198,9 @@ namespace SudokuSolver
             }
 
             
-            using (Pen p = new Pen(Color.Red))
+            using (Pen p = new Pen(Color.FromArgb(170, Color.Red)))
             {
-                p.Width = 1;
+                p.Width = 3;
                 int i1, i2, j1, j2, k1, k2;
 
                 float X1, X2;

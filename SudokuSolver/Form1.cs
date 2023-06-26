@@ -75,7 +75,6 @@ namespace SudokuSolver
             loadSudoku("13");
             //------------------------------------------------------------------------------------------------------------
 
-
             //загрузка судоку в поле
             //удаление лишних очевидных кандидатов
             //отрисовка сетки
@@ -100,7 +99,6 @@ namespace SudokuSolver
             CreateMenu();
 
         }
-
         //создание меню
         private void CreateMenu()
         {
@@ -242,6 +240,16 @@ namespace SudokuSolver
                 tecniquesPanel.Controls.Add(tecniques[i]);
             }
 
+            //----------------------------------------------------------------------------------------------------------------------
+            //ВРЕМЕННО ДЛЯ УДОБСТВА
+            //УБРАТЬ
+            tecniques[tecniques.Length - 1].Checked = false;
+            tecniques[tecniques.Length - 2].Checked = false;
+            //----------------------------------------------------------------------------------------------------------------------
+
+
+
+
             tecniquesPanel.Size = new Size(tecniques[0].Width + 30, (checkBoxSize + 5) * tecniques.Length + 20);
 
             //создание кнопки вкл-выкл всех техник
@@ -342,13 +350,7 @@ namespace SudokuSolver
         }
 
         //----------------------------------------------------------------------------------------------------------------------
-        //отрисовка вспомогательных элементов
-        //private void Form1_Paint(object sender, PaintEventArgs e)
-        //{
-            //base.OnPaint(e);
-
-            
-        //}
+        
 
         protected override void OnPaint(PaintEventArgs e)
         {
