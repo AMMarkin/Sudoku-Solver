@@ -19,7 +19,7 @@ namespace SudokuSolver
             "Открытые четверки", "Скрытые четверки",
             "X-Wings","Swordfish","Jellyfish",
             "Y-Wings",
-            "Simple Coloring"
+            "Simple Coloring","Extended Simple Coloring"
         };
 
         //список ключей и исключенных кандидатов
@@ -28,15 +28,17 @@ namespace SudokuSolver
 
 
         //для цепных техник
-        //список связей и звеньев цепи
+        //список связей и звеньев цепи 
+        //ind = 9 * i + j
         public static List<int[]> chain;        //ind, k => ind, k    сильные связи !A =>  B
         public static List<int[]> weak;         //ind, k => ind, k     слабые связи  A => !B
         public static List<int[]> chainUnits;   //ind, k
 
-        public static List<int[]> ON;           //цепи по двум цветам
-        public static List<int[]> OFF;
+        //цепи по двум цветам
+        public static List<int[]> ON;           //ind, k
+        public static List<int[]> OFF;          //ind, k
 
-
+        //перебор всех техник внесенных по возрастанию сложности
         public static string findElimination(ref Field field, bool[] tecFlags)
         {
 
@@ -248,14 +250,27 @@ namespace SudokuSolver
                 }
                 else
                 {
-                    //return "ON содержит " + ON.Count+" элементов";
-
                     ON.Clear();
                     OFF.Clear();
                     chain.Clear();
                 }
             }
 
+            //Extended Simple Coloring
+            if (tecFlags[14])
+            {
+                tmp = ExtendedSimpleColoring(ref field);
+                if (!tmp.Equals(""))
+                {
+                    return tmp;
+                }
+                else
+                {
+                    ON.Clear();
+                    OFF.Clear();
+                    chain.Clear();
+                }
+            }
 
             //проверка решения
             tmp = check(ref field);
@@ -267,11 +282,1148 @@ namespace SudokuSolver
             return answer;
         }
 
-        //Simple Coloring
-        //только по сильным связям
-        //не готово
+        //Extended Simple Coloring
+        //--------------------------------------------------------------------------------------------------------
+        //сильные связи для всех цветов + ячейки с двумя кандидатам(сильная связь внутри ячейки)
+        private static string ExtendedSimpleColoring(ref Field field)
+        {
+            string answer = "";
 
-        public static void FindLinks(ref Field field, int[] kArray)
+            int[] subChains = null;
+            int subChainCounter = 0;
+
+            //добавляю все сильные связи
+            CreateChain(ref field, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 });
+
+            //добавляю в связи ячейки с двумя кандидатами
+            AddBiValueToChain(ref field);
+
+            //разделение по компонентам связности
+
+            //нахожу компоненты связности
+            subChains = new int[chainUnits.Count];
+            subChainCounter = 0;
+
+            bool[] visited = new bool[chainUnits.Count];
+
+            for (int v = 0; v < chainUnits.Count; v++)
+            {
+                if (!visited[v])
+                {
+                    dfsStrong(ref visited, ref subChains, ref subChainCounter, v);
+                    subChainCounter++;
+                }
+            }
+
+            //поиск исключений
+
+            //для всех компонент
+
+            //раскрашиваем цепь в 2 цвета
+            for (int i = 0; i < subChainCounter; i++)
+            {
+
+                //раскрашиваю
+                SubChainColoring(i, subChains);
+
+
+
+                //поиск исключений
+
+                //проверка повторения цвета 
+                answer = chainLogicRepeatRule(ref field, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 });
+                if (!answer.Equals(""))
+                {
+                    ClearChainBySubChain(i, subChains);
+                    return ("Extended Simple Coloring: " + answer);
+                }
+                //повторение цвета в ячейке
+                answer = TwiceInCellRule(ref field);
+                if (!answer.Equals(""))
+                {
+                    ClearChainBySubChain(i,subChains);
+                    return ("Extended Simple Coloring: " + answer);
+                }
+                answer = TwoColorsInCell(ref field);
+                if (!answer.Equals(""))
+                {
+                    ClearChainBySubChain(i, subChains);
+                    return ("Extended Simple Coloring: " + answer);
+                }
+                //кандидаты видимые из двух цветов
+                for(int k = 0; k < 9; k++)
+                {
+                    answer = TwoColorsElsewhere(ref field, k);
+                    if (!answer.Equals(""))
+                    {
+                        ClearChainBySubChain(i, subChains);
+                        return ("Extended Simple Coloring: " + answer);
+                    }
+                }
+                //кандидаты делящие ячейку с одним цветом и видимые други
+                answer = TwoColorsUnitCell(ref field);
+                if (!answer.Equals(""))
+                {
+                    ClearChainBySubChain(i, subChains);
+                    return ("Extended Simple Coloring: " + answer);
+                }
+                //цвет полностью исключающий ячейку
+                answer = CellEmptiedByColor(ref field);
+                if (!answer.Equals(""))
+                {
+                    ClearChainBySubChain(i, subChains);
+                    return ("Extended Simple Coloring: " + answer);
+                }
+
+            }
+            return answer;
+        }
+        
+        //цвет полностью исключающий одну ячейку
+        private static string CellEmptiedByColor(ref Field field)
+        {
+            string answer="";
+
+            bool emptyed;
+            bool contains;
+
+            int i1, j1;
+
+            //для первого цвета
+            //иду по всем ячейкам
+            for(int i = 0; i < 9; i++)
+            {
+                for(int j = 0; j < 9; j++)
+                {
+                    //если есть значение то пропускаем
+                    if (field[i, j].value != -1)
+                    {
+                        continue;
+                    }
+                    //проверка нет ли текущей ячейки в цепи
+                    contains = false;
+                    foreach (int[] unit in ON)
+                    {
+                        if (9 * i + j == unit[0])
+                        {
+                            contains = true;
+                            break;
+                        }
+                    }
+                    if (contains)
+                    {
+                        continue;
+                    }
+                    foreach (int[] unit in OFF)
+                    {
+                        if (9 * i + j == unit[0])
+                        {
+                            contains = true;
+                            break;
+                        }
+                    }
+                    if (contains)
+                    {
+                        continue;
+                    }
+
+                    //если не закрашена то 
+                    //иду по всем ее кандидатам
+
+                    //для ON
+                    emptyed = true;
+                    for(int k = 0; k < 9; k++)
+                    {
+                        if (!field[i, j].candidates[k])
+                        {
+                            continue;
+                        }
+                        if (!seenByColor(9 * i + j, k, true))
+                        {
+                            emptyed = false;
+                            break;
+                        }
+                    }
+                    //если все кандидаты незакрашенной ячейки видны цветом
+                    //то этот цвет исключается
+                    if (emptyed)
+                    {
+                        foreach (int[] rem in ON)
+                        {
+                            i1 = rem[0] / 9;
+                            j1 = rem[0] % 9;
+                            field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            removed.Add(new int[] { i1, j1, rem[1]});
+                        }
+                        ON.Clear();
+                        ON.AddRange(OFF);
+                        OFF.Clear();
+
+                        answer = "все числа в ячейке (" + (i + 1) + ";" + (j + 1) + ") видны цветом";
+                        return answer;
+
+                    }
+
+                    //для OFF
+                    for (int k = 0; k < 9; k++)
+                    {
+                        if (!field[i, j].candidates[k])
+                        {
+                            continue;
+                        }
+                        if (!seenByColor(9 * i + j, k, false))
+                        {
+                            emptyed = false;
+                            break;
+                        }
+                    }
+                    //если все кандидаты незакрашенной ячейки видны цветом
+                    //то этот цвет исключается
+                    if (emptyed)
+                    {
+                        foreach (int[] rem in OFF)
+                        {
+                            i1 = rem[0] / 9;
+                            j1 = rem[0] % 9;
+                            field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            removed.Add(new int[] { i1, j1, rem[1] });
+                        }
+                        OFF.Clear();
+
+                        answer = "все числа в ячейке (" + (i + 1) + ";" + (j + 1) + ") видны цветом";
+                        return answer;
+
+                    }
+
+                }
+            }
+
+
+            return answer;
+        }
+
+        //виден ли кандидат в ячейке цветом
+        private static bool seenByColor(int ind,int k,bool OnOff)
+        {
+            //OnOff 
+            //true  - ON
+            //false - OFF
+
+            bool res = false;
+            if (OnOff)
+            {
+                foreach (int[] unit in ON)
+                {
+                    //если не тот кандидат пропускаем
+                    if (unit[1] != k)
+                    {
+                        continue;
+                    }
+                    //если одна ячейка пропускаем
+                    if(unit[0] == ind)
+                    {
+                        continue;
+                    }
+                    //если то же число, в другой ячейке из нужного цвета видит нужную ячейку, то возвращаем тру
+                    if (isSeen(ind, unit[0]))
+                    {
+                        return true;
+                    }
+
+                }
+            }
+            else
+            {
+                //тоже самое для другого цвета
+                foreach (int[] unit in OFF)
+                {
+                    //если не тот кандидат пропускаем
+                    if (unit[1] != k)
+                    {
+                        continue;
+                    }
+                    //если одна ячейка пропускаем
+                    if (unit[0] == ind)
+                    {
+                        continue;
+                    }
+                    //если то же число, в другой ячейке из нужного цвета видит нужную ячейку, то возвращаем тру
+                    if (isSeen(ind, unit[0]))
+                    {
+                        return true;
+                    }
+
+                }
+
+            }
+
+
+            return res;
+        }
+
+        //исключение кандидатов видимых одним цветом и находящихся в одной ячейке с другим
+        private static string TwoColorsUnitCell(ref Field field)
+        {
+            string answer = "";
+            //исключаю кандидатов которые без цвета
+            //но видят один цвет 
+            //а второй в их ячейке
+            //потому что если он будет решением, то сломает один цвет потому что займет ячейку
+            //второй цвет потому что исключит звено в цепи
+
+            int i1, j1;
+            int i2, j2;
+            //обхожу весь первый цвет
+            foreach (int[] unit1 in ON)
+            {
+                i1 = unit1[0] / 9;
+                j1 = unit1[0] % 9;
+                //по всем кандидатам
+                for(int k = 0; k < 9; k++)
+                {
+                    //если кандидат есть и не закрашен
+                    if(k!= unit1[1] && field[i1, j1].candidates[k])
+                    {
+                        //ищем ему пару во втором цвете
+                        foreach (int[] unit2 in OFF)
+                        {
+                            //если не тот кандидат 
+                            //пропускаем
+                            if (unit2[1] != k)
+                            {
+                                continue;
+                            }
+                            
+                            if (unit2[0] == unit1[0]) //не уверен что такое возможно но лучше ифануть
+                            {
+                                continue;
+                            }
+                            //если не видит 
+                            //пропускаем
+                            if (!isSeen(unit1[0], unit2[0]))
+                            {
+                                continue;
+                            }
+
+                            //если не пропустили то исключаем и составляем ответ
+                            i2 = unit2[0] / 9;
+                            j2 = unit2[0] % 9;
+
+                            answer = (k + 1) + " в ячейке (" + (i1 + 1) + ";" + (j1 + 1) + ") " +
+                                     "видит один цвет и свою пару в ячейке (" + (i2 + 1) + ";" + (j2 + 1) + ")";
+                            field[i1, j1].RemoveCandidat(k + 1);
+                            removed.Add(new int[] { i1, j1, k });
+                            return answer;
+                        }
+                    }
+                }
+            }
+
+            //то же самое для второго цвета
+            foreach (int[] unit1 in OFF)
+            {
+                i1 = unit1[0] / 9;
+                j1 = unit1[0] % 9;
+                //по всем кандидатам
+                for (int k = 0; k < 9; k++)
+                {
+                    //если кандидат есть и не закрашен
+                    if (k != unit1[1] && field[i1, j1].candidates[k])
+                    {
+                        //ищем ему пару во втором цвете
+                        foreach (int[] unit2 in ON)
+                        {
+                            //если не тот кандидат 
+                            //пропускаем
+                            if (unit2[1] != k)
+                            {
+                                continue;
+                            }
+
+                            if (unit2[0] == unit1[0]) //не уверен что такое возможно но лучше ифануть
+                            {
+                                continue;
+                            }
+                            //если не видит 
+                            //пропускаем
+                            if (!isSeen(unit1[0], unit2[0]))
+                            {
+                                continue;
+                            }
+
+                            //если не пропустили то исключаем и составляем ответ
+                            i2 = unit2[0] / 9;
+                            j2 = unit2[0] % 9;
+
+                            answer = (k + 1) + " в ячейке (" + (i1 + 1) + ";" + (j1 + 1) + ") " +
+                                     "видит один цвет и свою пару в ячейке (" + (i2 + 1) + ";" + (j2 + 1) + ")";
+                            field[i1, j1].RemoveCandidat(k + 1);
+                            removed.Add(new int[] { i1, j1, k });
+                            return answer;
+                        }
+                    }
+                }
+            }
+
+
+            return answer;
+        }
+
+        //проверка видят ли ячейки друг друга
+        private static bool isSeen(int ind1,int ind2)
+        {
+            bool res = false;
+            int i1, i2;
+            int j1, j2;
+
+            i1 = ind1 / 9;
+            j1 = ind1 % 9;
+
+            i2 = ind2 / 9;
+            j2 = ind2 % 9;
+
+            //видят по строке
+            if (i1 == i2)
+            {
+                res = true;
+            }
+            //видят по столбцу
+            if (j1 == j2)
+            {
+                res = true;
+            }
+            //видят по региону
+            if((3*(i1/3)+j1/3)== (3 * (i2 / 3) + j2 / 3))
+            {
+                res = true;
+            }
+
+            return res;
+        }
+        
+        //проверка появления двух цветов в одной ячейке
+        private static string TwoColorsInCell(ref Field field)
+        {
+            string answer = "";
+
+            int i, j;
+            bool impact = false;
+            //иду по первому цвету
+            foreach (int[] unit1 in ON)
+            {
+                //ищу такой же индекс во втором цвете 
+                foreach (int[] unit2 in OFF)
+                {
+                    //если нахожу то исключаю из ячейки все кроме этих двух цветов
+                    if (unit1[0] == unit2[0])
+                    {
+                        i = unit1[0] / 9;
+                        j = unit1[0] % 9;
+
+                        for (int k = 0; k < 9; k++)
+                        {
+                            if (k != unit1[1] && k != unit2[1] && field[i, j].candidates[k])
+                            {
+                                field[i, j].RemoveCandidat(k + 1);
+                                removed.Add(new int[] { i, j, k });
+                                impact = true;
+                            }
+                        }
+                        if (impact)
+                        {
+                            answer = "два цвета в ячейке (" + (i + 1) + ";" + (j + 1) + ")";
+                            return answer;
+                        }
+                    }
+
+                }
+
+            }
+
+            return answer;
+        }
+
+        //проверка появления одного цвета дважды в одной ячейке
+        private static string TwiceInCellRule(ref Field field)
+        {
+            string answer = "";
+
+            //иду по первому цвету
+            bool founded = false;
+            int i1, j1;
+
+            //полным перебором смотрю нет ли повторений индексов
+            foreach (int[] unit1 in ON)
+            {
+
+                foreach (int[] unit2 in ON)
+                {
+                    if (unit2.Equals(unit1))
+                    {
+                        continue;
+                    }
+                    //если нашли два цвета в одной ячейке
+                    if (unit2[0] == unit1[0])
+                    {
+                        founded = true;
+
+                        //Все ON удаляются
+                        foreach (int[] rem in ON)
+                        {
+                            i1 = rem[0] / 9;
+                            j1 = rem[0] % 9;
+                            field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            removed.Add(new int[] { i1, j1, rem[1] });
+                        }
+                        //для красоты перекидываем оставшееся в ON
+                        ON.Clear();
+                        ON.AddRange(OFF);
+                        OFF.Clear();
+                        answer = "повторение цвета в ячейке (" + (unit2[0] / 9 + 1) + ";" + (unit2[0] % 9 + 1) + ")";
+                        return answer;
+                    }
+                }
+            }
+
+            //полным перебором смотрю нет ли повторений индексов
+            foreach (int[] unit1 in OFF)
+            {
+
+                foreach (int[] unit2 in OFF)
+                {
+                    if (unit2.Equals(unit1))
+                    {
+                        continue;
+                    }
+                    //если нашли два цвета в одной ячейке
+                    if (unit2[0] == unit1[0])
+                    {
+                        founded = true;
+
+                        //Все ON удаляются
+                        foreach (int[] rem in OFF)
+                        {
+                            i1 = rem[0] / 9;
+                            j1 = rem[0] % 9;
+                            field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            removed.Add(new int[] { i1, j1, rem[1] });
+                        }
+                        //для красоты перекидываем оставшееся в ON
+                        OFF.Clear();
+                        answer = "повторение цвета в ячейке (" + (unit2[0] / 9 + 1) + ";" + (unit2[0] % 9 + 1) + ")";
+                        return answer;
+                    }
+                }
+            }
+            return answer;
+        }
+
+        //добавление в цепь сильных связей ячеек с двумя кандидатами
+        private static void AddBiValueToChain(ref Field field)
+        {
+            int counter = 0;
+            int a = -1;
+            int b = -1;
+
+            for (int i = 0; i < 9; i++)
+            {
+                for (int j = 0; j < 9; j++)
+                {
+                    //если значение не известно
+                    if (field[i, j].value == -1)
+                    {
+                        //считаю кандидатов
+                        counter = 0;
+                        a = -1;
+                        b = -1;
+                        for (int k = 0; k < 9; k++)
+                        {
+                            if (field[i, j].candidates[k])
+                            {
+                                counter++;
+                                //записываю кандидатов
+                                if (a == -1)
+                                {
+                                    a = k;
+                                }
+                                else
+                                {
+                                    b = k;
+                                }
+                            }
+                        }
+
+                        //если ровно два кандидата то добавляю в цепь сильную связь
+                        if (counter == 2)
+                        {
+                            AddLinkToChain(9 * i + j, 9 * i + j, a, b);
+                            AddUnitToChain(9 * i + j, a);
+                            AddUnitToChain(9 * i + j, b);
+                        }
+                    }
+                }
+            }
+        }
+
+        //очистка цепи для комфортного отображения
+        private static void ClearChainBySubChain(int subchainNumber, int[] subchains)
+        {
+            int ind, k;
+            List<int[]> rem = new List<int[]>();
+            for (int i = 0; i < subchains.Length; i++)
+            {
+                //если относится к ненужной компоненте
+                if (subchains[i] != subchainNumber)
+                {
+                    //запоминаем
+                    ind = chainUnits[i][0];
+                    k = chainUnits[i][1];
+
+                    foreach (int[] link in chain)
+                    {
+                        if ((link[0] == ind && link[1] == k) || (link[2] == ind && link[3] == k))
+                        {
+                            rem.Add(link);
+                        }
+                    }
+                }
+            }
+
+            for (int i = 0; i < rem.Count; i++)
+            {
+                chain.Remove(rem[i]);
+            }
+
+        }
+
+        //DEBUG
+        private static string printBiValue()
+        {
+            string answer = "";
+            int i, j;
+            foreach (int[] link in chain)
+            {
+                if (link[0] == link[2])
+                {
+                    i = link[0] / 9;
+                    j = link[0] % 9;
+
+                    answer += "\n(" + (i + 1) + ";" + (j + 1) + ") => " + (link[1] + 1) + " - " + (link[3] + 1);
+                }
+            }
+
+            return answer;
+        }
+
+
+        //Simple Coloring
+        //--------------------------------------------------------------------------------------------------------
+        //только по сильным связям
+        private static string SimpleColoring(ref Field field)
+        {
+            string answer = "";
+
+
+            int[] subChains = null;
+            int subChainCounter = 0;
+
+
+            for (int k = 0; k < 9; k++)
+            {
+                CreateChain(ref field, new int[] { k });
+
+
+                //поиск исключений
+
+                //раскрашиваем цепь в 2 цвета
+
+                //списки цветов
+                ON.Clear();
+                OFF.Clear();
+
+                //нахожу компоненты связности
+                subChains = new int[chainUnits.Count];
+                subChainCounter = 0;
+
+                bool[] visited = new bool[chainUnits.Count];
+
+                for (int v = 0; v < chainUnits.Count; v++)
+                {
+                    if (!visited[v])
+                    {
+                        dfsStrong(ref visited, ref subChains, ref subChainCounter, v);
+                        subChainCounter++;
+                    }
+                }
+                //для всех кусков
+                for (int i = 0; i < subChainCounter; i++)
+                {
+
+                    //раскрашиваю
+                    SubChainColoring(i, subChains);
+
+                    //поиск исключений
+
+                    //повторения цвета
+                    //для одного числа
+
+                    answer = chainLogicRepeatRule(ref field, new int[] { k });
+                    if (!answer.Equals(""))
+                    {
+                        return ("Simple Coloring: " + answer);
+                    }
+
+                    //ячейки видимые двумя цветами
+                    answer = TwoColorsElsewhere(ref field, k);
+                    if (!answer.Equals(""))
+                    {
+                        return ("Simple Coloring: " + answer);
+                    }
+
+                }
+            }
+
+            return answer;
+        }
+
+        //исключение кандидатов видимых двумя цветами
+        private static string TwoColorsElsewhere(ref Field field, int k)
+        {
+            string answer = "";
+
+            List<int> seenbyON = new List<int>();
+            List<int> intersec = new List<int>();
+
+            int i, j;
+            int i1, j1;
+            //находим все ячейки которые видны кандидатом k в группе ON
+            foreach (int[] unit in ON)
+            {
+                //если нашли нужное число
+                if (unit[1] == k)
+                {
+                    //находим нужную ячейку на поле
+                    i = unit[0] / 9;
+                    j = unit[0] % 9;
+                    //записываем все видимые ей индексы (новые)
+                    for(int n = 0; n < field[i, j].seenInd[0].Length; n++)
+                    {
+                        i1 = field[i, j].seenInd[0][n]; 
+                        j1 = field[i, j].seenInd[1][n];
+                        if (!seenbyON.Contains(9 * i1 + j1))
+                        {
+                            seenbyON.Add(9 * i1 + j1);
+                        }
+                    }
+
+                }
+            }
+
+            //находим все ячейки которые видны кандидатом k в группе OFF
+            foreach (int[] unit in OFF)
+            {
+                //если нашли нужное число
+                if (unit[1] == k)
+                {
+                    //находим нужную ячейку на поле
+                    i = unit[0] / 9;
+                    j = unit[0] % 9;
+                    //записываем все видимые ей индексы (новые)
+                    for (int n = 0; n < field[i, j].seenInd[0].Length; n++)
+                    {
+                        i1 = field[i, j].seenInd[0][n];
+                        j1 = field[i, j].seenInd[1][n];
+                        if (seenbyON.Contains(9 * i1 + j1))
+                        {
+                            intersec.Add(9 * i1 + j1);
+                        }
+                    }
+
+                }
+            }
+            bool impact = false;
+            answer = (k+1) + " в ячейках: ";
+            foreach(int ind in intersec)
+            {
+                i = ind / 9;
+                j = ind % 9;
+                if (field[i, j].candidates[k])
+                {
+                    answer += "(" + (i + 1) + ";" + (j + 1) + ") ";
+                    field[i, j].RemoveCandidat(k + 1);
+                    impact = true;
+                }
+                removed.Add(new int[] { i, j, k });
+            }
+            if (impact)
+            {
+                answer += "видимы из обоих цветов";
+            }
+            else
+            {
+                answer = "";
+            }
+            
+
+            return answer;
+        }
+
+        //повторение цвета 
+        private static string chainLogicRepeatRule(ref Field field, int[] kArray)
+        {
+            string answer = "";
+
+            bool repeat = false;
+            bool[] flags = new bool[9];
+
+            int i1, j1;
+            //по всем числам
+            foreach (int k in kArray)
+            {
+                //в строках
+                //------------------------------------------------------------------------------
+                //для ON
+                int row;
+                for (int j = 0; j < 9; j++)
+                {
+                    flags[j] = false;
+                }
+                row = -1;
+                foreach (int[] unit in ON)
+                {
+                    row = unit[0] / 9;
+
+                    if (unit[1] != k)
+                    {
+                        continue;
+                    }
+                    if (!flags[row])
+                    {
+                        flags[row] = true;
+                    }
+                    else
+                    {
+                        repeat = true;
+                        //Все ON удаляются
+                        foreach (int[] rem in ON)
+                        {
+                            i1 = rem[0] / 9;
+                            j1 = rem[0] % 9;
+                            field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            removed.Add(new int[] { i1, j1, rem[1] });
+                        }
+                        //для красоты перекидываем оставшееся в ON
+                        ON.Clear();
+                        ON.AddRange(OFF);
+                        OFF.Clear();
+                        break;
+                    }
+                }
+                if (repeat)
+                {
+                    answer = "повторение цвета в строке " + (row + 1);
+                    return answer;
+                }
+
+                //для OFF
+                for (int j = 0; j < 9; j++)
+                {
+                    flags[j] = false;
+                }
+                row = -1;
+                foreach (int[] unit in OFF)
+                {
+                    row = unit[0] / 9;
+                    if (unit[1] != k)
+                    {
+                        continue;
+                    }
+                    if (!flags[row])
+                    {
+                        flags[row] = true;
+                    }
+
+                    else
+                    {
+                        repeat = true;
+                        //Все ON удаляются
+                        foreach (int[] rem in OFF)
+                        {
+                            i1 = rem[0] / 9;
+                            j1 = rem[0] % 9;
+                            field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            removed.Add(new int[] { i1, j1, rem[1] });
+                        }
+                        OFF.Clear();
+                        break;
+                    }
+                }
+                if (repeat)
+                {
+                    answer = "повторение цвета в строке " + (row + 1);
+                    return answer;
+                }
+                //------------------------------------------------------------------------------
+                //в столбцах
+                int col;
+                //для ON
+                for (int j = 0; j < 9; j++)
+                {
+                    flags[j] = false;
+                }
+                col = -1;
+                foreach (int[] unit in ON)
+                {
+                    col = unit[0] / 9;
+                    if (unit[1] != k)
+                    {
+                        continue;
+                    }
+                    if (!flags[col])
+                    {
+                        flags[col] = true;
+                    }
+                    else
+                    {
+                        repeat = true;
+                        //Все ON исключаются
+                        foreach (int[] rem in ON)
+                        {
+                            i1 = rem[0] / 9;
+                            j1 = rem[0] % 9;
+                            field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            removed.Add(new int[] { i1, j1, rem[1] });
+                        }
+                        //для красоты перекидываем оставшееся в ON
+                        ON.Clear();
+                        ON.AddRange(OFF);
+                        OFF.Clear();
+                        break;
+                    }
+                }
+                if (repeat)
+                {
+                    answer = "повторение цвета в столбце " + (col + 1);
+                    return answer;
+                }
+
+                //для OFF
+                for (int j = 0; j < 9; j++)
+                {
+                    flags[j] = false;
+                }
+                col = -1;
+                foreach (int[] unit in OFF)
+                {
+                    col = unit[0] / 9;
+                    if (unit[1] != k)
+                    {
+                        continue;
+                    }
+                    if (!flags[col])
+                    {
+                        flags[col] = true;
+                    }
+                    else
+                    {
+                        repeat = true;
+                        //Все ON исключаются
+                        foreach (int[] rem in OFF)
+                        {
+                            i1 = rem[0] / 9;
+                            j1 = rem[0] % 9;
+                            field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            removed.Add(new int[] { i1, j1, rem[1] });
+                        }
+                        //для красоты перекидываем оставшееся в ON
+                        OFF.Clear();
+                        break;
+                    }
+                }
+                //если повторение в столбцах то 
+                if (repeat)
+                {
+                    answer = "повторение цвета в столбце " + (col + 1);
+                    return answer;
+                }
+                //------------------------------------------------------------------------------
+                //в регионах
+                int reg;
+                //для ON
+                for (int j = 0; j < 9; j++)
+                {
+                    flags[j] = false;
+                }
+                reg = -1;
+                foreach (int[] unit in ON)
+                {
+                    int x = unit[0] / 9;
+                    int y = unit[0] % 9;
+                    reg = 3 * (x / 3) + (y / 3);
+                    if (unit[1] != k)
+                    {
+                        continue;
+                    }
+                    if (!flags[reg])
+                    {
+                        flags[reg] = true;
+                    }
+                    else
+                    {
+                        repeat = true;
+                        //Все ON исключаются
+                        foreach (int[] rem in ON)
+                        {
+                            i1 = rem[0] / 9;
+                            j1 = rem[0] % 9;
+                            field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            removed.Add(new int[] { i1, j1, rem[1] });
+                        }
+                        //для красоты перекидываем оставшееся в ON
+                        ON.Clear();
+                        ON.AddRange(OFF);
+                        OFF.Clear();
+                        break;
+                    }
+                }
+                if (repeat)
+                {
+                    answer = "повторение цвета в регионе " + (reg + 1);
+                    return answer;
+                }
+                //для OFF
+                if (!repeat)
+                {
+                    for (int j = 0; j < 9; j++)
+                    {
+                        flags[j] = false;
+                    }
+                    col = -1;
+                    foreach (int[] unit in OFF)
+                    {
+                        int x = unit[0] / 9;
+                        int y = unit[0] % 9;
+                        reg = 3 * (x / 3) + (y / 3);
+                        if (unit[1] != k)
+                        {
+                            continue;
+                        }
+                        if (!flags[reg])
+                        {
+                            flags[reg] = true;
+                        }
+                        else
+                        {
+                            repeat = true;
+                            //Все OFF исключаются
+                            foreach (int[] rem in OFF)
+                            {
+                                i1 = rem[0] / 9;
+                                j1 = rem[0] % 9;
+                                field[i1, j1].RemoveCandidat(rem[1] + 1);
+                                removed.Add(new int[] { i1, j1, rem[1] });
+                            }
+                            //для красоты перекидываем оставшееся в ON
+                            OFF.Clear();
+                            break;
+                        }
+                    }
+                }
+
+                //если повторение в регионе
+                if (repeat)
+                {
+                    answer = "повторение цвета в регионе " + (reg + 1);
+                    return answer;
+                }
+            }
+
+            return answer;
+        }
+
+        //раскраска
+        private static void SubChainColoring(int subChainNumber, int[] subchains)
+        {
+            //переписываю кусок в массив для удобной работы
+            int counter = 0;
+            for (int j = 0; j < subchains.Length; j++)
+            {
+                if (subchains[j] == subChainNumber)
+                {
+                    counter++;
+                }
+            }
+            if (counter == 0)
+            {
+                return;
+            }
+
+
+            int[][] subChain = new int[counter][];
+            counter = 0;
+            for (int j = 0; j < subchains.Length; j++)
+            {
+                if (subchains[j] == subChainNumber)
+                {
+                    subChain[counter] = new int[3];
+                    subChain[counter][0] = chainUnits[j][0];    //ind
+                    subChain[counter][1] = chainUnits[j][1];    //k
+                    subChain[counter][2] = 0;                   //color
+                    counter++;
+                }
+            }
+
+            //раскрашиваю начиная с ON
+            subChain[0][2] = 1;
+
+            int[][] links = findStrongLinksInChain(subChain[0][0], subChain[0][1]);
+
+            //ON  - true
+            //OFF - false
+
+            coloring(ref subChain, links, false);
+
+
+
+            ON.Clear();
+            OFF.Clear();
+            for (int j = 0; j < subChain.Length; j++)
+            {
+                if (subChain[j][2] == 1)
+                {
+                    ON.Add(new int[] { subChain[j][0], subChain[j][1] });
+                }
+                if (subChain[j][2] == -1)
+                {
+                    OFF.Add(new int[] { subChain[j][0], subChain[j][1] });
+                }
+            }
+        }
+
+        //рекурсивный метод для раскраски цепи
+        private static void coloring(ref int[][] subChain, int[][] links, bool OnOff)
+        {
+            //для каждого ребра 
+            for (int i = 0; i < links.Length; i++)
+            {
+                //ищем вторую вершину в цепи
+                for (int j = 0; j < subChain.Length; j++)
+                {
+                    //если нашли нужную
+                    //если не раскрашена
+                    if (subChain[j][2] == 0 && subChain[j][0] == links[i][0] && subChain[j][1] == links[i][1])
+                    {
+                        subChain[j][2] = OnOff ? 1 : -1;
+                        coloring(ref subChain, findStrongLinksInChain(subChain[j][0], subChain[j][1]), !OnOff);
+                        break;
+                    }
+                }
+
+            }
+        }
+
+        //создание сильной цепи 
+        public static void CreateChain(ref Field field, int[] kArray)
         {
             int[][] matrix = new int[9][];
 
@@ -284,9 +1436,30 @@ namespace SudokuSolver
             int a = -1;
             int b = -1;
 
-            chain = new List<int[]>();
-            chainUnits = new List<int[]>();
-            weak = new List<int[]>();
+            if (chain != null)
+            {
+                chain.Clear();
+            }
+            else
+            {
+                chain = new List<int[]>();
+            }
+            if (weak != null)
+            {
+                weak.Clear();
+            }
+            else
+            {
+                weak = new List<int[]>();
+            }
+            if (chainUnits != null)
+            {
+                chainUnits.Clear();
+            }
+            else
+            {
+                chainUnits = new List<int[]>();
+            }
             //заполняем цепи для каждого числа отдельно
             foreach (int k in kArray)
             {
@@ -339,7 +1512,7 @@ namespace SudokuSolver
                         }
 
                         //добавил в цепь
-                        AddLinkToChain(a, b, k);
+                        AddLinkToChain(a, b, k, k);
                         AddUnitToChain(a, k);
                         AddUnitToChain(b, k);
                     }
@@ -378,7 +1551,7 @@ namespace SudokuSolver
                             }
                         }
                         //добавил в цепь
-                        AddLinkToChain(a, b, k);
+                        AddLinkToChain(a, b, k, k);
                         AddUnitToChain(a, k);
                         AddUnitToChain(b, k);
 
@@ -432,9 +1605,8 @@ namespace SudokuSolver
                                     }
                                 }
                             }
-
                             //добавил в цепь
-                            AddLinkToChain(a, b, k);
+                            AddLinkToChain(a, b, k, k);
                             AddUnitToChain(a, k);
                             AddUnitToChain(b, k);
                         }
@@ -442,516 +1614,11 @@ namespace SudokuSolver
                 }
                 //----------------------------------------------------------------------------------------------------------------------------
                 //слабые связи
-                fillWeakLinks();
-
-            }
-
-
-        }
-
-        private static string SimpleColoring(ref Field field)
-        {
-            string answer = "";
-
-
-            int[] subChains = null;
-            int subChainCounter = 0;
-
-
-            for (int k = 0; k < 9; k++)
-            {
-                FindLinks(ref field, new int[] { k });
-
-
-                //поиск исключений
-
-                //раскрашиваем цепь в 2 цвета
-
-                //списки цветов
-                ON.Clear();
-                OFF.Clear();
-
-                //нахожу компоненты связности
-                subChains = new int[chainUnits.Count];
-                subChainCounter = 0;
-
-                bool[] visited = new bool[chainUnits.Count];
-
-                for (int v = 0; v < chainUnits.Count; v++)
-                {
-                    if (!visited[v])
-                    {
-                        dfsStrong(ref visited, ref subChains, ref subChainCounter, v);
-                        subChainCounter++;
-                    }
-                }
-                //для всех кусков
-                for (int i = 0; i < subChainCounter; i++)
-                {
-
-                    //раскрашиваю
-                    SubChainColoring(i, subChains);
-
-                    //поиск исключений
-
-                    //ищу повторения цвета
-
-                    answer = chainLogicRepeatRule(ref field);
-
-                    if (!answer.Equals(""))
-                    {
-                        return ("Simple Coloring: " + answer);
-                    }
-
-                    //ячейки видимые двумя цветами
-                    answer = TwoColorsElsewhere(ref field, k);
-                    if (!answer.Equals(""))
-                    {
-                        return ("Simple Coloring: " + answer);
-                    }
-
-                }
-            }
-
-            return answer;
-        }
-        //ячейки видимые двумя цветами
-        private static string TwoColorsElsewhere(ref Field field, int k)
-        {
-            string answer = "";
-
-            //обходим все поле
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    //если ячейка уже заполнена пропускаем
-                    if (field[i, j].value != -1)
-                    {
-                        continue;
-                    }
-
-                    //если в ячейке нет искомого числа пропускаем
-                    if (!field[i, j].candidates[k])
-                    {
-                        continue;
-                    }
-                    bool contains = false;
-
-                    //если ячейка есть в цепи пропускаем
-                    foreach (int[] unit in chainUnits)
-                    {
-                        if ((unit[0] / 9) == i && (unit[0] % 9) == j && unit[1] == k)
-                        {
-                            contains = true;
-                            break;
-                        }
-                    }
-                    if (contains)
-                    {
-                        continue;
-                    }
-
-                    bool seenByON = false;
-                    bool seenByOFF = false;
-
-
-                    //проверяю видно ли текущюю ячейку из
-                    //ON
-                    int i1, i2;
-                    int j1, j2;
-
-                    bool founted = false;
-
-                    //для каждого элемента первого цвета
-                    foreach (int[] unit in ON)
-                    {
-                        if (founted)
-                        {
-                            break;
-                        }
-                        i1 = unit[0] / 9;
-                        j1 = unit[0] % 9;
-
-                        //проверяю не видит ли он текущую ячейку
-                        for (int n = 0; n < field[i, j].seenInd[0].Length; n++)
-                        {
-                            i2 = field[i, j].seenInd[0][n];
-                            j2 = field[i, j].seenInd[1][n];
-
-                            if (i1 == i2 && j1 == j2)
-                            {
-                                founted = true;
-                                seenByON = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    //если не видно из первого цвета
-                    //то второй не проверяем
-                    if (!seenByON)
-                    {
-                        continue;
-                    }
-
-                    founted = false;
-                    //для каждого элемента второго цвета
-                    foreach (int[] unit in OFF)
-                    {
-                        if (founted)
-                        {
-                            break;
-                        }
-                        i1 = unit[0] / 9;
-                        j1 = unit[0] % 9;
-
-                        //проверяю не видит ли он текущую ячейку
-                        for (int n = 0; n < field[i, j].seenInd[0].Length; n++)
-                        {
-                            i2 = field[i, j].seenInd[0][n];
-                            j2 = field[i, j].seenInd[1][n];
-
-                            if (i1 == i2 && j1 == j2)
-                            {
-                                founted = true;
-                                seenByOFF = true;
-                                break;
-                            }
-                        }
-                    }
-                    //если видно из двух цветов
-                    //исключаем
-                    //формируем ответ
-                    if (seenByON && seenByOFF)
-                    {
-                        answer = (k + 1) + " в (" + (i + 1) + ";" + (j + 1) + ") видно из двух цветов";
-                        field[i, j].RemoveCandidat(k + 1);
-                        removed.Add(new int[] { i, j, k });
-                        return answer;
-                    }
-
-                }
-            }
-
-
-            return answer;
-        }
-
-        //повторение цвета 
-        private static string chainLogicRepeatRule(ref Field field)
-        {
-            string answer = "";
-
-            bool repeat = false;
-            bool[] flags = new bool[9];
-
-            int i1, j1;
-
-            //в строках
-            //------------------------------------------------------------------------------
-            //для ON
-            int row;
-            for (int j = 0; j < 9; j++)
-            {
-                flags[j] = false;
-            }
-            row = -1;
-            foreach (int[] unit in ON)
-            {
-                row = unit[0] / 9;
-                if (!flags[row])
-                {
-                    flags[row] = true;
-                }
-                else
-                {
-                    repeat = true;
-                    //Все ON удаляются
-                    foreach (int[] rem in ON)
-                    {
-                        i1 = rem[0] / 9;
-                        j1 = rem[0] % 9;
-                        field[i1, j1].RemoveCandidat(rem[1] + 1);
-                        removed.Add(new int[] { i1, j1, rem[1] });
-                    }
-                    //для красоты перекидываем оставшееся в ON
-                    ON.Clear();
-                    ON.AddRange(OFF);
-                    OFF.Clear();
-                    break;
-                }
-            }
-
-
-            //для OFF
-            for (int j = 0; j < 9; j++)
-            {
-                flags[j] = false;
-            }
-            row = -1;
-            foreach (int[] unit in OFF)
-            {
-                row = unit[0] / 9;
-                if (!flags[row])
-                {
-                    flags[row] = true;
-                }
-                else
-                {
-
-                    repeat = true;
-                    //Все ON удаляются
-                    foreach (int[] rem in OFF)
-                    {
-                        i1 = rem[0] / 9;
-                        j1 = rem[0] % 9;
-                        field[i1, j1].RemoveCandidat(rem[1] + 1);
-                        removed.Add(new int[] { i1, j1, rem[1] });
-                    }
-                    OFF.Clear();
-                    break;
-                }
-            }
-            if (repeat)
-            {
-                answer = "повторение цвета в строке " + (row + 1);
-                return answer;
-            }
-            //------------------------------------------------------------------------------
-            //в столбцах
-            int col;
-            //для ON
-            for (int j = 0; j < 9; j++)
-            {
-                flags[j] = false;
-            }
-            col = -1;
-            foreach (int[] unit in ON)
-            {
-                col = unit[0] / 9;
-                if (!flags[col])
-                {
-                    flags[col] = true;
-                }
-                else
-                {
-                    repeat = true;
-                    //Все ON исключаются
-                    foreach (int[] rem in ON)
-                    {
-                        i1 = rem[0] / 9;
-                        j1 = rem[0] % 9;
-                        field[i1, j1].RemoveCandidat(rem[1] + 1);
-                        removed.Add(new int[] { i1, j1, rem[1] });
-                    }
-                    //для красоты перекидываем оставшееся в ON
-                    ON.Clear();
-                    ON.AddRange(OFF);
-                    OFF.Clear();
-                    break;
-                }
-            }
-
-
-            //для OFF
-            for (int j = 0; j < 9; j++)
-            {
-                flags[j] = false;
-            }
-            col = -1;
-            foreach (int[] unit in OFF)
-            {
-                col = unit[0] / 9;
-                if (!flags[col])
-                {
-                    flags[col] = true;
-                }
-                else
-                {
-                    repeat = true;
-                    //Все ON исключаются
-                    foreach (int[] rem in OFF)
-                    {
-                        i1 = rem[0] / 9;
-                        j1 = rem[0] % 9;
-                        field[i1, j1].RemoveCandidat(rem[1] + 1);
-                        removed.Add(new int[] { i1, j1, rem[1] });
-                    }
-                    //для красоты перекидываем оставшееся в ON
-                    OFF.Clear();
-                    break;
-                }
-            }
-            //если повторение в столбцах то 
-            if (repeat)
-            {
-                answer = "повторение цвета в столбце " + (col + 1);
-                return answer;
-            }
-            //------------------------------------------------------------------------------
-            //в регионах
-            int reg;
-            //для ON
-            for (int j = 0; j < 9; j++)
-            {
-                flags[j] = false;
-            }
-            reg = -1;
-            foreach (int[] unit in ON)
-            {
-                int x = unit[0] / 9;
-                int y = unit[0] % 9;
-                reg = 3 * (x / 3) + (y / 3);
-
-                if (!flags[reg])
-                {
-                    flags[reg] = true;
-                }
-                else
-                {
-                    repeat = true;
-                    //Все ON исключаются
-                    foreach (int[] rem in ON)
-                    {
-                        i1 = rem[0] / 9;
-                        j1 = rem[0] % 9;
-                        field[i1, j1].RemoveCandidat(rem[1] + 1);
-                        removed.Add(new int[] { i1, j1, rem[1] });
-                    }
-                    //для красоты перекидываем оставшееся в ON
-                    ON.Clear();
-                    ON.AddRange(OFF);
-                    OFF.Clear();
-                    break;
-                }
-            }
-
-            //для OFF
-            if (!repeat)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    flags[j] = false;
-                }
-                col = -1;
-                foreach (int[] unit in OFF)
-                {
-                    int x = unit[0] / 9;
-                    int y = unit[0] % 9;
-                    reg = 3 * (x / 3) + (y / 3);
-                    if (!flags[reg])
-                    {
-                        flags[reg] = true;
-                    }
-                    else
-                    {
-                        repeat = true;
-                        //Все OFF исключаются
-                        foreach (int[] rem in OFF)
-                        {
-                            i1 = rem[0] / 9;
-                            j1 = rem[0] % 9;
-                            field[i1, j1].RemoveCandidat(rem[1] + 1);
-                            removed.Add(new int[] { i1, j1, rem[1] });
-                        }
-                        //для красоты перекидываем оставшееся в ON
-                        OFF.Clear();
-                        break;
-                    }
-                }
-            }
-
-            //если повторение в регионе
-            if (repeat)
-            {
-                answer = "повторение цвета в регионе " + (reg + 1);
-                return answer;
-            }
-
-
-            return answer;
-        }
-
-        //раскраска
-        private static void SubChainColoring(int i, int[] subchains)
-        {
-            //переписываю кусок в массив для удобной работы
-            int counter = 0;
-            for (int j = 0; j < subchains.Length; j++)
-            {
-                if (subchains[j] == i)
-                {
-                    counter++;
-                }
-            }
-            if (counter == 0)
-            {
-                return;
-            }
-
-
-            int[][] subChain = new int[counter][];
-            counter = 0;
-            for (int j = 0; j < subchains.Length; j++)
-            {
-                if (subchains[j] == i)
-                {
-                    subChain[counter] = new int[3];
-                    subChain[counter][0] = chainUnits[j][0];
-                    subChain[counter][1] = chainUnits[j][1];
-                    counter++;
-                }
-            }
-
-            //раскрашиваю начиная с ON
-            subChain[0][2] = 1;
-
-            int[][] links = findStrongLinksInChain(subChain[0][0], subChain[0][1]);
-
-            //ON  - true
-            //OFF - false
-
-            coloring(ref subChain, links, false);
-
-
-
-            ON = new List<int[]>();
-            OFF = new List<int[]>();
-            for (int j = 0; j < subChain.Length; j++)
-            {
-                if (subChain[j][2] == 1)
-                {
-                    ON.Add(new int[] { subChain[j][0], subChain[j][1] });
-                }
-                if (subChain[j][2] == -1)
-                {
-                    OFF.Add(new int[] { subChain[j][0], subChain[j][1] });
-                }
+                //fillWeakLinks();
             }
         }
 
-        //рекурсивный метод для раскраски цепи
-        private static void coloring(ref int[][] subChain, int[][] links, bool OnOff)
-        {
-            //для каждого ребра 
-            for (int i = 0; i < links.Length; i++)
-            {
-                //ищем вторую вершину в цепи
-                for (int j = 0; j < subChain.Length; j++)
-                {
-                    //если не раскрашена 
-                    if (subChain[j][2] == 0 && subChain[j][0] == links[i][0] && subChain[j][1] == links[1][1])
-                    {
-                        subChain[j][2] = OnOff ? 1 : -1;
-                        coloring(ref subChain, findStrongLinksInChain(subChain[j][0], subChain[j][1]), !OnOff);
-                        break;
-                    }
-                }
-
-            }
-        }
-
+        //DEBUG
         private static string pringLinks(int ind, int k, int[][] links)
         {
             string ans = "(" + (ind / 9 + 1) + ";" + (ind % 9 + 1) + ") => "
@@ -966,14 +1633,14 @@ namespace SudokuSolver
             return ans;
         }
 
-        //найти все связи в цепи
+        //найти все сильные связи в цепи
         private static int[][] findStrongLinksInChain(int ind, int k)
         {
             //считаю колличество связей
             int counter = 0;
             foreach (int[] link in chain)
             {
-                if ((link[0] == ind && link[1] == k) || (link[2] == ind && link[3] == k))
+                if ((link[0] == ind && link[1] == k))
                 {
                     counter++;
                 }
@@ -981,21 +1648,18 @@ namespace SudokuSolver
 
             //записываю связи
             int[][] links = new int[counter][];
+
+            //ind, k
             counter = 0;
             foreach (int[] link in chain)
             {
-                if ((link[0] == ind && link[1] == k) || (link[2] == ind && link[3] == k))
+                if ((link[0] == ind && link[1] == k))
                 {
                     links[counter] = new int[2];
                     if (link[0] == ind && link[1] == k)
                     {
                         links[counter][0] = link[2];
                         links[counter][1] = link[3];
-                    }
-                    else
-                    {
-                        links[counter][0] = link[0];
-                        links[counter][1] = link[1];
                     }
                     counter++;
                 }
@@ -1028,7 +1692,7 @@ namespace SudokuSolver
             return ans;
         }
 
-        //заполняем слабые связи
+        //заполнение слабых связей
         private static void fillWeakLinks()
         {
             //полный перебор
@@ -1061,10 +1725,10 @@ namespace SudokuSolver
                             int j2 = unit2[0] % 9;
 
 
-                            if (((i1 == i2) ||                                    //по строкам
-                               (j1 == j2) ||                                     //по столбцам
-                               (3 * (i1 / 3) + (j1 / 3) == 3 * (i2 / 3) + (j2 / 3)))     //по регионам
-                               && (unit1[1] == unit2[1])                         //одинаковые кандидаты
+                            if (((i1 == i2) ||                                              //по строкам
+                               (j1 == j2) ||                                                //по столбцам
+                               (3 * (i1 / 3) + (j1 / 3) == 3 * (i2 / 3) + (j2 / 3)))        //по регионам
+                               && (unit1[1] == unit2[1])                                    //одинаковые кандидаты
                                 )
                             {
                                 weak.Add(new int[] { unit1[0], unit1[1], unit2[0], unit2[1] });
@@ -1075,7 +1739,6 @@ namespace SudokuSolver
                 }
             }
         }
-
 
         //дфс по сильным и слабым связям
         private static void dfsWeakStrong(ref bool[] visited, ref int[] component, ref int components, int v)
@@ -1135,7 +1798,7 @@ namespace SudokuSolver
             }
         }
 
-        //дфс только по сильным связям
+        //дфс по сильным связям
         private static void dfsStrong(ref bool[] visited, ref int[] component, ref int components, int v)
         {
             visited[v] = true;
@@ -1167,13 +1830,13 @@ namespace SudokuSolver
             }
         }
 
-        //добавляем в цепь новую связь
-        private static void AddLinkToChain(int ind1, int ind2, int k)
+        //добавление в цепь новой связь
+        private static void AddLinkToChain(int ind1, int ind2, int k1, int k2)
         {
             bool contains = false;
             foreach (int[] item in chain)
             {
-                if (item[0] == ind1 && item[1] == k && item[2] == ind2 && item[3] == k)
+                if (item[0] == ind1 && item[1] == k1 && item[2] == ind2 && item[3] == k2)
                 {
                     contains = true;
                     break;
@@ -1181,12 +1844,12 @@ namespace SudokuSolver
             }
             if (!contains)
             {
-                chain.Add(new int[] { ind1, k, ind2, k });
+                chain.Add(new int[] { ind1, k1, ind2, k2 });
             }
             contains = false;
             foreach (int[] item in chain)
             {
-                if (item[0] == ind2 && item[1] == k && item[2] == ind1 && item[3] == k)
+                if (item[0] == ind2 && item[1] == k2 && item[2] == ind1 && item[3] == k1)
                 {
                     contains = true;
                     break;
@@ -1194,7 +1857,7 @@ namespace SudokuSolver
             }
             if (!contains)
             {
-                chain.Add(new int[] { ind2, k, ind1, k });
+                chain.Add(new int[] { ind2, k2, ind1, k1 });
             }
         }
 
@@ -1215,7 +1878,7 @@ namespace SudokuSolver
                 chainUnits.Add(new int[] { ind, k });
             }
         }
-
+        //--------------------------------------------------------------------------------------------------------
 
         //Y-Wings
         private static string Y_Wings(ref Field field)
@@ -3671,7 +4334,6 @@ namespace SudokuSolver
 
             return answer;
         }
-
 
         public static string makeAnswer(int i, int j, int v, ref Field field)
         {

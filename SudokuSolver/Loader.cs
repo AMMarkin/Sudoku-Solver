@@ -157,6 +157,8 @@ namespace SudokuSolver
 
             list.AllowDrop = false;
 
+            list.DoubleClick += loadButton_Click;
+
             this.Controls.Add(list);
         }
 
@@ -181,6 +183,7 @@ namespace SudokuSolver
         private void addLine(string name)
         {
             ListViewItem line = new ListViewItem(name.Split('.')[0]);
+            
             list.Items.Add(line);
         }
 

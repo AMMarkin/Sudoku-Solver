@@ -213,16 +213,18 @@ namespace SudokuSolver
                 gr = g;
             }
 
-            
+            int mer = 6;
+            float dist = 20;
+
             using (Pen p = new Pen(Color.FromArgb(170, Color.Red)))
             {
-                p.Width = 3;
+                p.Width = 2;
                 int i1, i2, j1, j2, k1, k2;
 
                 float X1, X2;
                 float Y1, Y2;
 
-                int mer = 7;
+                float PX, PY;
 
                 for (int i = 0; i < Logic.chain.Count; i++)
                 {
@@ -238,7 +240,7 @@ namespace SudokuSolver
                     X2 = cells[i2][j2].centers[k2].X - Xshift;
                     Y2 = cells[i2][j2].centers[k2].Y - Yshift;
 
-
+                    
                     //если линия сверху вниз
                     if (Y1 > Y2)
                     {
@@ -261,8 +263,35 @@ namespace SudokuSolver
                         X2 -= mer;
                     }
 
-                    gr.DrawLine(p, X1,Y1,X2,Y2);
+                    //если линии достаточно отдаленные
+                    //искривляю
+                    //иначе рисуем прямую
+                    if(Math.Sqrt((X2 - X1) * (X2 - X1) + (Y2 - Y1)* (Y2 - Y1)) > dist)
+                    {
 
+                        PX = 0;
+                        PY = 0;
+
+                        if (X2 - X1 != 0)
+                        {
+                            PY = 2 * mer;
+                            PX = -(PY * (Y2 - Y1)) / (X2 - X1);
+                        }
+                        else
+                        {
+                            PX = 2 * mer;
+                            PY = -(PX * (X2 - X1)) / (Y2 - Y1);
+                        }
+
+                        PX += (X1 + X2) / (float)2.0;
+                        PY += (Y1 + Y2) / (float)2.0;
+
+                        gr.DrawBezier(p, X1, Y1, PX, PY, PX, PY, X2, Y2);
+                    }
+                    else
+                    {
+                        gr.DrawLine(p, X1,Y1,X2,Y2);
+                    }
                 }
 
                 if (Logic.weak != null)

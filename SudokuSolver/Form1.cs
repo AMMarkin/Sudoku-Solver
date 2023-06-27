@@ -30,14 +30,15 @@ namespace SudokuSolver
         
         MenuStrip menu;
 
-        //перенести в верхнюю панель
-        //сделать выбор файла для загрузки судоку
-
+        
         Constructor constructor;        //Форма конструктора судоку
         Loader loader;                  //Форма загрузчика судоку
 
         bool needRefresh;
         bool[] shownLinks;
+        bool[] usedTecniques;
+
+
 
         public Form1()
         {
@@ -46,7 +47,6 @@ namespace SudokuSolver
 
         private void Form1_Load(object sender, EventArgs e)
         {
-
             //создание окна
             this.Size = new Size(1220,680);
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -77,14 +77,6 @@ namespace SudokuSolver
             //------------------------------------------------------------------------------------------------------------
             loadSudoku("13");
             //------------------------------------------------------------------------------------------------------------
-
-            //загрузка судоку в поле
-            //удаление лишних очевидных кандидатов
-            //отрисовка сетки
-            field.updateField(sudoku);
-            Logic.SimpleRestriction(ref field);
-            grid.updateGrid(ref field);
-
 
             //создание консоли
             CreateConsole();
@@ -140,17 +132,28 @@ namespace SudokuSolver
 
             load.Click += loaderOpenButton_Click;
             sud.DropDownItems.Add(load);
-            
+
+
+            ToolStripMenuItem restart = new ToolStripMenuItem()
+            {
+                Text = "Заново"
+            };
+            restart.Click += restartButton_Click;
+            sud.DropDownItems.Add(restart);
 
             this.MainMenuStrip = menu;
             this.Controls.Add(menu);
         }
-
+        
+        //рестарт
+        private void restartButton_Click(object sender, EventArgs e)
+        {
+            loadSudokuFromBuffer();
+        }
 
         //----------------------------------------------------------------------------------------------------------------------
         //следующий шаг решения
         int step = 0;
-        bool[] usedTecniques;
         private void stepButtonClick(object sender, EventArgs e)
         {
 
@@ -241,17 +244,14 @@ namespace SudokuSolver
                 tecniques[i] = new CheckBox();
                 tecniques[i].Text = Logic.tecniques[i];
                 tecniques[i].Size = new Size(150, checkBoxSize);
-                tecniques[i].Checked = true;
+                tecniques[i].Checked = true; 
                 tecniques[i].Font = new Font(tecniques[i].Font.Name, tecniques[i].Font.Size, FontStyle.Underline);
                 tecniques[i].Location = new Point(20, 25 + i * (checkBoxSize + 5));
                 tecniquesPanel.Controls.Add(tecniques[i]);
             }
 
             //----------------------------------------------------------------------------------------------------------------------
-            //ВРЕМЕННО ДЛЯ УДОБСТВА
-            //УБРАТЬ
-            tecniques[tecniques.Length - 1].Checked = false;
-            tecniques[tecniques.Length - 2].Checked = false;
+            //tecniques[tecniques.Length - 1].Checked = true;
             //----------------------------------------------------------------------------------------------------------------------
 
 
@@ -333,7 +333,7 @@ namespace SudokuSolver
                 }
             }
 
-            Logic.FindLinks(ref field, links);
+            Logic.CreateChain(ref field, links);
             this.Refresh();
 
         }
@@ -388,14 +388,13 @@ namespace SudokuSolver
             this.Controls.Add(stepButton);
         }
 
-
         //----------------------------------------------------------------------------------------------------------------------
         //создание консоли
         private void CreateConsole()
         {
             console = new Label();
             console.Visible = true;
-            console.Size = new Size(300, 400);
+            console.Size = new Size(320, 400);
             console.Location = new Point(grid.startX + grid.sizeGrid + 30, grid.startY);
             console.BorderStyle = BorderStyle.FixedSingle;
             console.BackColor = Color.FromArgb(255, 228, 181);
@@ -460,6 +459,17 @@ namespace SudokuSolver
                 for (int j = 0; j < digits.Length; j++)
                 {
                     sudoku[i][j] = Convert.ToInt32(digits[j]);
+                }
+            }
+
+            //запоминаю в буфере для рестарта
+            Buffer.sudoku = new int[9][];
+            for(int i = 0; i < 9; i++)
+            {
+                Buffer.sudoku[i] = new int[9];
+                for(int j = 0; j < 9; j++)
+                {
+                    Buffer.sudoku[i][j] = sudoku[i][j];
                 }
             }
 
