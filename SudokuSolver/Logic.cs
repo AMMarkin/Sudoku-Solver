@@ -11,8 +11,8 @@ namespace SudokuSolver
 
         public static string noFound = "Исключений не найдено";
 
-        //массив названий техник
-        public static string[] tecniques = new string[] {
+        //массив и библиотека названий техник
+        public static List<string> tecniques = new List<string>() {
             "Открытые одиночки", "Скрытые одиночки","Виртуальные одиночки",
             "Открытые пары", "Cкрытые пары",
             "Открытые тройки", "Скрытые тройки",
@@ -21,6 +21,8 @@ namespace SudokuSolver
             "Y-Wings",
             "Simple Coloring","Extended Simple Coloring"
         };
+        
+        public static Dictionary<string, int> tech = new Dictionary<string, int>();
 
         //список ключей и исключенных кандидатов
         public static List<int[]> clues;        //i,j -- где ключ,         k -- что ключ
@@ -46,65 +48,32 @@ namespace SudokuSolver
 
             //очистка переменных
             string tmp = "";
-            if (clues != null)
-            {
-                clues.Clear();
-            }
-            else
-            {
-                clues = new List<int[]>();
-            }
-            if (removed != null)
-            {
-                removed.Clear();
-            }
-            else
-            {
-                removed = new List<int[]>();
-            }
-            if (chain != null)
-            {
-                chain.Clear();
-            }
-            else
-            {
-                chain = new List<int[]>();
-            }
-            if (weak != null)
-            {
-                weak.Clear();
-            }
-            else
-            {
-                weak = new List<int[]>();
-            }
-            if (chainUnits != null)
-            {
-                chainUnits.Clear();
-            }
-            else
-            {
-                chainUnits = new List<int[]>();
-            }
-            if (ON != null)
-            {
-                ON.Clear();
-            }
-            else
-            {
-                ON = new List<int[]>();
-            }
-            if (OFF != null)
-            {
-                OFF.Clear();
-            }
-            else
-            {
-                OFF = new List<int[]>();
-            }
 
+            {
+                clues?.Clear();
+                clues = clues ?? new List<int[]>();
+
+                removed?.Clear();
+                removed = removed ?? new List<int[]>();
+
+                chain?.Clear();
+                chain = chain ?? new List<int[]>();
+
+                weak?.Clear();
+                weak = weak ?? new List<int[]>();
+
+                chainUnits?.Clear();
+                chainUnits = chainUnits ?? new List<int[]>();
+
+                ON?.Clear();
+                ON = ON ?? new List<int[]>();
+
+                OFF?.Clear();
+                OFF = OFF ?? new List<int[]>();
+            }
+            
             //открытые одиночки
-            if (tecFlags[0])
+            if (tecFlags[tech["Открытые одиночки"]])
             {
                 tmp = NakedSingle(ref field);
 
@@ -118,7 +87,7 @@ namespace SudokuSolver
             }
 
             //скрытые одиночки
-            if (tecFlags[1])
+            if (tecFlags[tech["Скрытые одиночки"]])
             {
                 tmp = HiddenSingle(ref field);
 
@@ -132,7 +101,7 @@ namespace SudokuSolver
             }
 
             //виртуальные одиночки
-            if (tecFlags[2])
+            if (tecFlags[tech["Виртуальные одиночки"]])
             {
                 tmp = VirtualSingle(ref field);
                 if (!tmp.Equals(""))
@@ -142,7 +111,7 @@ namespace SudokuSolver
             }
 
             //открытые пары
-            if (tecFlags[3])
+            if (tecFlags[tech["Открытые пары"]])
             {
                 tmp = NakedPairs(ref field);
                 if (!tmp.Equals(""))
@@ -152,7 +121,7 @@ namespace SudokuSolver
             }
 
             //скрытые пары
-            if (tecFlags[4])
+            if (tecFlags[tech["Cкрытые пары"]])
             {
                 tmp = HiddenPairs(ref field);
                 if (!tmp.Equals(""))
@@ -162,7 +131,7 @@ namespace SudokuSolver
             }
 
             //открытые тройки
-            if (tecFlags[5])
+            if (tecFlags[tech["Открытые тройки"]])
             {
                 tmp = NakedTriples(ref field);
                 if (!tmp.Equals(""))
@@ -170,8 +139,9 @@ namespace SudokuSolver
                     return tmp;
                 }
             }
+
             //скрытые тройки
-            if (tecFlags[6])
+            if (tecFlags[tech["Скрытые тройки"]])
             {
                 tmp = HiddenTriples(ref field);
                 if (!tmp.Equals(""))
@@ -181,7 +151,7 @@ namespace SudokuSolver
             }
 
             //Открытые четверки
-            if (tecFlags[7])
+            if (tecFlags[tech["Открытые четверки"]])
             {
                 tmp = NakedQuads(ref field);
                 if (!tmp.Equals(""))
@@ -191,7 +161,7 @@ namespace SudokuSolver
             }
 
             //Скрытые четверки
-            if (tecFlags[8])
+            if (tecFlags[tech["Скрытые четверки"]])
             {
                 tmp = HiddenQuads(ref field);
                 if (!tmp.Equals(""))
@@ -201,7 +171,7 @@ namespace SudokuSolver
             }
 
             //X-Wings
-            if (tecFlags[9])
+            if (tecFlags[tech["X-Wings"]])
             {
                 tmp = X_Wings(ref field);
                 if (!tmp.Equals(""))
@@ -211,7 +181,7 @@ namespace SudokuSolver
             }
 
             //Swordfish
-            if (tecFlags[10])
+            if (tecFlags[tech["Swordfish"]])
             {
                 tmp = Swordfish(ref field);
                 if (!tmp.Equals(""))
@@ -221,7 +191,7 @@ namespace SudokuSolver
             }
 
             //Jellyfish
-            if (tecFlags[11])
+            if (tecFlags[tech["Jellyfish"]])
             {
                 tmp = Jellyfish(ref field);
                 if (!tmp.Equals(""))
@@ -231,7 +201,7 @@ namespace SudokuSolver
             }
 
             //Y-Wings
-            if (tecFlags[12])
+            if (tecFlags[tech["Y-Wings"]])
             {
                 tmp = Y_Wings(ref field);
                 if (!tmp.Equals(""))
@@ -241,7 +211,7 @@ namespace SudokuSolver
             }
 
             //Simple Coloring
-            if (tecFlags[13])
+            if (tecFlags[tech["Simple Coloring"]])
             {
                 tmp = SimpleColoring(ref field);
                 if (!tmp.Equals(""))
@@ -257,7 +227,7 @@ namespace SudokuSolver
             }
 
             //Extended Simple Coloring
-            if (tecFlags[14])
+            if (tecFlags[tech["Extended Simple Coloring"]])
             {
                 tmp = ExtendedSimpleColoring(ref field);
                 if (!tmp.Equals(""))

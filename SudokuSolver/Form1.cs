@@ -30,9 +30,9 @@ namespace SudokuSolver
         
         MenuStrip menu;
 
-        
         Constructor constructor;        //Форма конструктора судоку
         Loader loader;                  //Форма загрузчика судоку
+
 
         bool needRefresh;
         bool[] shownLinks;
@@ -165,7 +165,6 @@ namespace SudokuSolver
             {
                 case 0:
                     
-
                     for(int i = 0; i < tecniques.Length; i++)
                     {
                         usedTecniques[i] = tecniques[i].Checked;
@@ -237,7 +236,7 @@ namespace SudokuSolver
             tecniquesPanel.Font = new Font(tecniquesPanel.Font.Name, 10);
             this.Controls.Add(tecniquesPanel);
 
-            tecniques = new CheckBox[Logic.tecniques.Length];
+            tecniques = new CheckBox[Logic.tecniques.Count];
             int checkBoxSize = 20;
             for (int i = 0; i < tecniques.Length; i++)
             {
@@ -248,7 +247,10 @@ namespace SudokuSolver
                 tecniques[i].Font = new Font(tecniques[i].Font.Name, tecniques[i].Font.Size, FontStyle.Underline);
                 tecniques[i].Location = new Point(20, 25 + i * (checkBoxSize + 5));
                 tecniquesPanel.Controls.Add(tecniques[i]);
+
+                Logic.tech.Add(Logic.tecniques[i], i);
             }
+
 
             //----------------------------------------------------------------------------------------------------------------------
             //tecniques[tecniques.Length - 1].Checked = true;
