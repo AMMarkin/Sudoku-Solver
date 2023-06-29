@@ -50,6 +50,7 @@ namespace SudokuSolver
 
             this.Size = new Size(60 + inputField.Width, exitButton.Location.Y+exitButton.Height+50);
 
+            mainForm.Hide();
             this.ShowDialog();
         }
 
@@ -209,6 +210,7 @@ namespace SudokuSolver
         //закрытие конструктора
         private void ExitButton_Click(object sender, EventArgs e)
         {
+            mainForm.Show();
             this.Close();
         }
 

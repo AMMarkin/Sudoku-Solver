@@ -17,8 +17,9 @@ namespace SudokuSolver
             "Открытые пары", "Cкрытые пары",
             "Открытые тройки", "Скрытые тройки",
             "Открытые четверки", "Скрытые четверки",
+            "BUG",
             "X-Wings","Swordfish","Jellyfish",
-            "Y-Wings",
+            "Y-Wings","XYZ-Wing",
             "Simple Coloring","Extended Simple Coloring"
         };
         
@@ -48,7 +49,6 @@ namespace SudokuSolver
 
             //очистка переменных
             string tmp = "";
-
             {
                 clues?.Clear();
                 clues = clues ?? new List<int[]>();
@@ -170,10 +170,30 @@ namespace SudokuSolver
                 }
             }
 
+            //BUG
+            if (tecFlags[tech["BUG"]])
+            {
+                tmp = BUG(ref field);
+                if (!tmp.Equals(""))
+                {
+                    return tmp;
+                }
+            }
+
             //X-Wings
             if (tecFlags[tech["X-Wings"]])
             {
                 tmp = X_Wings(ref field);
+                if (!tmp.Equals(""))
+                {
+                    return tmp;
+                }
+            }
+
+            //XYZ-Wing
+            if (tecFlags[tech["XYZ-Wing"]])
+            {
+                tmp = XYZ_Wing(ref field);
                 if (!tmp.Equals(""))
                 {
                     return tmp;
@@ -252,6 +272,7 @@ namespace SudokuSolver
             return answer;
         }
 
+        
         //Extended Simple Coloring
         //--------------------------------------------------------------------------------------------------------
         //сильные связи для всех цветов + ячейки с двумя кандидатам(сильная связь внутри ячейки)
@@ -940,6 +961,7 @@ namespace SudokuSolver
                     answer = chainLogicRepeatRule(ref field, new int[] { k });
                     if (!answer.Equals(""))
                     {
+                        ClearChainBySubChain(i, subChains);
                         return ("Simple Coloring: " + answer);
                     }
 
@@ -947,6 +969,7 @@ namespace SudokuSolver
                     answer = TwoColorsElsewhere(ref field, k);
                     if (!answer.Equals(""))
                     {
+                        ClearChainBySubChain(i, subChains);
                         return ("Simple Coloring: " + answer);
                     }
 
@@ -1850,6 +1873,271 @@ namespace SudokuSolver
         }
         //--------------------------------------------------------------------------------------------------------
 
+        //XYZ-Wing
+        private static string XYZ_Wing(ref Field field)
+        {
+            string answer = "";
+
+            //ищем все ячейки с тремя кандидатами
+
+            List<int> indexes = new List<int>();
+            int counter;
+            int i1, j1; //индексы первого крыла
+            int i2, j2; //индексы второго крыла
+
+            int rem;    //исключаемое число
+
+            for (int i = 0; i < 9; i++)
+            {
+                for (int j = 0; j < 9; j++)
+                {
+                    //корень с тремя кандидатами
+                    if (field[i, j].remainingCandidates != 3)
+                    {
+                        continue;
+                    }
+
+                    //по региону ищем крыло с двумя кандидатами
+                    for (int x = 0; x < 3; x++)
+                    {
+                        for (int y = 0; y < 3; y++)
+                        {
+                            i1 = 3 * (i / 3) + y;
+                            j1 = 3 * (j / 3) + x;
+
+                            if (field[i1, j1].remainingCandidates != 2)
+                            {
+                                continue;
+                            }
+
+                            //должно быть два общих кандидата
+                            counter = 0;
+                            for (int k = 0; k < 9; k++)
+                            {
+                                if (field[i, j].candidates[k] && field[i1, j1].candidates[k])
+                                {
+                                    counter++;
+                                }
+                            }
+
+                            if (counter != 2)
+                            {
+                                continue;
+                            }
+
+                            //ищем второе крыло по строке
+
+                            for (int col = 0; col < 9; col++)
+                            {
+                                i2 = i;
+                                j2 = col;
+                                //пропускаем корень и возможно первое крыло
+                                if (j2 == j || (i2 == i1 && j2 == j1))
+                                {
+                                    continue;
+                                }
+                                if (field[i2, j2].remainingCandidates != 2)
+                                {
+                                    continue;
+                                }
+
+                                //должно быть два общих кандидата с корнем
+                                counter = 0;
+                                for (int k = 0; k < 9; k++)
+                                {
+                                    if (field[i2, j2].candidates[k] && field[i, j].candidates[k])
+                                    {
+                                        counter++;
+                                    }
+                                }
+
+                                if (counter != 2)
+                                {
+                                    continue;
+                                }
+
+                                //должен быть один общий кандидат с первым крылом
+                                counter = 0;
+                                for (int k = 0; k < 9; k++)
+                                {
+                                    if (field[i2, j2].candidates[k] && field[i1, j1].candidates[k])
+                                    {
+                                        counter++;
+                                    }
+                                }
+
+                                if (counter != 1)
+                                {
+                                    continue;
+                                }
+
+
+                                //ищем исключаемое число
+                                //единственное общее число у корня и двух крыльев
+                                rem = -1;
+                                for (int k = 0; k < 9; k++)
+                                {
+                                    if (field[i, j].candidates[k] && field[i1, j1].candidates[k] && field[i2, j2].candidates[k])
+                                    {
+                                        rem = k;
+                                        break;
+                                    }
+                                }
+
+                                if (rem == -1)
+                                {
+                                    answer = "ОШИБКА ЛОХ";
+                                }
+
+                                //исключения производим в регионе корня, строке второго крыла
+
+                                for (int r = 0; r < 3; r++)
+                                {
+                                    //пропускаем корень и возможно первое крыло
+                                    if ((i1 == i && 3 * (j / 3) + r == j1) || 3 * (j / 3) + r == j || (i2==i && 3 * (j / 3) + r == j2))
+                                    {
+                                        continue;
+                                    }
+                                    //если нашли ячейку видимую из всех трех позиций 
+                                    //и она имеет нужный кандидат
+                                    //исключаем его
+                                    if (field[i, 3 * (j / 3) + r].candidates[rem])
+                                    {
+                                        field[i, 3 * (j / 3) + r].RemoveCandidat(rem + 1);
+                                        removed.Add(new int[] { i, 3 * (j / 3) + r, rem });
+
+
+
+                                        for (int k = 0; k < 9; k++)
+                                        {
+                                            if (field[i, j].candidates[k])
+                                            {
+                                                clues.Add(new int[] { i, j, k });
+                                            }
+                                            if (field[i1, j1].candidates[k])
+                                            {
+                                                clues.Add(new int[] { i1, j1, k });
+                                            }
+                                            if (field[i2, j2].candidates[k])
+                                            {
+                                                clues.Add(new int[] { i2, j2, k });
+                                            }
+                                        }
+
+                                        answer = "XYZ-Wing: исключена " + (rem + 1) + " из (" + (i + 1) + ";" + (3 * (j / 3) + r + 1) + ")";
+                                        return answer;
+                                    }
+                                }
+                            }
+
+
+                            //ищем второе крыло по столбцу
+
+                            for (int row = 0; row < 9; row++)
+                            {
+                                i2 = row;
+                                j2 = j;
+                                //пропускаем корень и возможно первое крыло
+                                if (i2 == i || (i2 == i1 && j2 == j1))
+                                {
+                                    continue;
+                                }
+                                if (field[i2, j2].remainingCandidates != 2)
+                                {
+                                    continue;
+                                }
+
+                                //должно быть два общих кандидата с корнем
+                                counter = 0;
+                                for (int k = 0; k < 9; k++)
+                                {
+                                    if (field[i2, j2].candidates[k] && field[i, j].candidates[k])
+                                    {
+                                        counter++;
+                                    }
+                                }
+
+                                if (counter != 2)
+                                {
+                                    continue;
+                                }
+
+                                //должен быть один общий кандидат с первым крылом
+                                counter = 0;
+                                for (int k = 0; k < 9; k++)
+                                {
+                                    if (field[i2, j2].candidates[k] && field[i1, j1].candidates[k])
+                                    {
+                                        counter++;
+                                    }
+                                }
+
+                                if (counter != 1)
+                                {
+                                    continue;
+                                }
+
+
+                                //ищем исключаемое число
+                                //единственное общее число у корня и двух крыльев
+                                rem = -1;
+                                for (int k = 0; k < 9; k++)
+                                {
+                                    if (field[i, j].candidates[k] && field[i1, j1].candidates[k] && field[i2, j2].candidates[k])
+                                    {
+                                        rem = k;
+                                        break;
+                                    }
+                                }
+
+
+                                //исключения производим в регионе корня, столбце второго крыла
+
+                                for (int r = 0; r < 3; r++)
+                                {
+                                    //пропускаем корень и возможно первое крыло
+                                    if ((j1 == j && 3 * (i / 3) + r == i1) || 3 * (i / 3) + r == i || (3 * (i / 3) + r == i2 && j2==j))
+                                    {
+                                        continue;
+                                    }
+                                    //если нашли ячейку видимую из всех трех позиций 
+                                    //и она имеет нужный кандидат
+                                    //исключаем его
+                                    if (field[3 * (i / 3) + r, j].candidates[rem])
+                                    {
+                                        field[3 * (i / 3) + r, j].RemoveCandidat(rem + 1);
+                                        removed.Add(new int[] { 3 * (i / 3) + r, j, rem });
+
+
+
+                                        for (int k = 0; k < 9; k++)
+                                        {
+                                            if (field[i, j].candidates[k])
+                                            {
+                                                clues.Add(new int[] { i, j, k });
+                                            }
+                                            if (field[i1, j1].candidates[k])
+                                            {
+                                                clues.Add(new int[] { i1, j1, k });
+                                            }
+                                            if (field[i2, j2].candidates[k])
+                                            {
+                                                clues.Add(new int[] { i2, j2, k });
+                                            }
+                                        }
+
+                                        answer = "XYZ-Wing: исключена " + (rem + 1) + " из (" + (3 * (i / 3) + r + 1) + ";" + (j + 1) + ")";
+                                        return answer;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return answer;
+        }
+
         //Y-Wings
         private static string Y_Wings(ref Field field)
         {
@@ -2089,6 +2377,101 @@ namespace SudokuSolver
             }
 
 
+
+            return answer;
+        }
+
+        //BUG
+        private static string BUG(ref Field field)
+        {
+            string answer = "";
+
+            int counter = 0;
+
+            int bugI = -1;
+            int bugJ = -1;
+
+            //все ячейки кроме одной должны содержать 2 кандидата
+            //одна должна содержать 3
+
+            for (int i = 0; i < 9; i++)
+            {
+                for (int j = 0; j < 9; j++)
+                {
+                    if (field[i, j].value != -1) continue;
+
+                    if (field[i, j].remainingCandidates != 2 && field[i, j].remainingCandidates != 3)
+                    {
+                        return answer;
+                    }
+                    else if (field[i, j].remainingCandidates == 3)
+                    {
+                        counter++;
+                        bugI = i;
+                        bugJ = j;
+                    }
+                }
+            }
+
+            //если 3 кандидата более чем в одной ячейке то бага нет
+            if (counter != 1)
+            {
+                return answer;
+            }
+
+            int[] candidats_counter = new int[9];
+
+            int startX = 3 * (bugJ / 3);
+            int startY = 3 * (bugI / 3);
+
+            //обхожу регион с жуком
+            for (int x = 0; x < 3; x++)
+            {
+                for (int y = 0; y < 3; y++)
+                {
+                    //считаю колличество всех кандидатов
+                    for (int k = 0; k < 9; k++)
+                    {
+                        if (field[startY + y, startX + x].candidates[k])
+                        {
+                            candidats_counter[k]++;
+                        }
+                    }
+                }
+            }
+
+            int bugDigit = -1;
+            counter = 0;
+            for (int k = 0; k < 9; k++)
+            {
+                if (candidats_counter[k] != 2 && candidats_counter[k] != 3 && candidats_counter[k] != 0)
+                {
+                    return "BUG: ОШИБКА ПОДСЧЕТА КАНДИДАТОВ";
+                }
+                if (candidats_counter[k] == 3)
+                {
+                    counter++;
+                    bugDigit = k;
+                }
+            }
+
+            if (counter != 1)
+            {
+                return "BUG: ОШИБКА";
+            }
+
+            answer = "BUG: если в ячейке (" + (bugI + 1) + ";" + (bugJ + 1) + ") установить не " + (bugDigit + 1) + ", то судоку будет иметь 2 решения";
+            clues.Add(new int[] { bugI, bugJ, bugDigit });
+            for (int k = 0; k < 9; k++)
+            {
+                if (k == bugDigit) continue;
+
+                if (field[bugI, bugJ].candidates[k])
+                {
+                    removed.Add(new int[] { bugI, bugJ, k });
+                }
+            }
+            field[bugI, bugJ].SetValue(bugDigit + 1);
 
             return answer;
         }

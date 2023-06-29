@@ -70,6 +70,7 @@ namespace SudokuSolver
 
             //массив кандидатов
             public bool[] candidates;
+            public int remainingCandidates;
 
             //массив индексов ячеек которые видно отсюда
             public int[][] seenInd;
@@ -80,6 +81,7 @@ namespace SudokuSolver
                 //неизвестное значение
                 value = -1;
                 candidates = new bool[9];
+                remainingCandidates = 9;
 
                 //добавление всех кандидатов
                 for (int i = 0; i < candidates.Length; i++)
@@ -156,7 +158,11 @@ namespace SudokuSolver
             //исключение кандидата
             public void RemoveCandidat(int v)
             {
-                candidates[v - 1] = false;
+                if (candidates[v - 1])
+                {
+                    candidates[v - 1] = false;
+                    remainingCandidates--;
+                }
             }
 
         }

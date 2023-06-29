@@ -243,7 +243,7 @@ namespace SudokuSolver
                 tecniques[i] = new CheckBox();
                 tecniques[i].Text = Logic.tecniques[i];
                 tecniques[i].Size = new Size(150, checkBoxSize);
-                tecniques[i].Checked = true; 
+                tecniques[i].Checked = true;
                 tecniques[i].Font = new Font(tecniques[i].Font.Name, tecniques[i].Font.Size, FontStyle.Underline);
                 tecniques[i].Location = new Point(20, 25 + i * (checkBoxSize + 5));
                 tecniquesPanel.Controls.Add(tecniques[i]);
