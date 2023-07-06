@@ -18,11 +18,12 @@ namespace SudokuSolver
             "Открытые тройки", "Скрытые тройки",
             "Открытые четверки", "Скрытые четверки",
             "BUG",
+            //"X-Cycles",
             "X-Wings","Swordfish","Jellyfish",
             "Y-Wings","XYZ-Wing",
             "Simple Coloring","Extended Simple Coloring"
         };
-        
+
         public static Dictionary<string, int> tech = new Dictionary<string, int>();
 
         //список ключей и исключенных кандидатов
@@ -41,8 +42,10 @@ namespace SudokuSolver
         public static List<int[]> ON;           //ind, k
         public static List<int[]> OFF;          //ind, k
 
+        public static bool done = false;
+
         //перебор всех техник внесенных по возрастанию сложности
-        public static string findElimination(ref Field field, bool[] tecFlags)
+        public static string findElimination(Field field, bool[] tecFlags)
         {
 
             string answer = noFound;
@@ -71,14 +74,14 @@ namespace SudokuSolver
                 OFF?.Clear();
                 OFF = OFF ?? new List<int[]>();
             }
-            
+
             //открытые одиночки
             if (tecFlags[tech["Открытые одиночки"]])
             {
-                tmp = NakedSingle(ref field);
+                tmp = NakedSingle(field);
 
                 //проверка простых исключений
-                SimpleRestriction(ref field);
+                SimpleRestriction(field);
 
                 if (!tmp.Equals(""))
                 {
@@ -89,10 +92,10 @@ namespace SudokuSolver
             //скрытые одиночки
             if (tecFlags[tech["Скрытые одиночки"]])
             {
-                tmp = HiddenSingle(ref field);
+                tmp = HiddenSingle(field);
 
                 //проверка простых исключений
-                SimpleRestriction(ref field);
+                SimpleRestriction(field);
 
                 if (!tmp.Equals(""))
                 {
@@ -103,7 +106,7 @@ namespace SudokuSolver
             //виртуальные одиночки
             if (tecFlags[tech["Виртуальные одиночки"]])
             {
-                tmp = VirtualSingle(ref field);
+                tmp = VirtualSingle(field);
                 if (!tmp.Equals(""))
                 {
                     return tmp;
@@ -113,7 +116,7 @@ namespace SudokuSolver
             //открытые пары
             if (tecFlags[tech["Открытые пары"]])
             {
-                tmp = NakedPairs(ref field);
+                tmp = NakedPairs(field);
                 if (!tmp.Equals(""))
                 {
                     return tmp;
@@ -123,7 +126,7 @@ namespace SudokuSolver
             //скрытые пары
             if (tecFlags[tech["Cкрытые пары"]])
             {
-                tmp = HiddenPairs(ref field);
+                tmp = HiddenPairs(field);
                 if (!tmp.Equals(""))
                 {
                     return tmp;
@@ -133,7 +136,7 @@ namespace SudokuSolver
             //открытые тройки
             if (tecFlags[tech["Открытые тройки"]])
             {
-                tmp = NakedTriples(ref field);
+                tmp = NakedTriples(field);
                 if (!tmp.Equals(""))
                 {
                     return tmp;
@@ -143,7 +146,7 @@ namespace SudokuSolver
             //скрытые тройки
             if (tecFlags[tech["Скрытые тройки"]])
             {
-                tmp = HiddenTriples(ref field);
+                tmp = HiddenTriples(field);
                 if (!tmp.Equals(""))
                 {
                     return tmp;
@@ -153,7 +156,7 @@ namespace SudokuSolver
             //Открытые четверки
             if (tecFlags[tech["Открытые четверки"]])
             {
-                tmp = NakedQuads(ref field);
+                tmp = NakedQuads(field);
                 if (!tmp.Equals(""))
                 {
                     return tmp;
@@ -163,7 +166,7 @@ namespace SudokuSolver
             //Скрытые четверки
             if (tecFlags[tech["Скрытые четверки"]])
             {
-                tmp = HiddenQuads(ref field);
+                tmp = HiddenQuads(field);
                 if (!tmp.Equals(""))
                 {
                     return tmp;
@@ -173,7 +176,7 @@ namespace SudokuSolver
             //BUG
             if (tecFlags[tech["BUG"]])
             {
-                tmp = BUG(ref field);
+                tmp = BUG(field);
                 if (!tmp.Equals(""))
                 {
                     return tmp;
@@ -183,7 +186,7 @@ namespace SudokuSolver
             //X-Wings
             if (tecFlags[tech["X-Wings"]])
             {
-                tmp = X_Wings(ref field);
+                tmp = X_Wings(field);
                 if (!tmp.Equals(""))
                 {
                     return tmp;
@@ -193,7 +196,7 @@ namespace SudokuSolver
             //XYZ-Wing
             if (tecFlags[tech["XYZ-Wing"]])
             {
-                tmp = XYZ_Wing(ref field);
+                tmp = XYZ_Wing(field);
                 if (!tmp.Equals(""))
                 {
                     return tmp;
@@ -203,7 +206,7 @@ namespace SudokuSolver
             //Swordfish
             if (tecFlags[tech["Swordfish"]])
             {
-                tmp = Swordfish(ref field);
+                tmp = Swordfish(field);
                 if (!tmp.Equals(""))
                 {
                     return tmp;
@@ -213,7 +216,7 @@ namespace SudokuSolver
             //Jellyfish
             if (tecFlags[tech["Jellyfish"]])
             {
-                tmp = Jellyfish(ref field);
+                tmp = Jellyfish(field);
                 if (!tmp.Equals(""))
                 {
                     return tmp;
@@ -223,7 +226,7 @@ namespace SudokuSolver
             //Y-Wings
             if (tecFlags[tech["Y-Wings"]])
             {
-                tmp = Y_Wings(ref field);
+                tmp = Y_Wings(field);
                 if (!tmp.Equals(""))
                 {
                     return tmp;
@@ -233,7 +236,7 @@ namespace SudokuSolver
             //Simple Coloring
             if (tecFlags[tech["Simple Coloring"]])
             {
-                tmp = SimpleColoring(ref field);
+                tmp = SimpleColoring(field);
                 if (!tmp.Equals(""))
                 {
                     return tmp;
@@ -249,7 +252,7 @@ namespace SudokuSolver
             //Extended Simple Coloring
             if (tecFlags[tech["Extended Simple Coloring"]])
             {
-                tmp = ExtendedSimpleColoring(ref field);
+                tmp = ExtendedSimpleColoring(field);
                 if (!tmp.Equals(""))
                 {
                     return tmp;
@@ -263,7 +266,7 @@ namespace SudokuSolver
             }
 
             //проверка решения
-            tmp = check(ref field);
+            tmp = check(field);
             if (!tmp.Equals(""))
             {
                 return tmp;
@@ -272,11 +275,92 @@ namespace SudokuSolver
             return answer;
         }
 
-        
+        //WXYZ-Wing
+        private static string WXYZ_Wing(Field field)
+        {
+            string answer = "";
+
+            //к моменту использования этой техники уже будут найдены все тройки и четверки
+
+            //нахожу три ячейки с четыремя кандидатами в строке или столбце
+            //по очереди пытаюсь выбрать одну из ячеек корнем
+            //в регионе корня ищу ячейку которая "закроет" четверку
+            
+            //внутри четверки считаю колличество "несвязанных" чисел
+            //если несвязанных !=1 то скип
+            //если ==1 то ищу исключения среди ячеек которые видимы всеми ячейками с несвязанным числом 
+
+
+
+
+
+
+
+
+
+            return answer;
+        }
+
+
+
+        //X-Cycles
+        //поиск циклов в цепи из сильных и слабых связей для одного числа
+        //не готово
+        private static string X_Cycles(Field field)
+        {
+            string answer = "";
+
+            int[] subChains;
+            int subChainCounter;
+
+            for(int k = 0; k < 9; k++)
+            {
+                //сильные связи для числа
+                CreateChain(field, k);
+                //нахожу слабые связи
+                fillWeakLinks();
+
+
+                //нахожу компоненты связности
+                subChains = new int[chainUnits.Count];
+                subChainCounter = 0;
+
+                bool[] visited = new bool[chainUnits.Count];
+
+                for (int v = 0; v < chainUnits.Count; v++)
+                {
+                    if (!visited[v])
+                    {
+                        dfsWeakStrong(ref visited, ref subChains, ref subChainCounter, v);
+                        subChainCounter++;
+                    }
+                }
+                //для всех кусков
+                for (int i = 0; i < subChainCounter; i++)
+                {
+
+                    //раскрашиваю
+                    //SubChainColoring(i, subChains);
+
+                    ClearChainBySubChain(i, subChains);
+
+
+
+                }
+
+
+
+            }
+            
+
+
+            return answer;
+        }
+
         //Extended Simple Coloring
         //--------------------------------------------------------------------------------------------------------
         //сильные связи для всех цветов + ячейки с двумя кандидатам(сильная связь внутри ячейки)
-        private static string ExtendedSimpleColoring(ref Field field)
+        private static string ExtendedSimpleColoring(Field field)
         {
             string answer = "";
 
@@ -284,10 +368,10 @@ namespace SudokuSolver
             int subChainCounter = 0;
 
             //добавляю все сильные связи
-            CreateChain(ref field, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 });
+            CreateChain(field, 0, 1, 2, 3, 4, 5, 6, 7, 8);
 
             //добавляю в связи ячейки с двумя кандидатами
-            AddBiValueToChain(ref field);
+            AddBiValueToChain(field);
 
             //разделение по компонентам связности
 
@@ -322,29 +406,29 @@ namespace SudokuSolver
                 //поиск исключений
 
                 //проверка повторения цвета 
-                answer = chainLogicRepeatRule(ref field, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 });
+                answer = chainLogicRepeatRule(field, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 });
                 if (!answer.Equals(""))
                 {
                     ClearChainBySubChain(i, subChains);
                     return ("Extended Simple Coloring: " + answer);
                 }
                 //повторение цвета в ячейке
-                answer = TwiceInCellRule(ref field);
+                answer = TwiceInCellRule(field);
                 if (!answer.Equals(""))
                 {
-                    ClearChainBySubChain(i,subChains);
+                    ClearChainBySubChain(i, subChains);
                     return ("Extended Simple Coloring: " + answer);
                 }
-                answer = TwoColorsInCell(ref field);
+                answer = TwoColorsInCell(field);
                 if (!answer.Equals(""))
                 {
                     ClearChainBySubChain(i, subChains);
                     return ("Extended Simple Coloring: " + answer);
                 }
                 //кандидаты видимые из двух цветов
-                for(int k = 0; k < 9; k++)
+                for (int k = 0; k < 9; k++)
                 {
-                    answer = TwoColorsElsewhere(ref field, k);
+                    answer = TwoColorsElsewhere(field, k);
                     if (!answer.Equals(""))
                     {
                         ClearChainBySubChain(i, subChains);
@@ -352,14 +436,14 @@ namespace SudokuSolver
                     }
                 }
                 //кандидаты делящие ячейку с одним цветом и видимые други
-                answer = TwoColorsUnitCell(ref field);
+                answer = TwoColorsUnitCell(field);
                 if (!answer.Equals(""))
                 {
                     ClearChainBySubChain(i, subChains);
                     return ("Extended Simple Coloring: " + answer);
                 }
                 //цвет полностью исключающий ячейку
-                answer = CellEmptiedByColor(ref field);
+                answer = CellEmptiedByColor(field);
                 if (!answer.Equals(""))
                 {
                     ClearChainBySubChain(i, subChains);
@@ -369,11 +453,11 @@ namespace SudokuSolver
             }
             return answer;
         }
-        
+
         //цвет полностью исключающий одну ячейку
-        private static string CellEmptiedByColor(ref Field field)
+        private static string CellEmptiedByColor(Field field)
         {
-            string answer="";
+            string answer = "";
 
             bool emptyed;
             bool contains;
@@ -382,9 +466,9 @@ namespace SudokuSolver
 
             //для первого цвета
             //иду по всем ячейкам
-            for(int i = 0; i < 9; i++)
+            for (int i = 0; i < 9; i++)
             {
-                for(int j = 0; j < 9; j++)
+                for (int j = 0; j < 9; j++)
                 {
                     //если есть значение то пропускаем
                     if (field[i, j].value != -1)
@@ -423,7 +507,7 @@ namespace SudokuSolver
 
                     //для ON
                     emptyed = true;
-                    for(int k = 0; k < 9; k++)
+                    for (int k = 0; k < 9; k++)
                     {
                         if (!field[i, j].candidates[k])
                         {
@@ -444,7 +528,7 @@ namespace SudokuSolver
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
                             field[i1, j1].RemoveCandidat(rem[1] + 1);
-                            removed.Add(new int[] { i1, j1, rem[1]});
+                            removed.Add(new int[] { i1, j1, rem[1] });
                         }
                         ON.Clear();
                         ON.AddRange(OFF);
@@ -494,7 +578,7 @@ namespace SudokuSolver
         }
 
         //виден ли кандидат в ячейке цветом
-        private static bool seenByColor(int ind,int k,bool OnOff)
+        private static bool seenByColor(int ind, int k, bool OnOff)
         {
             //OnOff 
             //true  - ON
@@ -511,7 +595,7 @@ namespace SudokuSolver
                         continue;
                     }
                     //если одна ячейка пропускаем
-                    if(unit[0] == ind)
+                    if (unit[0] == ind)
                     {
                         continue;
                     }
@@ -553,7 +637,7 @@ namespace SudokuSolver
         }
 
         //исключение кандидатов видимых одним цветом и находящихся в одной ячейке с другим
-        private static string TwoColorsUnitCell(ref Field field)
+        private static string TwoColorsUnitCell(Field field)
         {
             string answer = "";
             //исключаю кандидатов которые без цвета
@@ -570,10 +654,10 @@ namespace SudokuSolver
                 i1 = unit1[0] / 9;
                 j1 = unit1[0] % 9;
                 //по всем кандидатам
-                for(int k = 0; k < 9; k++)
+                for (int k = 0; k < 9; k++)
                 {
                     //если кандидат есть и не закрашен
-                    if(k!= unit1[1] && field[i1, j1].candidates[k])
+                    if (k != unit1[1] && field[i1, j1].candidates[k])
                     {
                         //ищем ему пару во втором цвете
                         foreach (int[] unit2 in OFF)
@@ -584,7 +668,7 @@ namespace SudokuSolver
                             {
                                 continue;
                             }
-                            
+
                             if (unit2[0] == unit1[0]) //не уверен что такое возможно но лучше ифануть
                             {
                                 continue;
@@ -661,7 +745,7 @@ namespace SudokuSolver
         }
 
         //проверка видят ли ячейки друг друга
-        private static bool isSeen(int ind1,int ind2)
+        private static bool isSeen(int ind1, int ind2)
         {
             bool res = false;
             int i1, i2;
@@ -684,16 +768,16 @@ namespace SudokuSolver
                 res = true;
             }
             //видят по региону
-            if((3*(i1/3)+j1/3)== (3 * (i2 / 3) + j2 / 3))
+            if ((3 * (i1 / 3) + j1 / 3) == (3 * (i2 / 3) + j2 / 3))
             {
                 res = true;
             }
 
             return res;
         }
-        
+
         //проверка появления двух цветов в одной ячейке
-        private static string TwoColorsInCell(ref Field field)
+        private static string TwoColorsInCell(Field field)
         {
             string answer = "";
 
@@ -735,12 +819,11 @@ namespace SudokuSolver
         }
 
         //проверка появления одного цвета дважды в одной ячейке
-        private static string TwiceInCellRule(ref Field field)
+        private static string TwiceInCellRule(Field field)
         {
             string answer = "";
 
             //иду по первому цвету
-            bool founded = false;
             int i1, j1;
 
             //полным перебором смотрю нет ли повторений индексов
@@ -756,7 +839,6 @@ namespace SudokuSolver
                     //если нашли два цвета в одной ячейке
                     if (unit2[0] == unit1[0])
                     {
-                        founded = true;
 
                         //Все ON удаляются
                         foreach (int[] rem in ON)
@@ -789,7 +871,6 @@ namespace SudokuSolver
                     //если нашли два цвета в одной ячейке
                     if (unit2[0] == unit1[0])
                     {
-                        founded = true;
 
                         //Все ON удаляются
                         foreach (int[] rem in OFF)
@@ -810,7 +891,7 @@ namespace SudokuSolver
         }
 
         //добавление в цепь сильных связей ячеек с двумя кандидатами
-        private static void AddBiValueToChain(ref Field field)
+        private static void AddBiValueToChain(Field field)
         {
             int counter = 0;
             int a = -1;
@@ -823,8 +904,10 @@ namespace SudokuSolver
                     //если значение не известно
                     if (field[i, j].value == -1)
                     {
-                        //считаю кандидатов
-                        counter = 0;
+                        //ищу ровно два кандидата
+                        if (field[i, j].remainingCandidates != 2) continue;
+
+                        //записываю кандидатов
                         a = -1;
                         b = -1;
                         for (int k = 0; k < 9; k++)
@@ -844,13 +927,12 @@ namespace SudokuSolver
                             }
                         }
 
-                        //если ровно два кандидата то добавляю в цепь сильную связь
-                        if (counter == 2)
-                        {
-                            AddLinkToChain(9 * i + j, 9 * i + j, a, b);
-                            AddUnitToChain(9 * i + j, a);
-                            AddUnitToChain(9 * i + j, b);
-                        }
+                        //добавляю в цепь сильную связь
+
+                        AddLinkToChain(9 * i + j, 9 * i + j, a, b);
+                        AddUnitToChain(9 * i + j, a);
+                        AddUnitToChain(9 * i + j, b);
+
                     }
                 }
             }
@@ -906,11 +988,10 @@ namespace SudokuSolver
             return answer;
         }
 
-
         //Simple Coloring
         //--------------------------------------------------------------------------------------------------------
         //только по сильным связям
-        private static string SimpleColoring(ref Field field)
+        private static string SimpleColoring(Field field)
         {
             string answer = "";
 
@@ -921,7 +1002,7 @@ namespace SudokuSolver
 
             for (int k = 0; k < 9; k++)
             {
-                CreateChain(ref field, new int[] { k });
+                CreateChain(field, k);
 
 
                 //поиск исключений
@@ -958,7 +1039,7 @@ namespace SudokuSolver
                     //повторения цвета
                     //для одного числа
 
-                    answer = chainLogicRepeatRule(ref field, new int[] { k });
+                    answer = chainLogicRepeatRule(field, new int[] { k });
                     if (!answer.Equals(""))
                     {
                         ClearChainBySubChain(i, subChains);
@@ -966,7 +1047,7 @@ namespace SudokuSolver
                     }
 
                     //ячейки видимые двумя цветами
-                    answer = TwoColorsElsewhere(ref field, k);
+                    answer = TwoColorsElsewhere(field, k);
                     if (!answer.Equals(""))
                     {
                         ClearChainBySubChain(i, subChains);
@@ -980,7 +1061,7 @@ namespace SudokuSolver
         }
 
         //исключение кандидатов видимых двумя цветами
-        private static string TwoColorsElsewhere(ref Field field, int k)
+        private static string TwoColorsElsewhere(Field field, int k)
         {
             string answer = "";
 
@@ -999,9 +1080,9 @@ namespace SudokuSolver
                     i = unit[0] / 9;
                     j = unit[0] % 9;
                     //записываем все видимые ей индексы (новые)
-                    for(int n = 0; n < field[i, j].seenInd[0].Length; n++)
+                    for (int n = 0; n < field[i, j].seenInd[0].Length; n++)
                     {
-                        i1 = field[i, j].seenInd[0][n]; 
+                        i1 = field[i, j].seenInd[0][n];
                         j1 = field[i, j].seenInd[1][n];
                         if (!seenbyON.Contains(9 * i1 + j1))
                         {
@@ -1035,8 +1116,8 @@ namespace SudokuSolver
                 }
             }
             bool impact = false;
-            answer = (k+1) + " в ячейках: ";
-            foreach(int ind in intersec)
+            answer = (k + 1) + " в ячейках: ";
+            foreach (int ind in intersec)
             {
                 i = ind / 9;
                 j = ind % 9;
@@ -1056,13 +1137,13 @@ namespace SudokuSolver
             {
                 answer = "";
             }
-            
+
 
             return answer;
         }
 
         //повторение цвета 
-        private static string chainLogicRepeatRule(ref Field field, int[] kArray)
+        private static string chainLogicRepeatRule(Field field, int[] kArray)
         {
             string answer = "";
 
@@ -1416,7 +1497,7 @@ namespace SudokuSolver
         }
 
         //создание сильной цепи 
-        public static void CreateChain(ref Field field, int[] kArray)
+        public static void CreateChain(Field field,params int[] kArray)
         {
             int[][] matrix = new int[9][];
 
@@ -1686,7 +1767,7 @@ namespace SudokuSolver
         }
 
         //заполнение слабых связей
-        private static void fillWeakLinks()
+        public static void fillWeakLinks()
         {
             //полный перебор
 
@@ -1708,22 +1789,14 @@ namespace SudokuSolver
                                 break;
                             }
                         }
-                        //если не связаны сильно то проверяем видят ли они друг друга
+                        //если не связаны сильно то
+                        //проверяем одно ли число содержат
+                        //проверяем видят ли они друг друга
                         if (!linked)
                         {
-
-                            int i1 = unit1[0] / 9;
-                            int j1 = unit1[0] % 9;
-                            int i2 = unit2[0] / 9;
-                            int j2 = unit2[0] % 9;
-
-
-                            if (((i1 == i2) ||                                              //по строкам
-                               (j1 == j2) ||                                                //по столбцам
-                               (3 * (i1 / 3) + (j1 / 3) == 3 * (i2 / 3) + (j2 / 3)))        //по регионам
-                               && (unit1[1] == unit2[1])                                    //одинаковые кандидаты
-                                )
+                            if ((unit1[1] == unit2[1]) && isSeen(unit1[0], unit2[0]))
                             {
+                                //добавляю слабую связь
                                 weak.Add(new int[] { unit1[0], unit1[1], unit2[0], unit2[1] });
                             }
 
@@ -1874,7 +1947,7 @@ namespace SudokuSolver
         //--------------------------------------------------------------------------------------------------------
 
         //XYZ-Wing
-        private static string XYZ_Wing(ref Field field)
+        private static string XYZ_Wing(Field field)
         {
             string answer = "";
 
@@ -1994,7 +2067,7 @@ namespace SudokuSolver
                                 for (int r = 0; r < 3; r++)
                                 {
                                     //пропускаем корень и возможно первое крыло
-                                    if ((i1 == i && 3 * (j / 3) + r == j1) || 3 * (j / 3) + r == j || (i2==i && 3 * (j / 3) + r == j2))
+                                    if ((i1 == i && 3 * (j / 3) + r == j1) || 3 * (j / 3) + r == j || (i2 == i && 3 * (j / 3) + r == j2))
                                     {
                                         continue;
                                     }
@@ -2096,7 +2169,7 @@ namespace SudokuSolver
                                 for (int r = 0; r < 3; r++)
                                 {
                                     //пропускаем корень и возможно первое крыло
-                                    if ((j1 == j && 3 * (i / 3) + r == i1) || 3 * (i / 3) + r == i || (3 * (i / 3) + r == i2 && j2==j))
+                                    if ((j1 == j && 3 * (i / 3) + r == i1) || 3 * (i / 3) + r == i || (3 * (i / 3) + r == i2 && j2 == j))
                                     {
                                         continue;
                                     }
@@ -2139,7 +2212,7 @@ namespace SudokuSolver
         }
 
         //Y-Wings
-        private static string Y_Wings(ref Field field)
+        private static string Y_Wings(Field field)
         {
             string answer = "";
 
@@ -2154,15 +2227,7 @@ namespace SudokuSolver
             {
                 for (int j = 0; j < 9; j++)
                 {
-                    counter = 0;
-                    for (int k = 0; k < 9; k++)
-                    {
-                        if (field[i, j].candidates[k])
-                        {
-                            counter++;
-                        }
-                    }
-                    if (counter == 2)
+                    if (field[i,j].remainingCandidates == 2)
                     {
                         list.Add(field[i, j]);
                     }
@@ -2219,17 +2284,8 @@ namespace SudokuSolver
 
                     //Берем вторую точку
                     X1 = Y.seenCell[j];
-
-                    counter = 0;
-                    for (int k = 0; k < 9; k++)
-                    {
-                        if (X1.candidates[k])
-                        {
-                            counter++;
-                        }
-                    }
-                    if (counter != 2)
-                        continue;
+                    
+                    if (X1.remainingCandidates != 2) continue;
 
                     //если 0 совпадений то flag=false  -- пропускаем
                     //если 1 совпадение то flag=true   -- то что нужно
@@ -2272,21 +2328,11 @@ namespace SudokuSolver
                         //ищем второе "крыло"
                         for (int j2 = 0; j2 < Y.seenCell.Length; j2++)
                         {
-                            if (j2 == j)
-                                continue;
+                            if (j2 == j) continue;
 
                             X2 = Y.seenCell[j2];
 
-                            counter = 0;
-                            for (int k = 0; k < 9; k++)
-                            {
-                                if (X2.candidates[k])
-                                {
-                                    counter++;
-                                }
-                            }
-                            if (counter != 2)
-                                continue;
+                            if (X2.remainingCandidates != 2) continue;
 
                             counter = 0;
 
@@ -2382,7 +2428,7 @@ namespace SudokuSolver
         }
 
         //BUG
-        private static string BUG(ref Field field)
+        private static string BUG(Field field)
         {
             string answer = "";
 
@@ -2477,7 +2523,7 @@ namespace SudokuSolver
         }
 
         //Jellyfish
-        private static string Jellyfish(ref Field field)
+        private static string Jellyfish(Field field)
         {
             string answer = "";
 
@@ -2613,7 +2659,7 @@ namespace SudokuSolver
         }
 
         //скрытые четверки
-        private static string HiddenQuads(ref Field field)
+        private static string HiddenQuads(Field field)
         {
             string answer = "";
 
@@ -2633,7 +2679,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[i][j];
                 }
-                answer = HiddenQuadsInGroup(ref group);
+                answer = HiddenQuadsInGroup(group);
                 if (!answer.Equals(""))
                 {
                     answer = "Строка  " + (i + 1).ToString() + ": " + answer;
@@ -2648,7 +2694,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[j][i];
                 }
-                answer = HiddenQuadsInGroup(ref group);
+                answer = HiddenQuadsInGroup(group);
                 if (!answer.Equals(""))
                 {
                     answer = "Столбец " + (i + 1).ToString() + ": " + answer;
@@ -2671,7 +2717,7 @@ namespace SudokuSolver
                             group[y * 3 + x] = field.cells[i * 3 + x][j * 3 + y];
                         }
                     }
-                    answer = HiddenQuadsInGroup(ref group);
+                    answer = HiddenQuadsInGroup(group);
                     if (!answer.Equals(""))
                     {
                         answer = "Регион  " + ((i) * 3 + j + 1).ToString() + ": " + ": " + answer;
@@ -2685,7 +2731,7 @@ namespace SudokuSolver
         }
 
         //скрытые четверки в группе
-        private static string HiddenQuadsInGroup(ref Field.Cell[] group)
+        private static string HiddenQuadsInGroup(Field.Cell[] group)
         {
             string answer = "";
 
@@ -2751,7 +2797,7 @@ namespace SudokuSolver
         }
 
         //открытые четверки
-        private static string NakedQuads(ref Field field)
+        private static string NakedQuads(Field field)
         {
             string answer = "";
 
@@ -2770,7 +2816,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[i][j];
                 }
-                answer = NakedQuadsInGroup(ref group);
+                answer = NakedQuadsInGroup(group);
                 if (!answer.Equals(""))
                 {
                     answer = "Строка  " + (i + 1).ToString() + ": " + answer;
@@ -2785,7 +2831,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[j][i];
                 }
-                answer = NakedQuadsInGroup(ref group);
+                answer = NakedQuadsInGroup(group);
                 if (!answer.Equals(""))
                 {
                     answer = "Столбец " + (i + 1).ToString() + ": " + answer;
@@ -2808,7 +2854,7 @@ namespace SudokuSolver
                             group[y * 3 + x] = field.cells[i * 3 + x][j * 3 + y];
                         }
                     }
-                    answer = NakedQuadsInGroup(ref group);
+                    answer = NakedQuadsInGroup(group);
                     if (!answer.Equals(""))
                     {
                         answer = "Регион  " + ((i) * 3 + j + 1).ToString() + ": " + ": " + answer;
@@ -2822,7 +2868,7 @@ namespace SudokuSolver
         }
 
         //открытые тройки в группе
-        private static string NakedQuadsInGroup(ref Field.Cell[] group)
+        private static string NakedQuadsInGroup(Field.Cell[] group)
         {
             string answer = "";
 
@@ -3004,14 +3050,12 @@ namespace SudokuSolver
                                 }
 
                                 //смотрю есть ли исключения
-                                bool impact = false;
                                 for (int j = 0; j < n; j++)
                                 {
                                     for (int i = 0; i < a.Length; i++)
                                     {
                                         if (i != rows[0] && i != rows[1] && i != rows[2] && i != rows[3] && a[i][colums[j]] > 0)
                                         {
-                                            impact = true;
                                             return new int[][] { rows, colums };
                                         }
                                     }
@@ -3028,7 +3072,7 @@ namespace SudokuSolver
         }
 
         //Swordfish
-        private static string Swordfish(ref Field field)
+        private static string Swordfish(Field field)
         {
             string answer = "";
 
@@ -3160,7 +3204,7 @@ namespace SudokuSolver
         }
 
         //скрытые тройки
-        private static string HiddenTriples(ref Field field)
+        private static string HiddenTriples(Field field)
         {
             string answer = "";
 
@@ -3180,7 +3224,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[i][j];
                 }
-                answer = HiddenTriplesInGroup(ref group);
+                answer = HiddenTriplesInGroup(group);
                 if (!answer.Equals(""))
                 {
                     answer = "Строка  " + (i + 1).ToString() + ": " + answer;
@@ -3195,7 +3239,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[j][i];
                 }
-                answer = HiddenTriplesInGroup(ref group);
+                answer = HiddenTriplesInGroup(group);
                 if (!answer.Equals(""))
                 {
                     answer = "Столбец " + (i + 1).ToString() + ": " + answer;
@@ -3218,7 +3262,7 @@ namespace SudokuSolver
                             group[y * 3 + x] = field.cells[i * 3 + x][j * 3 + y];
                         }
                     }
-                    answer = HiddenTriplesInGroup(ref group);
+                    answer = HiddenTriplesInGroup(group);
                     if (!answer.Equals(""))
                     {
                         answer = "Регион  " + ((i) * 3 + j + 1).ToString() + ": " + ": " + answer;
@@ -3232,7 +3276,7 @@ namespace SudokuSolver
         }
 
         //скрытые пары в группе
-        private static string HiddenTriplesInGroup(ref Field.Cell[] group)
+        private static string HiddenTriplesInGroup(Field.Cell[] group)
         {
             string answer = "";
 
@@ -3296,7 +3340,7 @@ namespace SudokuSolver
         }
 
         //открытые тройки
-        private static string NakedTriples(ref Field field)
+        private static string NakedTriples(Field field)
         {
             string answer = "";
 
@@ -3316,7 +3360,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[i][j];
                 }
-                answer = NakedTripesInGroup(ref group);
+                answer = NakedTripesInGroup(group);
                 if (!answer.Equals(""))
                 {
                     answer = "Строка  " + (i + 1).ToString() + ": " + answer;
@@ -3331,7 +3375,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[j][i];
                 }
-                answer = NakedTripesInGroup(ref group);
+                answer = NakedTripesInGroup(group);
                 if (!answer.Equals(""))
                 {
                     answer = "Столбец " + (i + 1).ToString() + ": " + answer;
@@ -3354,7 +3398,7 @@ namespace SudokuSolver
                             group[y * 3 + x] = field.cells[i * 3 + x][j * 3 + y];
                         }
                     }
-                    answer = NakedTripesInGroup(ref group);
+                    answer = NakedTripesInGroup(group);
                     if (!answer.Equals(""))
                     {
                         answer = "Регион  " + ((i) * 3 + j + 1).ToString() + ": " + ": " + answer;
@@ -3368,7 +3412,7 @@ namespace SudokuSolver
         }
 
         //открытые тройки в группе
-        private static string NakedTripesInGroup(ref Field.Cell[] group)
+        private static string NakedTripesInGroup(Field.Cell[] group)
         {
             string answer = "";
 
@@ -3538,14 +3582,12 @@ namespace SudokuSolver
                             }
 
                             //смотрю есть ли исключения
-                            bool impact = false;
                             for (int j = 0; j < n; j++)
                             {
                                 for (int i = 0; i < a.Length; i++)
                                 {
                                     if (i != rows[0] && i != rows[1] && i != rows[2] && a[i][colums[j]] > 0)
                                     {
-                                        impact = true;
                                         return new int[][] { rows, colums };
                                     }
                                 }
@@ -3561,7 +3603,7 @@ namespace SudokuSolver
         }
 
         //X-Wings
-        private static string X_Wings(ref Field field)
+        private static string X_Wings(Field field)
         {
             string answer = "";
 
@@ -3684,7 +3726,7 @@ namespace SudokuSolver
         }
 
         //скрытые пары
-        private static string HiddenPairs(ref Field field)
+        private static string HiddenPairs(Field field)
         {
             string answer = "";
 
@@ -3704,7 +3746,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[i][j];
                 }
-                answer = HiddenPairsInGroup(ref group);
+                answer = HiddenPairsInGroup(group);
                 if (!answer.Equals(""))
                 {
                     answer = "Строка  " + (i + 1).ToString() + ": " + answer;
@@ -3719,7 +3761,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[j][i];
                 }
-                answer = HiddenPairsInGroup(ref group);
+                answer = HiddenPairsInGroup(group);
                 if (!answer.Equals(""))
                 {
                     answer = "Столбец " + (i + 1).ToString() + ": " + answer;
@@ -3742,7 +3784,7 @@ namespace SudokuSolver
                             group[y * 3 + x] = field.cells[i * 3 + x][j * 3 + y];
                         }
                     }
-                    answer = HiddenPairsInGroup(ref group);
+                    answer = HiddenPairsInGroup(group);
                     if (!answer.Equals(""))
                     {
                         answer = "Регион  " + ((i) * 3 + j + 1).ToString() + ": " + ": " + answer;
@@ -3757,7 +3799,7 @@ namespace SudokuSolver
 
         //скрытые пары в группе
 
-        private static string HiddenPairsInGroup(ref Field.Cell[] group)
+        private static string HiddenPairsInGroup(Field.Cell[] group)
         {
             string answer = "";
 
@@ -3911,14 +3953,12 @@ namespace SudokuSolver
                         }
 
                         //смотрю есть ли исключения
-                        bool impact = false;
                         for (int j = 0; j < n; j++)
                         {
                             for (int i = 0; i < a.Length; i++)
                             {
                                 if (i != rows[0] && i != rows[1] && a[i][colums[j]] > 0)
                                 {
-                                    impact = true;
                                     return new int[][] { rows, colums };
                                 }
                             }
@@ -3931,7 +3971,7 @@ namespace SudokuSolver
         }
 
         //виртуальные одиночки
-        private static string VirtualSingle(ref Field field)
+        private static string VirtualSingle(Field field)
         {
             string answer = "";
             /*строки
@@ -4307,7 +4347,7 @@ namespace SudokuSolver
         }
 
         //открытые пары
-        private static string NakedPairs(ref Field field)
+        private static string NakedPairs(Field field)
         {
 
             string answer = "";
@@ -4327,7 +4367,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[i][j];
                 }
-                answer = NakedPairsInGroup(ref group);
+                answer = NakedPairsInGroup(group);
                 if (!answer.Equals(""))
                 {
                     answer = "Строка  " + (i + 1).ToString() + ": " + answer;
@@ -4342,7 +4382,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[j][i];
                 }
-                answer = NakedPairsInGroup(ref group);
+                answer = NakedPairsInGroup(group);
                 if (!answer.Equals(""))
                 {
                     answer = "Столбец " + (i + 1).ToString() + ": " + answer;
@@ -4365,7 +4405,7 @@ namespace SudokuSolver
                             group[y * 3 + x] = field.cells[i * 3 + x][j * 3 + y];
                         }
                     }
-                    answer = NakedPairsInGroup(ref group);
+                    answer = NakedPairsInGroup(group);
                     if (!answer.Equals(""))
                     {
                         answer = "Регион  " + ((i) * 3 + j + 1).ToString() + ": " + ": " + answer;
@@ -4377,7 +4417,7 @@ namespace SudokuSolver
         }
 
         //способ на матрицах для масштабирования
-        private static string NakedPairsInGroup(ref Field.Cell[] group)
+        private static string NakedPairsInGroup(Field.Cell[] group)
         {
             string answer = "";
 
@@ -4435,7 +4475,7 @@ namespace SudokuSolver
         }
 
         //скрытые одиночки
-        private static string HiddenSingle(ref Field field)
+        private static string HiddenSingle(Field field)
         {
             string answer = "";
 
@@ -4454,7 +4494,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[i][j];
                 }
-                answer = HiddenSingleGroup(ref group);
+                answer = HiddenSingleGroup(group);
                 if (!answer.Equals(""))
                 {
                     answer = "Строка  " + (i + 1).ToString() + ": " + answer;
@@ -4469,7 +4509,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[j][i];
                 }
-                answer = HiddenSingleGroup(ref group);
+                answer = HiddenSingleGroup(group);
                 if (!answer.Equals(""))
                 {
                     answer = "Столбец " + (i + 1).ToString() + ": " + answer;
@@ -4492,7 +4532,7 @@ namespace SudokuSolver
                             group[y * 3 + x] = field.cells[i * 3 + x][j * 3 + y];
                         }
                     }
-                    answer = HiddenSingleGroup(ref group);
+                    answer = HiddenSingleGroup(group);
                     if (!answer.Equals(""))
                     {
                         answer = "Регион  " + ((i) * 3 + j + 1).ToString() + ": " + answer;
@@ -4506,7 +4546,7 @@ namespace SudokuSolver
         }
 
         //скрытые одиночки в группе
-        private static string HiddenSingleGroup(ref Field.Cell[] group)
+        private static string HiddenSingleGroup(Field.Cell[] group)
         {
             string answer = "";
 
@@ -4539,7 +4579,7 @@ namespace SudokuSolver
         }
 
         //открытые одиночки
-        private static string NakedSingle(ref Field field)
+        private static string NakedSingle(Field field)
         {
             string answer = "";
             //обход всех ячеек
@@ -4585,7 +4625,7 @@ namespace SudokuSolver
 
         //простые ислючения
         //способ на списке
-        public static void SimpleRestriction(ref Field field)
+        public static void SimpleRestriction(Field field)
         {
             int value = 0;
             //обход всего поля
@@ -4613,10 +4653,9 @@ namespace SudokuSolver
         }
 
         //проверка
-        private static string check(ref Field field)
+        private static string check(Field field)
         {
             string answer = "";
-            bool right = true;
 
             //проверка на решение
             bool full = true;
@@ -4633,6 +4672,7 @@ namespace SudokuSolver
             if (full)
             {
                 answer = "Судоку решено!";
+                done = true;
                 return answer;
             }
 
@@ -4648,8 +4688,8 @@ namespace SudokuSolver
                         {
                             if (x != i & field[x, j].value == field[i, j].value)
                             {
-                                right = false;
                                 answer = "Ошибка! Совпадение в столбце " + (j + 1).ToString() + ": (" + (x + 1).ToString() + ";" + (j + 1).ToString() + ") и (" + (i + 1).ToString() + ";" + (j + 1).ToString() + ")!";
+                                done = false;
                                 return answer;
                             }
                         }
@@ -4658,8 +4698,8 @@ namespace SudokuSolver
                         {
                             if (x != j & field[i, x].value == field[i, j].value)
                             {
-                                right = false;
                                 answer = "Ошибка! Совпадение в строке " + (i + 1).ToString() + ": (" + (i + 1).ToString() + ";" + (x + 1).ToString() + ") и (" + (i + 1).ToString() + ";" + (j + 1).ToString() + ")!";
+                                done = false;
                                 return answer;
                             }
                         }
@@ -4674,8 +4714,8 @@ namespace SudokuSolver
                             {
                                 if ((indX + x) != i & (indY + y) != j & field[(indX + x), (indY + y)].value == field[i, j].value)
                                 {
-                                    right = false;
                                     answer = "Ошибка! Совпадение в регионе " + (indY * 3 + indX + 1).ToString() + ": (" + ((indX + x) + 1).ToString() + ";" + ((indY + y) + 1).ToString() + ") и (" + (i + 1).ToString() + ";" + (j + 1).ToString() + ")!";
+                                    done = false;
                                     return answer;
                                 }
                             }
@@ -4688,7 +4728,7 @@ namespace SudokuSolver
             return answer;
         }
 
-        public static string makeAnswer(int i, int j, int v, ref Field field)
+        public static string makeAnswer(int i, int j, int v,Field field)
         {
             return "Исключена " + v.ToString() + " из ячейки (" + (i + 1).ToString() + ";" + (j + 1).ToString() + ")";
         }

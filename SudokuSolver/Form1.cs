@@ -14,12 +14,13 @@ namespace SudokuSolver
     public partial class Form1 : Form
     {
         Grid grid;                      //нарисованная сетка
-        Field field;                    //массив ячеек
+        List<Field> field;              //массив ячеек
         int[][] sudoku;                 //вспомогательный массив для загрузки из файла
-              
 
-        Button stepButton;              //кнопка шага
-        Label console;                  //консоль
+
+        Button DoButton;                //кнопка шага
+        Button UndoButton;              //кнопка шага назад
+        TextBox console;                //консоль
         GroupBox tecniquesPanel;        //панель включения техник
         CheckBox[] tecniques;           //кнопки включения техник
         GroupBox highlightingPanel;     //панель подсветки
@@ -27,7 +28,7 @@ namespace SudokuSolver
         GroupBox linksPanel;            //панель отображения связей
         Button[] linksButtons;          //кнопки включения отображения связей
 
-        
+
         MenuStrip menu;
 
         Constructor constructor;        //Форма конструктора судоку
@@ -38,31 +39,54 @@ namespace SudokuSolver
         bool[] shownLinks;
         bool[] usedTecniques;
 
+        List<string> consoleLogs;
+
 
 
         public Form1()
         {
             InitializeComponent();
-        }
 
-        private void Form1_Load(object sender, EventArgs e)
-        {
+
             //создание окна
-            this.Size = new Size(1220,680);
+            this.Size = new Size(1220, 680);
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
             this.Location = new Point(10, 10);
-            
+
             //this.DoubleBuffered = true;
 
             //создание интерфейса сетки
             grid = new Grid(this);
 
             //создание поля
-            field = new Field();
+            field = new List<Field>();
 
+
+            //создание консоли
+            CreateConsole();
+
+            //настройка кнопок шага
+            CreateButtons();
+
+            //панель подсветки
+            CreateHighlightingPanel();
+
+            //панель связей
+            CreateLinksPanel();
+
+            //панель выбора техник
+            CreateTecniquesPanel();
+
+            //создание панели меню
+            CreateMenu();
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            
             //загрузка судоку
             sudoku = new int[9][];
-            for(int i = 0; i < sudoku.Length; i++)
+            for (int i = 0; i < sudoku.Length; i++)
             {
                 sudoku[i] = new int[9];
             }
@@ -78,23 +102,7 @@ namespace SudokuSolver
             loadSudoku("13");
             //------------------------------------------------------------------------------------------------------------
 
-            //создание консоли
-            CreateConsole();
-
-            //настройка кнопки шага
-            CreateStepButton();
-
-            //панель подсветки
-            CreateHighlightingPanel();
-
-            //панель связей
-            CreateLinksPanel();
-
-            //панель выбора техник
-            CreateTecniquesPanel();
-
-            //создание панели меню
-            CreateMenu();
+            
 
         }
         //создание меню
@@ -107,10 +115,10 @@ namespace SudokuSolver
             {
                 Text = "Судоку"
             };
-            
+
             menu.Items.Add(sud);
 
-            
+
 
             ToolStripMenuItem make = new ToolStripMenuItem()
             {
@@ -144,7 +152,7 @@ namespace SudokuSolver
             this.MainMenuStrip = menu;
             this.Controls.Add(menu);
         }
-        
+
         //рестарт
         private void restartButton_Click(object sender, EventArgs e)
         {
@@ -153,59 +161,76 @@ namespace SudokuSolver
 
         //----------------------------------------------------------------------------------------------------------------------
         //следующий шаг решения
-        int step = 0;
-        private void stepButtonClick(object sender, EventArgs e)
+
+        private void DoButtonClick(object sender, EventArgs e)
         {
 
-            grid.updateGrid(ref field);
+            if (Logic.done) return;
+
+
+            grid.updateGrid(field[field.Count - 1]);
 
             usedTecniques = new bool[tecniques.Length];
 
-            switch (step)
+            Field newField = new Field();
+            newField.CopyFrom(field[field.Count - 1]);
+
+            field.Add(newField);
+
+
+            
+
+            for (int i = 0; i < tecniques.Length; i++)
             {
-                case 0:
-                    
-                    for(int i = 0; i < tecniques.Length; i++)
-                    {
-                        usedTecniques[i] = tecniques[i].Checked;
-                    }
+                usedTecniques[i] = tecniques[i].Checked;
+            }
 
-                    string answer = Logic.findElimination(ref field, usedTecniques);
-                    printToConsole(answer);
+            string answer = Logic.findElimination(field[field.Count - 1], usedTecniques);
+            printToConsole(answer);
 
-                       
 
-                    
 
-                    grid.HighlighteRemoved(Logic.clues,Logic.removed);
 
-                    if(needRefresh || (Logic.chain!=null && Logic.chain.Count != 0))
-                    {
-                        this.Refresh();
-                        if(Logic.chain==null || (Logic.chain!=null && Logic.chain.Count == 0))
-                        {
-                            needRefresh = false;
-                        }
-                        else
-                        {
-                            needRefresh = true;
-                        }
-                    }
-                    
 
-                    break;
+            grid.HighlighteRemoved(Logic.clues, Logic.removed);
+
+            if (needRefresh || (Logic.chain != null && Logic.chain.Count != 0))
+            {
+                this.Refresh();
+                if (Logic.chain == null || (Logic.chain != null && Logic.chain.Count == 0))
+                {
+                    needRefresh = false;
+                }
+                else
+                {
+                    needRefresh = true;
+                }
+            }
+
+
+        }
+
+        //нажатие кнопки назад
+        private void UndoButtonClick(object sender, EventArgs e)
+        {
+            //выкидываю последнюю запись
+            if (field.Count > 2)
+            {
+                field.RemoveAt(field.Count - 1);
+                field.RemoveAt(field.Count - 1);
+                grid.updateGrid(field[field.Count - 1]);
+
+                Logic.done = false;
+
+                DoButton.PerformClick();
+
+                printToConsole("Шаг назад");
             }
         }
 
         //----------------------------------------------------------------------------------------------------------------------
         //нажатие кнопки вызова загрузчика
-        private void loaderOpenButton_Click(object sender,EventArgs e)
-        {
-            loaderOpen();
-        }
-        
-        //вызов окна загрузки
-        private void loaderOpen()
+        private void loaderOpenButton_Click(object sender, EventArgs e)
         {
             loader = new Loader(this);
         }
@@ -213,12 +238,6 @@ namespace SudokuSolver
         //----------------------------------------------------------------------------------------------------------------------
         //нажатие на кнопку вызова конструктора
         private void constrOpenClick(object sender, EventArgs e)
-        {
-            LoadConstructor();
-        }
-
-        //вызов конструктора
-        private void LoadConstructor()
         {
             constructor = new Constructor(this);
         }
@@ -251,6 +270,13 @@ namespace SudokuSolver
                 Logic.tech.Add(Logic.tecniques[i], i);
             }
 
+            for (int i = 0; i < tecniques.Length; i++)
+            {
+                if (tecniques[i].Text.Equals("X-Cycles"))
+                {
+                    tecniques[i].Checked = true;
+                }
+            }
 
             //----------------------------------------------------------------------------------------------------------------------
             //tecniques[tecniques.Length - 1].Checked = true;
@@ -280,7 +306,7 @@ namespace SudokuSolver
                 tecniques[i].Checked = all.Checked;
             }
         }
-        
+
         //----------------------------------------------------------------------------------------------------------------------
         //создание панели связей
         private void CreateLinksPanel()
@@ -314,10 +340,10 @@ namespace SudokuSolver
         {
             Button b = sender as Button;
             int digit = Convert.ToInt32(b.Text);
-            
-            shownLinks[digit-1] = !shownLinks[digit-1];
+
+            shownLinks[digit - 1] = !shownLinks[digit - 1];
             int counter = 0;
-            for(int i = 0; i < shownLinks.Length; i++)
+            for (int i = 0; i < shownLinks.Length; i++)
             {
                 if (shownLinks[i])
                 {
@@ -330,12 +356,13 @@ namespace SudokuSolver
             {
                 if (shownLinks[i])
                 {
-                    links[counter]=i;
+                    links[counter] = i;
                     counter++;
                 }
             }
 
-            Logic.CreateChain(ref field, links);
+            Logic.CreateChain(field[field.Count - 1], links);
+            Logic.fillWeakLinks();
             this.Refresh();
 
         }
@@ -345,7 +372,7 @@ namespace SudokuSolver
         private void CreateHighlightingPanel()
         {
             highlightingPanel = new GroupBox();
-            highlightingPanel.Location = new Point(stepButton.Location.X + stepButton.Width + 20, stepButton.Location.Y);
+            highlightingPanel.Location = new Point(DoButton.Location.X + DoButton.Width + 20, DoButton.Location.Y);
             highlightingPanel.Text = "Подсветка";
             highlightingPanel.Visible = true;
 
@@ -377,56 +404,104 @@ namespace SudokuSolver
 
         //----------------------------------------------------------------------------------------------------------------------
         //создание кнопки следующего шага
-        private void CreateStepButton()
+        private void CreateButtons()
         {
-            stepButton = new Button();
-            stepButton.Size = new Size(70, 30);
-            stepButton.Location = new Point(console.Location.X, console.Location.Y + console.Size.Height + 30);
-            stepButton.Text = "Далее";
-            stepButton.Visible = true;
-            stepButton.Click += stepButtonClick;
+            string iconsDir = @"E:\SudokuSolver\SudokuSolver\Icons";
 
-            this.AcceptButton = stepButton;
-            this.Controls.Add(stepButton);
+            UndoButton = new Button();
+            UndoButton.Size = new Size(30, 30);
+            UndoButton.Location = new Point(console.Location.X, console.Location.Y + console.Size.Height + 30);
+            UndoButton.Text = "";
+            UndoButton.Visible = true;
+            UndoButton.Click += UndoButtonClick;
+
+            Image UndoButtonIcon = Image.FromFile(iconsDir + @"\DoButton.jpg");
+            UndoButtonIcon.RotateFlip(RotateFlipType.RotateNoneFlipX);
+            UndoButton.BackgroundImage = UndoButtonIcon;
+            UndoButton.BackgroundImageLayout = ImageLayout.Stretch;
+
+            this.Controls.Add(UndoButton);
+
+            DoButton = new Button();
+            DoButton.Size = new Size(30, 30);
+            DoButton.Location = new Point(UndoButton.Location.X + UndoButton.Width + 10, UndoButton.Location.Y);
+            DoButton.Text = "";
+            DoButton.Visible = true;
+            DoButton.Click += DoButtonClick;
+
+            Image DoButtonIcon = Image.FromFile(iconsDir + @"\DoButton.jpg");
+
+            DoButton.BackgroundImage = DoButtonIcon;
+            DoButton.BackgroundImageLayout = ImageLayout.Stretch;
+
+
+            this.AcceptButton = DoButton;
+            this.Controls.Add(DoButton);
+            DoButton.Focus();
         }
 
         //----------------------------------------------------------------------------------------------------------------------
         //создание консоли
         private void CreateConsole()
         {
-            console = new Label();
+            console = new TextBox();
             console.Visible = true;
             console.Size = new Size(320, 400);
             console.Location = new Point(grid.startX + grid.sizeGrid + 30, grid.startY);
             console.BorderStyle = BorderStyle.FixedSingle;
             console.BackColor = Color.FromArgb(255, 228, 181);
             console.Text = "";
+
+            console.WordWrap = true;
+            console.Multiline = true;
+            console.ScrollBars = ScrollBars.Vertical;
+            console.ReadOnly = true;
+
+            console.Cursor = Cursors.Default;
+
+            //отключаю возможность получения фокуса
+            console.GotFocus += delegate (object sender, EventArgs e) { this.ActiveControl = null; };
+
             this.Controls.Add(console);
+
+
+            consoleLogs = new List<string>();
         }
 
         //очистить консоль
         void clearConsole()
         {
             console.Text = "";
+            consoleLogs.Clear();
         }
 
         //написать в консоль
         void printToConsole(string s)
         {
-            console.Text = s + "\n" + console.Text;
+            //consoleLogs.Add(s);
+            console.Text = s + Environment.NewLine + console.Text;
+            if (console.Text.Length > 2000)
+            {
+                console.Text = console.Text.Remove(1000, console.Text.Length - 1000);
+            }
+
+        }
+
+        //удалить из консоли
+        void removeLastLogFromConsole()
+        {
+            consoleLogs.RemoveAt(consoleLogs.Count - 1);
         }
 
         //----------------------------------------------------------------------------------------------------------------------
-        
 
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
-            
+
             grid.g = e.Graphics;
             grid.drawLines();
         }
-
 
         //----------------------------------------------------------------------------------------------------------------------
         //загрузка судоку
@@ -444,7 +519,7 @@ namespace SudokuSolver
                 string defaultSudoku = "6 0 0 8 0 0 7 0 9\n0 0 4 0 0 2 0 6 0\n0 0 0 0 3 7 0 0 0\n5 0 0 1 0 0 0 8 0\n0 0 1 0 0 0 6 0 0\n0 8 0 0 0 3 0 0 2\n0 0 0 0 1 0 0 0 0\n0 3 0 7 0 0 1 0 0\n4 0 2 0 0 6 0 0 8";
                 lines = defaultSudoku.Split('\n');
 
-                MessageBox.Show("Загружено тестовое судоку", "Файл не существует",MessageBoxButtons.OK,MessageBoxIcon.Error);
+                MessageBox.Show("Загружено тестовое судоку", "Файл не существует", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
             //очищаю консоль
@@ -466,21 +541,23 @@ namespace SudokuSolver
 
             //запоминаю в буфере для рестарта
             Buffer.sudoku = new int[9][];
-            for(int i = 0; i < 9; i++)
+            for (int i = 0; i < 9; i++)
             {
                 Buffer.sudoku[i] = new int[9];
-                for(int j = 0; j < 9; j++)
+                for (int j = 0; j < 9; j++)
                 {
                     Buffer.sudoku[i][j] = sudoku[i][j];
                 }
             }
 
             //обновляю поле
-            field = new Field();
-            field.updateField(sudoku);
-            Logic.SimpleRestriction(ref field);
+            field.Clear();
+            field.Add(new Field());
+            field[field.Count - 1].updateField(sudoku);
+
+            Logic.SimpleRestriction(field[field.Count - 1]);
             grid.reloadGrid();
-            grid.updateGrid(ref field);
+            grid.updateGrid(field[field.Count - 1]);
 
         }
 
@@ -488,9 +565,9 @@ namespace SudokuSolver
         {
             //переписываю судоку
 
-            for(int i = 0; i < 9; i++)
+            for (int i = 0; i < 9; i++)
             {
-                for(int j = 0; j < 9; j++)
+                for (int j = 0; j < 9; j++)
                 {
                     sudoku[i][j] = Buffer.sudoku[i][j];
                 }
@@ -500,11 +577,13 @@ namespace SudokuSolver
             clearConsole();
 
             //обновляю поле
-            field = new Field();
-            field.updateField(sudoku);
-            Logic.SimpleRestriction(ref field);
+            field.Clear();
+            field.Add(new Field());
+            field[field.Count - 1].updateField(sudoku);
+
+            Logic.SimpleRestriction(field[field.Count - 1]);
             grid.reloadGrid();
-            grid.updateGrid(ref field);
+            grid.updateGrid(field[field.Count - 1]);
 
         }
 

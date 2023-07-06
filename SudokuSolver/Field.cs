@@ -45,6 +45,17 @@ namespace SudokuSolver
 
         }
 
+        public void CopyFrom(Field sourse)
+        {
+            for(int i = 0; i < 9; i++)
+            {
+                for(int j = 0; j < 9; j++)
+                {
+                    cells[i][j].CopyFrom(sourse.cells[i][j]);
+                }
+            }
+        }
+
         public void updateField(int[][] sudoku)
         {
             for(int i = 0; i < sudoku.Length; i++)
@@ -64,9 +75,9 @@ namespace SudokuSolver
             //значение в ячейке
             public int value;
 
-            public int row;         //i
-            public int column;      //j
-            public int ind;         //9*i + j
+            public readonly int row;         //i
+            public readonly int column;      //j
+            public readonly int ind;         //9*i + j
 
             //массив кандидатов
             public bool[] candidates;
@@ -91,6 +102,8 @@ namespace SudokuSolver
 
                 this.row = row;
                 this.column = column;
+                this.ind = 9 * row + column;
+
 
                 //заполнение массива видимых ячеек
                 seenInd = new int[2][];
@@ -165,6 +178,16 @@ namespace SudokuSolver
                 }
             }
 
+            internal void CopyFrom(Cell sourse)
+            {
+                value = sourse.value;
+                remainingCandidates = sourse.remainingCandidates;
+
+                for(int k = 0; k < 9; k++)
+                {
+                    candidates[k] = sourse.candidates[k];
+                }
+            }
         }
     }
 

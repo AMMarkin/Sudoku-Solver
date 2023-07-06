@@ -29,8 +29,7 @@ namespace SudokuSolver
 
         public Graphics g;
         public Form1 mainForm;
-        public Panel canvas;
-
+        
         public Grid(Form1 f)
         {
             mainForm = f;
@@ -66,6 +65,10 @@ namespace SudokuSolver
                 isHighlighted[Convert.ToInt32(value.Text) - 1] = !isHighlighted[Convert.ToInt32(value.Text) - 1];
                 HighlighteGrid(isHighlighted);
             }
+
+
+
+
         }
 
         //подсветка кандидатов
@@ -145,7 +148,7 @@ namespace SudokuSolver
             }
         }
 
-        public void updateGrid(ref Field field)
+        public void updateGrid(Field field)
         {
             for (int i = 0; i < cells.Length; i++)
             {
@@ -154,7 +157,6 @@ namespace SudokuSolver
                     cells[i][j].updateCell(field[i, j]);
                     cells[i][j].ResetHighlighting(isHighlighted);
                     cells[i][j].HighlighteCell(isHighlighted);
-
                 }
             }
         }
@@ -200,7 +202,7 @@ namespace SudokuSolver
             }
 
         }
-
+        //отрисовка найденных связей
         public void drawChain(int Xshift, int Yshift, PaintEventArgs e)
         {
             Graphics gr;
@@ -293,10 +295,10 @@ namespace SudokuSolver
                         gr.DrawLine(p, X1,Y1,X2,Y2);
                     }
                 }
-
+                //отрисовка слабых связей
                 if (Logic.weak != null)
                 {
-                    p.Color = Color.FromArgb(170,Color.Gray);
+                    p.Color = Color.FromArgb(170, Color.Gray);
                     for (int i = 0; i < Logic.weak.Count; i++)
                     {
                         i1 = Logic.weak[i][0] / 9;
@@ -335,8 +337,32 @@ namespace SudokuSolver
                             X2 -= mer;
                         }
 
-                        gr.DrawLine(p, X1, Y1, X2, Y2);
+                        if (Math.Sqrt((X2 - X1) * (X2 - X1) + (Y2 - Y1) * (Y2 - Y1)) > dist)
+                        {
 
+                            PX = 0;
+                            PY = 0;
+
+                            if (X2 - X1 != 0)
+                            {
+                                PY = 2 * mer;
+                                PX = -(PY * (Y2 - Y1)) / (X2 - X1);
+                            }
+                            else
+                            {
+                                PX = 2 * mer;
+                                PY = -(PX * (X2 - X1)) / (Y2 - Y1);
+                            }
+
+                            PX += (X1 + X2) / (float)2.0;
+                            PY += (Y1 + Y2) / (float)2.0;
+
+                            gr.DrawBezier(p, X1, Y1, PX, PY, PX, PY, X2, Y2);
+                        }
+                        else
+                        {
+                            gr.DrawLine(p, X1, Y1, X2, Y2);
+                        }
                     }
 
                 }
@@ -558,6 +584,12 @@ namespace SudokuSolver
                 {
                     setValue(cell.value);
                 }
+                else
+                {
+                    value.Visible = false;
+                    digit = 0;
+                }
+
                 for (int i = 0; i < cell.candidates.Length; i++)
                 {
                     candidates[i].Visible = cell.candidates[i];
@@ -598,7 +630,6 @@ namespace SudokuSolver
                     grid.drawChain(Xshift,Yshift,e);
                 }
             }
-
         }
 
     }
