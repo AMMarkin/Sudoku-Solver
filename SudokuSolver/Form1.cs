@@ -43,6 +43,35 @@ namespace SudokuSolver
         {
             InitializeComponent();
 
+            Init();
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            
+
+            //загрузка судоку
+            sudoku = new int[9][];
+            for (int i = 0; i < sudoku.Length; i++)
+            {
+                sudoku[i] = new int[9];
+            }
+
+            
+            //7 X-Wings & NakedTriples
+            //12 скрытые тройки
+            //13 Swordfish 
+            //13 Y-Wings
+            //14 Jellyfish
+            //------------------------------------------------------------------------------------------------------------
+            loadSudoku("13");
+            //------------------------------------------------------------------------------------------------------------
+
+
+        }
+
+        private void Init()
+        {
             //создание окна
             this.Size = new Size(1220, 680);
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -73,29 +102,6 @@ namespace SudokuSolver
             CreateMenu();
         }
 
-        private void Form1_Load(object sender, EventArgs e)
-        {
-            
-            //загрузка судоку
-            sudoku = new int[9][];
-            for (int i = 0; i < sudoku.Length; i++)
-            {
-                sudoku[i] = new int[9];
-            }
-
-            
-            //7 X-Wings & NakedTriples
-            //12 скрытые тройки
-            //13 Swordfish 
-            //13 Y-Wings
-            //14 Jellyfish
-            //------------------------------------------------------------------------------------------------------------
-            loadSudoku("13");
-            //------------------------------------------------------------------------------------------------------------
-
-            
-
-        }
         //создание меню
         private void CreateMenu()
         {

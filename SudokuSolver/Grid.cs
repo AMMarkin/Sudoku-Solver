@@ -5,6 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -29,6 +30,8 @@ namespace SudokuSolver
 
         public Graphics g;
         public Form1 mainForm;
+
+        
         
         public Grid(Form1 f)
         {
@@ -43,18 +46,63 @@ namespace SudokuSolver
             //создание ячеек
 
             cells = new Cell[9][];
+
+            Thread[] threads = new Thread[9];
+
             for (int i = 0; i < cells.Length; i++)
             {
                 cells[i] = new Cell[9];
-                for (int j = 0; j < cells[i].Length; j++)
+                Info info = new Info()
                 {
-                    cells[i][j] = new Cell(startX + j * (merStep + sizeCell), startY + i * (merStep + sizeCell), f, this);
-                    cells[i][j].value.Click += HighlighteEvent;
-                }
+                    i = i,
+                    merStep = merStep,
+                    sizeCell = sizeCell,
+                    f = f,
+                    grid = this
+                };
+                threads[i] = new Thread(CreateRowOfCell)
+                {
+                    Name = "Row " + (i + 1)
+                };
+                threads[i].Start(info);
+            }
+
+            for(int i = 0; i < 9; i++)
+            {
+                threads[i].Join();
             }
 
             isHighlighted = new bool[9];
+        }
 
+
+        //пакет с инфой для потоков
+        private class Info
+        {
+            internal int i;
+            internal int merStep;
+            internal int sizeCell;
+            internal Form f;
+            internal Grid grid;
+        }
+
+
+        private void CreateRowOfCell(object obj)
+        {
+            Info info = (Info)obj;
+
+            int i = info.i;
+            int merStep = info.merStep;
+            int sizeCell = info.sizeCell;
+            Form f = info.f;
+            Grid grid = info.grid;
+
+
+            for (int j = 0; j < cells[i].Length; j++)
+            {
+                cells[i][j] = new Cell(startX + j * (merStep + sizeCell), startY + i * (merStep + sizeCell), f, this);
+                cells[i][j].value.Click += HighlighteEvent;
+            }
         }
 
         internal void HighlighteEvent(object sender, EventArgs e)
@@ -65,10 +113,6 @@ namespace SudokuSolver
                 isHighlighted[Convert.ToInt32(value.Text) - 1] = !isHighlighted[Convert.ToInt32(value.Text) - 1];
                 HighlighteGrid(isHighlighted);
             }
-
-
-
-
         }
 
         //подсветка кандидатов
@@ -82,6 +126,7 @@ namespace SudokuSolver
                 }
             }
         }
+
         public void HighlighteGrid()
         {
             for (int i = 0; i < 9; i++)
@@ -132,7 +177,6 @@ namespace SudokuSolver
                 }
             }
         }
-
         //обновить сетку
         public void updateGrid(int[][] grid)
         {
@@ -167,13 +211,23 @@ namespace SudokuSolver
 
             for (int i = 0; i < 9; i++)
             {
-                for (int j = 0; j < 9; j++)
-                {
-                    cells[i][j].reloadCell();
-                }
+                Info info = new Info() { i = i };
+                reloadRow(new Info() { i = i });
             }
-
+            
         }
+
+        private void reloadRow(Object obj)
+        {
+
+            int i = ((Info)obj).i;
+
+            for (int j = 0; j < 9; j++)
+            {
+                cells[i][j].reloadCell();
+            }
+        }
+
 
         public void drawLines()
         {
@@ -383,8 +437,8 @@ namespace SudokuSolver
 
             public PointF[] centers;
 
-            Panel p;
-
+            private Panel p;
+            private Form mainForm;
             Color defaultColor = Color.FromArgb(173, 216, 230);
             Color highlightedColor = Color.FromArgb(255, 105, 180);
             Color clueColor = Color.FromArgb(255, 255, 0);
@@ -396,8 +450,8 @@ namespace SudokuSolver
             //конструктор
             public Cell(int x, int y, Form f, Grid grid)
             {
-                this.grid = grid; 
-
+                this.grid = grid;
+                mainForm = f;
                 this.x = x;
                 this.y = y;
 
@@ -408,6 +462,10 @@ namespace SudokuSolver
                 p.BackColor = Color.FromArgb(173, 216, 230);
                 p.BorderStyle = BorderStyle.FixedSingle;
                 p.Paint += drawChain;
+
+                //костыль
+                if (f == null || p == null) Thread.Sleep(0);
+
                 f.Controls.Add(p);
 
                 value = new Label();
@@ -420,7 +478,6 @@ namespace SudokuSolver
                 value.Paint += drawChain;
 
                 digit = 0;
-
 
                 p.Controls.Add(value);
 
@@ -535,7 +592,6 @@ namespace SudokuSolver
                     }
                 }
             }
-
 
             internal void HighlighteAsClue()
             {
