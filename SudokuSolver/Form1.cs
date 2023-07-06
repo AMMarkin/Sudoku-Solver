@@ -39,28 +39,20 @@ namespace SudokuSolver
         bool[] shownLinks;
         bool[] usedTecniques;
 
-        List<string> consoleLogs;
-
-
-
         public Form1()
         {
             InitializeComponent();
-
 
             //создание окна
             this.Size = new Size(1220, 680);
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
             this.Location = new Point(10, 10);
 
-            //this.DoubleBuffered = true;
-
             //создание интерфейса сетки
             grid = new Grid(this);
 
             //создание поля
             field = new List<Field>();
-
 
             //создание консоли
             CreateConsole();
@@ -91,8 +83,7 @@ namespace SudokuSolver
                 sudoku[i] = new int[9];
             }
 
-            needRefresh = false;
-
+            
             //7 X-Wings & NakedTriples
             //12 скрытые тройки
             //13 Swordfish 
@@ -460,41 +451,52 @@ namespace SudokuSolver
             console.Cursor = Cursors.Default;
 
             //отключаю возможность получения фокуса
-            console.GotFocus += delegate (object sender, EventArgs e) { this.ActiveControl = null; };
+            console.GotFocus += delegate (object sender, EventArgs e) 
+            {
+                this.ActiveControl = null; 
+            };
 
             this.Controls.Add(console);
-
-
-            consoleLogs = new List<string>();
         }
 
         //очистить консоль
         void clearConsole()
         {
             console.Text = "";
-            consoleLogs.Clear();
+            linesCount = 0;
         }
 
         //написать в консоль
+        int linesCount = 0;
         void printToConsole(string s)
         {
-            //consoleLogs.Add(s);
             console.Text = s + Environment.NewLine + console.Text;
-            if (console.Text.Length > 2000)
+            
+            //считаю строки
+            linesCount++;
+
+
+            //если строк больше допустимого, обрезаю 
+            int maxLineCount = 60;
+            if (linesCount>maxLineCount)
             {
-                console.Text = console.Text.Remove(1000, console.Text.Length - 1000);
+                var lines = console.Text.Split('\n');
+                
+                lines[linesCount-1] = "";
+                linesCount--;
+                StringBuilder stringBuilder = new StringBuilder();
+                foreach(string line in lines)
+                {
+                    stringBuilder.Append(line);
+                    if(line.Length > 0)
+                        stringBuilder.Append(Environment.NewLine);
+                }
+                console.Text = stringBuilder.ToString();
             }
 
         }
 
-        //удалить из консоли
-        void removeLastLogFromConsole()
-        {
-            consoleLogs.RemoveAt(consoleLogs.Count - 1);
-        }
-
         //----------------------------------------------------------------------------------------------------------------------
-
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
@@ -502,7 +504,6 @@ namespace SudokuSolver
             grid.g = e.Graphics;
             grid.drawLines();
         }
-
         //----------------------------------------------------------------------------------------------------------------------
         //загрузка судоку
         public void loadSudoku(string a)
@@ -554,11 +555,13 @@ namespace SudokuSolver
             field.Clear();
             field.Add(new Field());
             field[field.Count - 1].updateField(sudoku);
-
+            Logic.ClearChainBuffer();
             Logic.SimpleRestriction(field[field.Count - 1]);
             grid.reloadGrid();
             grid.updateGrid(field[field.Count - 1]);
-
+            this.Refresh();
+            needRefresh = false;
+            Logic.done = false;
         }
 
         public void loadSudokuFromBuffer()
@@ -580,10 +583,13 @@ namespace SudokuSolver
             field.Clear();
             field.Add(new Field());
             field[field.Count - 1].updateField(sudoku);
-
+            Logic.ClearChainBuffer();
             Logic.SimpleRestriction(field[field.Count - 1]);
             grid.reloadGrid();
             grid.updateGrid(field[field.Count - 1]);
+            this.Refresh();
+            needRefresh = false;
+            Logic.done = false;
 
         }
 

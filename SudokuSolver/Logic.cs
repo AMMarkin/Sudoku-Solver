@@ -52,28 +52,7 @@ namespace SudokuSolver
 
             //очистка переменных
             string tmp = "";
-            {
-                clues?.Clear();
-                clues = clues ?? new List<int[]>();
-
-                removed?.Clear();
-                removed = removed ?? new List<int[]>();
-
-                chain?.Clear();
-                chain = chain ?? new List<int[]>();
-
-                weak?.Clear();
-                weak = weak ?? new List<int[]>();
-
-                chainUnits?.Clear();
-                chainUnits = chainUnits ?? new List<int[]>();
-
-                ON?.Clear();
-                ON = ON ?? new List<int[]>();
-
-                OFF?.Clear();
-                OFF = OFF ?? new List<int[]>();
-            }
+            ClearChainBuffer();
 
             //открытые одиночки
             if (tecFlags[tech["Открытые одиночки"]])
@@ -273,6 +252,30 @@ namespace SudokuSolver
             }
 
             return answer;
+        }
+
+        public static void ClearChainBuffer()
+        {
+            clues?.Clear();
+            clues = clues ?? new List<int[]>();
+
+            removed?.Clear();
+            removed = removed ?? new List<int[]>();
+
+            chain?.Clear();
+            chain = chain ?? new List<int[]>();
+
+            weak?.Clear();
+            weak = weak ?? new List<int[]>();
+
+            chainUnits?.Clear();
+            chainUnits = chainUnits ?? new List<int[]>();
+
+            ON?.Clear();
+            ON = ON ?? new List<int[]>();
+
+            OFF?.Clear();
+            OFF = OFF ?? new List<int[]>();
         }
 
         //WXYZ-Wing
