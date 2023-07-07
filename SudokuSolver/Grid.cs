@@ -9,6 +9,7 @@ namespace SudokuSolver
 {
     internal class Grid
     {
+
         readonly Cell[][] cells;
 
         public Cell this[int i, int j]
@@ -21,22 +22,20 @@ namespace SudokuSolver
         public readonly int startY = 40;
         public bool[] isHighlighted;        //массив флагов для подсветки
 
-
+        private int selectedInd = -1;            //индекс выбранной ячейки
+        private int selectedDigitByClick = -1;
 
         public Graphics g;                  //ссылка на доступ к графике
         public Form1 mainForm;              //ссылка на основную форму
 
+        private readonly int merStep = 5;
+        private readonly int sizeCell = Cell.size;
 
 
         public Grid(Form1 f)
         {
             mainForm = f;
             //размеры сетки
-
-            int merStep = 5;
-
-            int sizeCell = Cell.size;
-
             sizeGrid = 9 * (merStep + sizeCell);
 
 
@@ -71,7 +70,6 @@ namespace SudokuSolver
             isHighlighted = new bool[9];
         }
 
-
         //пакет с инфой для потоков
         private class Info
         {
@@ -81,7 +79,6 @@ namespace SudokuSolver
             internal Form f;
             internal Grid grid;
         }
-
 
         private void CreateRowOfCell(object obj)
         {
@@ -97,34 +94,234 @@ namespace SudokuSolver
             for (int j = 0; j < cells[i].Length; j++)
             {
                 cells[i][j] = new Cell(startX + j * (merStep + sizeCell), startY + i * (merStep + sizeCell), f, this);
+
+                //устанавливаю событие клика
                 cells[i][j].value.Click += HighlighteEvent;
                 cells[i][j].p.Click += HighlighteEvent;
+                for (int k = 0; k < 9; k++)
+                    cells[i][j].candidates[k].Click += HighlighteEvent;
             }
         }
 
         internal void HighlighteEvent(object sender, EventArgs e)
         {
+            int ind;
             if (sender is Label)
             {
 
                 Label label = sender as Label;
                 if (label.Name.Equals("value"))
                 {
+                    //клик по заполненному лейблу
                     if (!label.Text.Equals(""))
                     {
-                        isHighlighted[Convert.ToInt32(label.Text) - 1] = !isHighlighted[Convert.ToInt32(label.Text) - 1];
+                        int digit = Convert.ToInt32(label.Text) - 1;
+
+                        //если уже выбранное число кликом поменялось
+                        if (selectedDigitByClick != digit)
+                        {
+                            if (selectedDigitByClick != -1)
+                            {
+                                //снимаю старое выделение
+                                isHighlighted[selectedDigitByClick] = false;
+                            }
+                        }
+                        selectedDigitByClick = digit;
+                        //если число в ячейке не выделено
+                        if (!isHighlighted[digit])
+                        {
+                            //выделяем
+                            isHighlighted[digit] = true;
+                        }
                         HighlighteGrid(isHighlighted);
-                        //найти ячейку по координатам лейбла
-                        //вызвать метод подсветки видимых ячеек
+                        //если уже выделено то ничего не делаем
+
+
+                        Point location = label.Parent.Location;
+
+                        ind = GetIndexFromLocation(location.X, location.Y);
+                        HighlighteSeenCells(ind);
                     }
+                }
+                else if (label.Name.Equals("candidate"))
+                {
+                    isHighlighted = new bool[9];
+                    HighlighteGrid(isHighlighted);
+
+                    Point location = label.Parent.Location;
+                    ind = GetIndexFromLocation(location.X, location.Y);
+                    HighlighteSeenCells(ind);
                 }
             }
             if (sender is Panel)
             {
-                //найти ячейку по координатам лейбла
-                //вызвать метод подсветки видимых ячеек
+                isHighlighted = new bool[9];
+                HighlighteGrid(isHighlighted);
+
+                Panel panel = sender as Panel;
+                Point location = panel.Location;
+                ind = GetIndexFromLocation(location.X, location.Y);
+                HighlighteSeenCells(ind);
             }
         }
+
+        //подсветка всех ячеек видимых из данной
+        private void HighlighteSeenCells(int index)
+        {
+            //если не выбрано ничего
+            if (selectedInd == -1)
+            {
+                //запоминаю выбранную ячейку
+                selectedInd = index;
+
+                //строка столбец выбранной ячейки
+                int i = index / 9;
+                int j = index % 9;
+
+                //крашу регион ячейки
+                for(int x=0; x < 3; x++)
+                {
+                    for(int y = 0; y < 3; y++)
+                    {
+                        cells[3 * (i / 3) + y][3 * (j / 3) + x].HighlightAsSeen(false);
+                    }
+                }
+                //крашу строку и столбец
+                for(int x = 0; x < 9; x++)
+                {
+                    //если не в регионе выбранной
+                    if (x / 3 != j / 3)
+                    {
+                        cells[i][x].HighlightAsSeen(false);
+                    }
+                    //если не в регионе выбранной
+                    if (x / 3 != i / 3)
+                    {
+                        cells[x][j].HighlightAsSeen(false);
+                    }
+                }
+
+            }
+            //если уже выбрана эта ячейка
+            else if(selectedInd == index)
+            {
+                selectedInd = -1;
+                //нужно снять выделение
+                //строка столбец выбранной ячейки
+                int i = index / 9;
+                int j = index % 9;
+
+                //чищу регион ячейки
+                for (int x = 0; x < 3; x++)
+                {
+                    for (int y = 0; y < 3; y++)
+                    {
+                        cells[3 * (i / 3) + y][3 * (j / 3) + x].HighlightAsSeen(true);
+                    }
+                }
+                //чищу строку и столбец
+                for (int x = 0; x < 9; x++)
+                {
+                    //если не в регионе выбранной
+                    if (x / 3 != j / 3)
+                    {
+                        cells[i][x].HighlightAsSeen(true);
+                    }
+                    //если не в регионе выбранной
+                    if (x / 3 != i / 3)
+                    {
+                        cells[x][j].HighlightAsSeen(true);
+                    }
+                }
+            }
+            //если выбрана другая
+            else
+            {
+                //перекрашиваю
+
+                //снимаю выделение с выбранной
+
+                //строка столбец выбранной ячейки
+                int i = selectedInd / 9;
+                int j = selectedInd % 9;
+
+                //чищу регион ячейки
+                for (int x = 0; x < 3; x++)
+                {
+                    for (int y = 0; y < 3; y++)
+                    {
+                        cells[3 * (i / 3) + y][3 * (j / 3) + x].HighlightAsSeen(true);
+                    }
+                }
+                //чищу строку и столбец
+                for (int x = 0; x < 9; x++)
+                {
+                    //если не в регионе выбранной
+                    if (x / 3 != j / 3)
+                    {
+                        cells[i][x].HighlightAsSeen(true);
+                    }
+                    //если не в регионе выбранной
+                    if (x / 3 != i / 3)
+                    {
+                        cells[x][j].HighlightAsSeen(true);
+                    }
+                }
+
+                //крашу новую
+                //запоминаю выбранную ячейку
+                selectedInd = index;
+
+                //строка столбец выбранной ячейки
+                i = index / 9;
+                j = index % 9;
+
+                //крашу регион ячейки
+                for (int x = 0; x < 3; x++)
+                {
+                    for (int y = 0; y < 3; y++)
+                    {
+                        cells[3 * (i / 3) + y][3 * (j / 3) + x].HighlightAsSeen(false);
+                    }
+                }
+                //крашу строку и столбец
+                for (int x = 0; x < 9; x++)
+                {
+                    //если не в регионе выбранной
+                    if (x / 3 != j / 3)
+                    {
+                        cells[i][x].HighlightAsSeen(false);
+                    }
+                    //если не в регионе выбранной
+                    if (x / 3 != i / 3)
+                    {
+                        cells[x][j].HighlightAsSeen(false);
+                    }
+                }
+
+            }
+        }
+
+        //нахождение индекса ячейки из координат левого верхнего угла
+        private int GetIndexFromLocation(int x, int y)
+        {
+            //координаты левого верхнего угла ячейки
+
+            //x = startX + j * (merStep + sizeCell)
+            //y = startY + i * (merStep + sizeCell)
+
+            //строка
+            //столбец
+            int i;
+            int j;
+
+            j = (x - startX) / (merStep + sizeCell);
+            i = (y - startY) / (merStep + sizeCell);
+
+            //индекс
+            return 9 * i + j;
+        }
+
 
         //подсветка кандидатов
         public void HighlighteGrid(bool[] flags)
@@ -444,13 +641,16 @@ namespace SudokuSolver
             private readonly Form mainForm;                         //ссылка на основную форму
 
             //цвета на все случаи жизни
-            private readonly Color defaultColor = Color.FromArgb(173, 216, 230);
-            private readonly Color highlightedColor = Color.FromArgb(255, 105, 180);
-            private readonly Color clueColor = Color.FromArgb(255, 255, 0);
-            private readonly Color removingColor = Color.FromArgb(255, 215, 0);
-            private readonly Color clueDigitColor = Color.FromArgb(154, 205, 50);
-            private readonly Color chainColorON = Color.FromArgb(173, 255, 47);
+            private readonly Color defaultColor = Color.FromArgb(173, 216, 230);        //обычный цвет
+            private readonly Color seenColor = Color.FromArgb(135, 206, 235);           //цвет когда видима из выбранной
+            private readonly Color highlightedColor = Color.FromArgb(255, 105, 180);    //цвет когда выделена
+            private readonly Color clueColor = Color.FromArgb(255, 255, 0);             //цвет ключевой ячейки
+            private readonly Color removingColor = Color.FromArgb(255, 215, 0);         //цвет исключаемого кандидата
+            private readonly Color clueDigitColor = Color.FromArgb(154, 205, 50);       //цвет ключевого кандидата
+            private readonly Color chainColorON = Color.FromArgb(173, 255, 47);         //цвета групп цепей (ON,OFF)
             private readonly Color chainColorOFF = Color.FromArgb(0, 0, 255);
+
+            private bool seen;
 
 
             //заглушка для лока потоков
@@ -478,7 +678,7 @@ namespace SudokuSolver
                 //добавляем панельки на форму
                 lock (locker)
                 {
-                    f.Controls.Add(p);
+                    mainForm.Controls.Add(p);
                 }
 
                 //лейбл значения
@@ -516,9 +716,11 @@ namespace SudokuSolver
                         //настройки позиции
                         Location = new Point(2 + (i % 3) * size / 3, 2 + (i / 3) * size / 3)
                     };
+
                     //подключение отрисовки
                     candidates[i].Paint += DrawChain;
-                    //добавления на панельку
+
+                    //добавление на панельку
                     p.Controls.Add(candidates[i]);
                 }
 
@@ -551,70 +753,182 @@ namespace SudokuSolver
             //подсветка кандидатов
             internal void HighlighteCell(bool[] flags)
             {
+
+                //обхожу всех кандидатов
                 for (int i = 0; i < 9; i++)
                 {
-                    if (digit - 1 == i && flags[i])
-                    {
-
-                        value.BackColor = highlightedColor;
-
-
-                    }
-                    if (digit - 1 == i && !flags[i])
-                    {
-
-                        value.BackColor = defaultColor;
-
-                    }
-
-
-
+                    //выделяю все что есть внутри этой ячейи
                     if (flags[i])
                     {
-                        if (candidates[i].BackColor != clueDigitColor && candidates[i].BackColor != removingColor &&
-                            candidates[i].BackColor != chainColorON && candidates[i].BackColor != chainColorOFF)
+                        //если ячейка заполнена и нужно выделить
+                        if (digit - 1 == i)
                         {
-                            candidates[i].BackColor = highlightedColor;
+                            //выделяю основное число
+                            value.BackColor = highlightedColor;
+                        }
+                        //если ячейка не заполнена выделяю кандидата
+                        //если кандидат есть
+                        else if (candidates[i].Visible)
+                        {
+                            //если кандидат не учавствовал в решении
+                            if (candidates[i].BackColor == defaultColor || candidates[i].BackColor == seenColor)
+                            {
+                                candidates[i].BackColor = highlightedColor;
+                            }
+                        }
+
+                    }
+                    //если нужно снять выделение
+                    else
+                    {
+                        //если ячейка заполнена
+                        if (digit - 1 == i)
+                        {
+                            //снимаю выделение
+                            if (!seen)
+                            {
+                                value.BackColor = defaultColor;
+                            }
+                            else
+                            {
+                                value.BackColor = seenColor;
+                            }
+
+                        }
+                        //снимаю выделение с кандидата
+                        //если кандидат есть
+                        else if (candidates[i].Visible)
+                        {
+                            //если кандидат не учавствовал в решении
+                            if (candidates[i].BackColor == highlightedColor)
+                            {
+                                //снимаю выделение
+                                candidates[i].BackColor = p.BackColor;
+                            }
+                        }
+                    }
+                }
+            }
+
+            //подсветка ячейки как видимой из выбранной
+            internal void HighlightAsSeen(bool remove)
+            {
+                //если подсвечиваю
+                if (!remove)
+                {
+                    seen = true;
+                    //если ячейка заполнена
+                    if (value.Visible)
+                    {
+                        //подсветка основного лейбла
+                        //если не подсвечен и не учавастовал в решении
+                        if (value.BackColor == defaultColor)
+                        {
+                            value.BackColor = seenColor;
                         }
                     }
                     else
                     {
-                        if (candidates[i].BackColor != clueDigitColor && candidates[i].BackColor != removingColor &&
-                            candidates[i].BackColor != chainColorON && candidates[i].BackColor != chainColorOFF)
+                        //подсветка кандидатов
+                        for (int k = 0; k < 9; k++)
                         {
-                            candidates[i].BackColor = p.BackColor;
-
+                            //если кандидат есть
+                            if (candidates[k].Visible)
+                            {
+                                //если кандидат не учавствует в решении
+                                if (candidates[k].BackColor == defaultColor)
+                                {
+                                    //выделяю
+                                    candidates[k].BackColor = seenColor;
+                                }
+                            }
                         }
-                        if (p.BackColor != clueColor)
+                        if (p.BackColor == defaultColor)
+                        {
+                            p.BackColor = seenColor;
+                        }
+                    }
+                }
+                //иначе снимаю подсветку
+                else
+                {
+                    seen = false;
+                    //если ячейка заполнена
+                    if (value.Visible)
+                    {
+                        //подсветка основного лейбла
+                        //если не подсвечен и не учавастовал в решении
+                        if (value.BackColor == seenColor)
+                        {
+                            value.BackColor = defaultColor;
+                        }
+                    }
+                    else
+                    {
+                        //подсветка кандидатов
+                        for (int k = 0; k < 9; k++)
+                        {
+                            //если кандидат есть
+                            if (candidates[k].Visible)
+                            {
+                                //если кандидат не учавствует в решении
+                                if (candidates[k].BackColor == seenColor)
+                                {
+                                    //выделяю
+                                    candidates[k].BackColor = defaultColor;
+                                }
+                            }
+                        }
+                        if (p.BackColor == seenColor)
                         {
                             p.BackColor = defaultColor;
                         }
                     }
+
+
                 }
             }
 
             //сброс раскраски
             internal void ResetHighlighting(bool[] flags)
             {
-                p.BackColor = defaultColor;
+                if (seen)
+                {
+                    p.BackColor = seenColor;
+                }
+                else
+                {
+                    p.BackColor = defaultColor;
+                }
+
                 for (int i = 0; i < flags.Length; i++)
                 {
-                    if (digit - 1 == i && flags[i])
-                    {
-                        value.BackColor = highlightedColor;
-                    }
-                    if (digit - 1 == i && !flags[i])
-                    {
-                        value.BackColor = defaultColor;
-                    }
-
                     if (flags[i])
                     {
-                        candidates[i].BackColor = highlightedColor;
+                        if (value.Visible)
+                        {
+                            value.BackColor = highlightedColor;
+                        }
+                        else
+                        {
+                            candidates[i].BackColor = highlightedColor;
+                        }
                     }
                     else
                     {
-                        candidates[i].BackColor = defaultColor;
+                        if (value.Visible)
+                        {
+                            if (seen)
+                            {
+                                value.BackColor = seenColor;
+                            }
+                            else
+                            {
+                                value.BackColor = defaultColor;
+                            }
+                        }
+
+                        candidates[i].BackColor = p.BackColor;
 
                     }
                 }

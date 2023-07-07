@@ -9,7 +9,7 @@ namespace SudokuSolver
     internal static class Logic
     {
 
-        public static string noFound = "Исключений не найдено";
+        public const string noFound = "Исключений не найдено";
 
         //массив и библиотека названий техник
         public static List<string> tecniques = new List<string>() {
