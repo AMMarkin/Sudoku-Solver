@@ -1,12 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 
@@ -14,25 +9,25 @@ namespace SudokuSolver
 {
     internal class Grid
     {
-        Cell[][] cells;
+        readonly Cell[][] cells;
 
         public Cell this[int i, int j]
         {
             get => cells[i][j];
         }
 
-        public int sizeGrid;
-        public int startX = 20;
-        public int startY = 40;
-        public bool[] isHighlighted;
+        public readonly int sizeGrid;       //размер поля
+        public readonly int startX = 20;    //левый верхний угол начала рисования
+        public readonly int startY = 40;
+        public bool[] isHighlighted;        //массив флагов для подсветки
 
 
 
-        public Graphics g;
-        public Form1 mainForm;
+        public Graphics g;                  //ссылка на доступ к графике
+        public Form1 mainForm;              //ссылка на основную форму
 
-        
-        
+
+
         public Grid(Form1 f)
         {
             mainForm = f;
@@ -40,13 +35,14 @@ namespace SudokuSolver
 
             int merStep = 5;
 
-            int sizeCell = 60;
+            int sizeCell = Cell.size;
 
             sizeGrid = 9 * (merStep + sizeCell);
+
+
             //создание ячеек
-
+            //9 строк создаются в 9и потоках
             cells = new Cell[9][];
-
             Thread[] threads = new Thread[9];
 
             for (int i = 0; i < cells.Length; i++)
@@ -67,7 +63,7 @@ namespace SudokuSolver
                 threads[i].Start(info);
             }
 
-            for(int i = 0; i < 9; i++)
+            for (int i = 0; i < 9; i++)
             {
                 threads[i].Join();
             }
@@ -102,16 +98,31 @@ namespace SudokuSolver
             {
                 cells[i][j] = new Cell(startX + j * (merStep + sizeCell), startY + i * (merStep + sizeCell), f, this);
                 cells[i][j].value.Click += HighlighteEvent;
+                cells[i][j].p.Click += HighlighteEvent;
             }
         }
 
         internal void HighlighteEvent(object sender, EventArgs e)
         {
-            Label value = sender as Label;
-            if (!value.Text.Equals(""))
+            if (sender is Label)
             {
-                isHighlighted[Convert.ToInt32(value.Text) - 1] = !isHighlighted[Convert.ToInt32(value.Text) - 1];
-                HighlighteGrid(isHighlighted);
+
+                Label label = sender as Label;
+                if (label.Name.Equals("value"))
+                {
+                    if (!label.Text.Equals(""))
+                    {
+                        isHighlighted[Convert.ToInt32(label.Text) - 1] = !isHighlighted[Convert.ToInt32(label.Text) - 1];
+                        HighlighteGrid(isHighlighted);
+                        //найти ячейку по координатам лейбла
+                        //вызвать метод подсветки видимых ячеек
+                    }
+                }
+            }
+            if (sender is Panel)
+            {
+                //найти ячейку по координатам лейбла
+                //вызвать метод подсветки видимых ячеек
             }
         }
 
@@ -158,7 +169,7 @@ namespace SudokuSolver
             }
 
             //если цепь не null и не пустая то отмечаем звенья
-            if(Logic.ON!=null && Logic.ON.Count != 0)
+            if (Logic.ON != null && Logic.ON.Count != 0)
             {
                 foreach (int[] unit in Logic.ON)
                 {
@@ -178,7 +189,7 @@ namespace SudokuSolver
             }
         }
         //обновить сетку
-        public void updateGrid(int[][] grid)
+        public void UpdateGrid(int[][] grid)
         {
             for (int i = 0; i < grid.Length; i++)
             {
@@ -186,50 +197,49 @@ namespace SudokuSolver
                 {
                     if (grid[i][j] != 0)
                     {
-                        cells[i][j].setValue(grid[i][j]);
+                        cells[i][j].SetValue(grid[i][j]);
                     }
                 }
             }
         }
 
-        public void updateGrid(Field field)
+        public void UpdateGrid(Field field)
         {
             for (int i = 0; i < cells.Length; i++)
             {
                 for (int j = 0; j < cells[i].Length; j++)
                 {
-                    cells[i][j].updateCell(field[i, j]);
+                    cells[i][j].UpdateCell(field[i, j]);
                     cells[i][j].ResetHighlighting(isHighlighted);
                     cells[i][j].HighlighteCell(isHighlighted);
                 }
             }
         }
 
-        public void reloadGrid()
+        public void ReloadGrid()
         {
             isHighlighted = new bool[isHighlighted.Length];
 
             for (int i = 0; i < 9; i++)
             {
-                Info info = new Info() { i = i };
-                reloadRow(new Info() { i = i });
+                ReloadRow(new Info() { i = i });
             }
-            
+
         }
 
-        private void reloadRow(Object obj)
+        private void ReloadRow(Object obj)
         {
 
             int i = ((Info)obj).i;
 
             for (int j = 0; j < 9; j++)
             {
-                cells[i][j].reloadCell();
+                cells[i][j].ReloadCell();
             }
         }
 
 
-        public void drawLines()
+        public void DrawLines()
         {
 
             using (Pen p = new Pen(Color.Black))
@@ -249,7 +259,7 @@ namespace SudokuSolver
                 {
                     if (Logic.chain.Count != 0)
                     {
-                        drawChain(-1,-1,null);
+                        DrawChain(-1, -1, null);
                     }
                 }
 
@@ -257,7 +267,7 @@ namespace SudokuSolver
 
         }
         //отрисовка найденных связей
-        public void drawChain(int Xshift, int Yshift, PaintEventArgs e)
+        public void DrawChain(int Xshift, int Yshift, PaintEventArgs e)
         {
             Graphics gr;
             if (e != null)
@@ -296,13 +306,14 @@ namespace SudokuSolver
                     X2 = cells[i2][j2].centers[k2].X - Xshift;
                     Y2 = cells[i2][j2].centers[k2].Y - Yshift;
 
-                    
+
                     //если линия сверху вниз
                     if (Y1 > Y2)
                     {
                         Y1 -= mer;
                         Y2 += mer;
-                    }else if (Y1 < Y2)
+                    }
+                    else if (Y1 < Y2)
                     {
                         Y1 += mer;
                         Y2 -= mer;
@@ -313,7 +324,7 @@ namespace SudokuSolver
                         X1 -= mer;
                         X2 += mer;
                     }
-                    else if(X1<X2)
+                    else if (X1 < X2)
                     {
                         X1 += mer;
                         X2 -= mer;
@@ -322,12 +333,8 @@ namespace SudokuSolver
                     //если линии достаточно отдаленные
                     //искривляю
                     //иначе рисуем прямую
-                    if(Math.Sqrt((X2 - X1) * (X2 - X1) + (Y2 - Y1)* (Y2 - Y1)) > dist)
+                    if (Math.Sqrt((X2 - X1) * (X2 - X1) + (Y2 - Y1) * (Y2 - Y1)) > dist)
                     {
-
-                        PX = 0;
-                        PY = 0;
-
                         if (X2 - X1 != 0)
                         {
                             PY = 2 * mer;
@@ -346,7 +353,7 @@ namespace SudokuSolver
                     }
                     else
                     {
-                        gr.DrawLine(p, X1,Y1,X2,Y2);
+                        gr.DrawLine(p, X1, Y1, X2, Y2);
                     }
                 }
                 //отрисовка слабых связей
@@ -393,10 +400,6 @@ namespace SudokuSolver
 
                         if (Math.Sqrt((X2 - X1) * (X2 - X1) + (Y2 - Y1) * (Y2 - Y1)) > dist)
                         {
-
-                            PX = 0;
-                            PY = 0;
-
                             if (X2 - X1 != 0)
                             {
                                 PY = 2 * mer;
@@ -426,82 +429,105 @@ namespace SudokuSolver
         internal class Cell
         {
 
-            Grid grid;
-            int size = 60;
-            int x;
-            int y;
+            private readonly Grid grid;                                      //ссылка на основное поле
+            public static readonly int size = 55;                   //размер ячейки
+            readonly int x;                                         //координаты ячейки
+            readonly int y;
 
-            internal Label[] candidates;
-            internal Label value;
-            int digit;
+            internal Label[] candidates;                            //лейблы для отображения кандидатов
+            internal Label value;                                   //лейбл для отображения числа
+            private int digit;                                      //число в ячейке
 
-            public PointF[] centers;
+            public PointF[] centers;                                //координаты центра ячейки
 
-            private Panel p;
-            private Form mainForm;
-            Color defaultColor = Color.FromArgb(173, 216, 230);
-            Color highlightedColor = Color.FromArgb(255, 105, 180);
-            Color clueColor = Color.FromArgb(255, 255, 0);
-            Color removingColor = Color.FromArgb(255, 215, 0);
-            Color clueDigitColor = Color.FromArgb(154, 205, 50);
-            Color chainColorON = Color.FromArgb(173, 255, 47);
-            Color chainColorOFF = Color.FromArgb(0, 0, 255);
+            internal readonly Panel p;                               //панелька ячейки
+            private readonly Form mainForm;                         //ссылка на основную форму
+
+            //цвета на все случаи жизни
+            private readonly Color defaultColor = Color.FromArgb(173, 216, 230);
+            private readonly Color highlightedColor = Color.FromArgb(255, 105, 180);
+            private readonly Color clueColor = Color.FromArgb(255, 255, 0);
+            private readonly Color removingColor = Color.FromArgb(255, 215, 0);
+            private readonly Color clueDigitColor = Color.FromArgb(154, 205, 50);
+            private readonly Color chainColorON = Color.FromArgb(173, 255, 47);
+            private readonly Color chainColorOFF = Color.FromArgb(0, 0, 255);
+
+
+            //заглушка для лока потоков
+            private static readonly object locker = new object();
 
             //конструктор
             public Cell(int x, int y, Form f, Grid grid)
             {
+                //переписываю параметры
                 this.grid = grid;
-                mainForm = f;
+                this.mainForm = f;
                 this.x = x;
                 this.y = y;
 
-                p = new Panel();
-                p.Size = new Size(size, size);
-                p.Location = new Point(x, y);
+                //панелька ячейки
+                p = new Panel()
+                {
+                    Size = new Size(size, size),
+                    Location = new Point(x, y),
+                    BackColor = Color.FromArgb(173, 216, 230),
+                    BorderStyle = BorderStyle.FixedSingle,
+                };
+                p.Paint += DrawChain;
 
-                p.BackColor = Color.FromArgb(173, 216, 230);
-                p.BorderStyle = BorderStyle.FixedSingle;
-                p.Paint += drawChain;
+                //добавляем панельки на форму
+                lock (locker)
+                {
+                    f.Controls.Add(p);
+                }
 
-                //костыль
-                if (f == null || p == null) Thread.Sleep(0);
+                //лейбл значения
+                value = new Label()
+                {
+                    Name = "value",
+                    Visible = false,
+                    Size = new Size(size, size),
+                    Location = new Point(0, 0),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Font = new Font("Microsoft Sans Serif", Convert.ToInt32(size * 0.6)),
+                    Text = ""
+                };
+                value.Paint += DrawChain;
 
-                f.Controls.Add(p);
 
-                value = new Label();
-                value.Visible = false;
-                value.Size = new Size(size, size);
-                value.Location = new Point(0, 0);
-                value.TextAlign = ContentAlignment.MiddleCenter;
-                value.Font = new Font("Microsoft Sans Serif", Convert.ToInt32(size * 0.6));
-                value.Text = "";
-                value.Paint += drawChain;
-
+                //значение в ячейке
                 digit = 0;
-
                 p.Controls.Add(value);
 
+                //лейблы кандидатов
                 candidates = new Label[9];
                 for (int i = 0; i < candidates.Length; i++)
                 {
-                    candidates[i] = new Label();
-                    candidates[i].Visible = true;
-                    candidates[i].TextAlign = ContentAlignment.MiddleCenter;
-                    candidates[i].Text = (i + 1).ToString();
-
-                    candidates[i].Size = new Size(size / 3 - 6, size / 3 - 6);
-                    candidates[i].Location = new Point(2 + (i % 3) * size / 3, 2 + (i / 3) * size / 3);
-
-                    candidates[i].Paint += drawChain;
-
+                    //общие настройки
+                    candidates[i] = new Label()
+                    {
+                        Name = "candidate",
+                        Visible = true,
+                        TextAlign = ContentAlignment.MiddleCenter,
+                        Text = (i + 1).ToString(),
+                        //настройки размера и шрифта
+                        Size = new Size(size / 3 - 6, size / 3 - 6),
+                        Font = new Font("Microsoft Sans Serif", Convert.ToInt32((size / 3 - 6) * 0.6)),
+                        //настройки позиции
+                        Location = new Point(2 + (i % 3) * size / 3, 2 + (i / 3) * size / 3)
+                    };
+                    //подключение отрисовки
+                    candidates[i].Paint += DrawChain;
+                    //добавления на панельку
                     p.Controls.Add(candidates[i]);
-
                 }
 
+                //нахожу коордитаны центров лейблов кандидатов
                 centers = new PointF[9];
                 for (int i = 0; i < 9; i++)
                 {
-                    centers[i] = new PointF((float)(candidates[i].Location.X + x )+ (float) (candidates[i].Size.Width / 2.0), (float)(candidates[i].Location.Y +y)+(float)( candidates[i].Size.Height/2.0));
+                    centers[i] = new PointF((float)(candidates[i].Location.X + x) + (float)(candidates[i].Size.Width / 2.0),
+                                            (float)(candidates[i].Location.Y + y) + (float)(candidates[i].Size.Height / 2.0));
                 }
             }
 
@@ -554,7 +580,7 @@ namespace SudokuSolver
                     else
                     {
                         if (candidates[i].BackColor != clueDigitColor && candidates[i].BackColor != removingColor &&
-                            candidates[i].BackColor != chainColorON   && candidates[i].BackColor != chainColorOFF)
+                            candidates[i].BackColor != chainColorON && candidates[i].BackColor != chainColorOFF)
                         {
                             candidates[i].BackColor = p.BackColor;
 
@@ -567,6 +593,7 @@ namespace SudokuSolver
                 }
             }
 
+            //сброс раскраски
             internal void ResetHighlighting(bool[] flags)
             {
                 p.BackColor = defaultColor;
@@ -593,6 +620,7 @@ namespace SudokuSolver
                 }
             }
 
+            //подсветить ячейку как ключевую
             internal void HighlighteAsClue()
             {
                 p.BackColor = clueColor;
@@ -602,17 +630,20 @@ namespace SudokuSolver
                 }
             }
 
+            //подсветить кандидата как ключевого
             internal void HighlighteDigitsAsClue(int digit)
             {
                 candidates[digit].BackColor = clueDigitColor;
             }
 
+            //подсветить кандидата как исключаемого
             internal void HighlighteRemoving(int digit)
             {
                 candidates[digit].BackColor = removingColor;
             }
 
-            internal void setValue(int v)
+            //вывести значение в ячейке
+            internal void SetValue(int v)
             {
                 for (int i = 0; i < candidates.Length; i++)
                 {
@@ -627,18 +658,19 @@ namespace SudokuSolver
                 digit = v;
             }
 
-
-            internal void removeCandidate(int i)
+            //скрыть кандидата
+            internal void RemoveCandidate(int i)
             {
                 candidates[i].Visible = false;
                 candidates[i].Enabled = false;
             }
 
-            internal void updateCell(Field.Cell cell)
+            //обновить ячейку в соответствии с ячейкой поля
+            internal void UpdateCell(Field.Cell cell)
             {
                 if (cell.value != -1)
                 {
-                    setValue(cell.value);
+                    SetValue(cell.value);
                 }
                 else
                 {
@@ -652,7 +684,8 @@ namespace SudokuSolver
                 }
             }
 
-            internal void reloadCell()
+            //полный сброс ячейки
+            internal void ReloadCell()
             {
                 digit = 0;
                 p.BackColor = defaultColor;
@@ -666,7 +699,8 @@ namespace SudokuSolver
                 }
             }
 
-            internal void drawChain(object sender, PaintEventArgs e)
+            //отрисовка всего что нужно поверх элемента
+            internal void DrawChain(object sender, PaintEventArgs e)
             {
                 int Xshift = x;
                 int Yshift = y;
@@ -682,10 +716,10 @@ namespace SudokuSolver
 
                 if (Logic.chain != null && Logic.chain.Count != 0)
                 {
-                    Graphics gr = e.Graphics;
-                    grid.drawChain(Xshift,Yshift,e);
+                    grid.DrawChain(Xshift, Yshift, e);
                 }
             }
+
         }
 
     }

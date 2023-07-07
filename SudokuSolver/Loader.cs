@@ -90,7 +90,7 @@ namespace SudokuSolver
                 var items = list.SelectedItems;
                 foreach (ListViewItem item in items)
                 {
-                    mainForm.loadSudoku(item.Text);
+                    mainForm.LoadSudoku(item.Text);
                 }
             }
         }

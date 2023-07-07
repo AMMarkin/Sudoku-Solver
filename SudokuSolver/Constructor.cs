@@ -13,13 +13,13 @@ namespace SudokuSolver
 {
     internal class Constructor : Form
     {
-        GroupBox inputField;        //поле для ввода чисел
-        TextBox[][] digits;         //текстовые поля
-        Button loadButton;          //кнопка Загрузить в солвер
-        Button saveButton;          //кнопка Сохранить в файл
-        Button exitButton;          //кнопка выхода
-        TextBox fileName;           //поля ввода имени файла для сохранения
-        Form1 mainForm;             //основное окно
+        private GroupBox inputField;        //поле для ввода чисел
+        private TextBox[][] digits;         //текстовые поля
+        private Button loadButton;          //кнопка Загрузить в солвер
+        private Button saveButton;          //кнопка Сохранить в файл
+        private Button exitButton;          //кнопка выхода
+        private TextBox fileName;           //поля ввода имени файла для сохранения
+        private readonly Form1 mainForm;             //основное окно
 
 
         public Constructor(Form1 mainForm)
@@ -101,7 +101,7 @@ namespace SudokuSolver
                     {
                         digits[i][j].BackColor = second;
                     }
-                    digits[i][j].KeyPress += inputField_KeyPress;
+                    digits[i][j].KeyPress += InputField_KeyPress;
                 }
 
                 inputField.Controls.AddRange(digits[i]);
@@ -112,7 +112,7 @@ namespace SudokuSolver
 
         //настройка фильтров
         //перевод курсора на следующее поле
-        private void inputField_KeyPress(object sender, KeyPressEventArgs e)
+        private void InputField_KeyPress(object sender, KeyPressEventArgs e)
         {
             TextBox txt = (TextBox)sender;
 
@@ -226,7 +226,7 @@ namespace SudokuSolver
                 Font = new Font(this.Font.Name,10)
             };
             saveButton.Location = new Point(inputField.Location.X + inputField.Width - saveButton.Width, inputField.Location.Y + inputField.Height + 20+ fileName.Height+20);
-            saveButton.Click += saveButton_Click;
+            saveButton.Click += SaveButton_Click;
             
             this.Controls.Add(saveButton);
 
@@ -238,13 +238,13 @@ namespace SudokuSolver
                 Font = new Font(this.Font.Name, 10),
                 Location = new Point(inputField.Location.X, saveButton.Location.Y)
             };
-            loadButton.Click += loadButton_Click;
+            loadButton.Click += LoadButton_Click;
 
             this.Controls.Add(loadButton);
         }
 
         //кнопка загрузки в солвер
-        private void loadButton_Click(object sender,EventArgs e)
+        private void LoadButton_Click(object sender,EventArgs e)
         {
             Buffer.sudoku = new int[9][];
 
@@ -268,12 +268,12 @@ namespace SudokuSolver
                 }
             }
 
-            mainForm.loadSudokuFromBuffer();
+            mainForm.LoadSudokuFromBuffer();
             
         }
 
         //сохранить судоку в файл
-        private void saveButton_Click(object sender, EventArgs e)
+        private void SaveButton_Click(object sender, EventArgs e)
         {
             string name = fileName.Text;
 
