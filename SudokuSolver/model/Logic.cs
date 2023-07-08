@@ -404,8 +404,6 @@ namespace SudokuSolver
                 //раскрашиваю
                 SubChainColoring(i, subChains);
 
-
-
                 //поиск исключений
 
                 //проверка повторения цвета 
@@ -855,6 +853,8 @@ namespace SudokuSolver
                         ON.Clear();
                         ON.AddRange(OFF);
                         OFF.Clear();
+                        clues.Add(new int[] { unit2[0] / 9, unit2[0] % 9, unit2[1] });
+                        clues.Add(new int[] { unit2[0] / 9, unit2[0] % 9, unit1[1] });
                         answer = "повторение цвета в ячейке (" + (unit2[0] / 9 + 1) + ";" + (unit2[0] % 9 + 1) + ")";
                         return answer;
                     }
@@ -885,6 +885,9 @@ namespace SudokuSolver
                         }
                         //для красоты перекидываем оставшееся в ON
                         OFF.Clear();
+
+                        clues.Add(new int[] { unit2[0] / 9, unit2[0] % 9, unit2[1] });
+                        clues.Add(new int[] { unit2[0] / 9, unit2[0] % 9, unit1[1] });
                         answer = "повторение цвета в ячейке (" + (unit2[0] / 9 + 1) + ";" + (unit2[0] % 9 + 1) + ")";
                         return answer;
                     }

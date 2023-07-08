@@ -8,25 +8,28 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using SudokuSolver.controller;
 
 namespace SudokuSolver
 {
-    internal class Loader : Form
+    public class Loader : Form
     {
-        Form1 mainForm;    //основное окно
-        ListView list;
+        private readonly IController controller;
 
+        ListView list;      
         Button load;       //кнопка загрузки в солвер
         Button delete;     //кнопка удаления файла
         Button exit;       //кнопка выхода
+        
 
         string path;
 
-        public Loader(Form1 mainForm)
+        public Loader(IController controller)
         {
-            this.mainForm = mainForm;
+            this.controller = controller;
+
             InitializeComponent();
-            
+
             //создание списка файлов
             CreateFileList();
 
@@ -48,7 +51,7 @@ namespace SudokuSolver
                 Visible = true
             };
             load.Location = new Point(list.Location.X + list.Width - load.Width, list.Location.Y + list.Height + 20);
-            load.Click += loadButton_Click;
+            load.Click += LoadButton_Click;
 
             this.Controls.Add(load);
 
@@ -60,7 +63,7 @@ namespace SudokuSolver
                 Visible = true
             };
 
-            delete.Click+=deleteButton_Click;
+            delete.Click+=DeleteButton_Click;
             this.Controls.Add(delete);
 
             exit = new Button()
@@ -70,12 +73,12 @@ namespace SudokuSolver
                 Location = new Point(load.Location.X, load.Location.Y + load.Height + 20)
             };
 
-            exit.Click+=exitButton_Click;
+            exit.Click+=ExitButton_Click;
             this.Controls.Add(exit);
         }
 
         //загрузка
-        private void loadButton_Click(object sender, EventArgs e)
+        private void LoadButton_Click(object sender, EventArgs e)
         {
             if (list.SelectedIndices.Count == 0)
             {
@@ -90,31 +93,38 @@ namespace SudokuSolver
                 var items = list.SelectedItems;
                 foreach (ListViewItem item in items)
                 {
-                    mainForm.LoadSudoku(item.Text);
+                    controller.LoadFrom(item.Text);
                 }
             }
         }
 
         //удаление
-        private void deleteButton_Click(object sender, EventArgs e)
+        private void DeleteButton_Click(object sender, EventArgs e)
         {
+            //если ничего не выбрано
             if (list.SelectedIndices.Count==0)
             {
                 MessageBox.Show("Не выбраны файлы для удаления", "Ошибка!");
             }
+            //иначе
             else
-            {
+            {   
+                //спрашиваю подтверждение
                 if (MessageBox.Show("Подтвердите удаление файла", "Подтверждение", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                 {
+                    //составляю массив имен файлов
                     var items = list.SelectedItems;
                     string[] names = new string[items.Count];
 
                     for (int i = 0; i < items.Count; i++)
                     {
-                        names[i] = items[i].Text + ".txt";
-                        File.Delete(path + names[i]);
+                        names[i] = items[i].Text;
+                        
                     }
+                    //удаляю выбранные 
+                    controller.Delete(names);
 
+                    //убираю из списка
                     foreach (ListViewItem item in items)
                     {
                         list.Items.Remove(item);
@@ -126,7 +136,7 @@ namespace SudokuSolver
         }
 
         //закрытие
-        private void exitButton_Click(object sender,EventArgs e)
+        private void ExitButton_Click(object sender,EventArgs e)
         {
             this.Close();
         }
@@ -157,7 +167,7 @@ namespace SudokuSolver
 
             list.AllowDrop = false;
 
-            list.DoubleClick += loadButton_Click;
+            list.DoubleClick += LoadButton_Click;
 
             this.Controls.Add(list);
         }
@@ -165,22 +175,12 @@ namespace SudokuSolver
         //заполнение списка файлов
         private void FillList()
         {
-            //путь к папке с судоку
-            path = @"E:\SudokuSolver\Sudoku\";
+            var filenames = controller.GetListSaved();
 
-            //загружаем все имена
-            var a = Directory.GetFiles(path, "*", SearchOption.TopDirectoryOnly).ToList();
-            //обрезаем пути
-            for(int i = 0; i < a.Count; i++)
-            {
-                a[i] = Path.GetFileName(a[i]);
-            }
-
-
-            a.ForEach(f => addLine(f));
+            filenames.ForEach(f => AddLine(f));
         }
 
-        private void addLine(string name)
+        private void AddLine(string name)
         {
             ListViewItem line = new ListViewItem(name.Split('.')[0]);
             

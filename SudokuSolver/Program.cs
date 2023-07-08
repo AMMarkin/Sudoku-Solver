@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using SudokuSolver.controller;
 
 namespace SudokuSolver
 {
@@ -16,7 +17,13 @@ namespace SudokuSolver
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+
+
+            //создаю контроллер WINFORMS
+            WFController controller = new WFController();
+
+            //запускаю форму
+            Application.Run(new Solver(controller));
         }
     }
 }

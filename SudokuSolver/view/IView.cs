@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SudokuSolver
+namespace SudokuSolver.view
 {
-    internal static class Buffer
+    internal interface IView
     {
-        public static int[][] sudoku;
+        void Update();
     }
 }

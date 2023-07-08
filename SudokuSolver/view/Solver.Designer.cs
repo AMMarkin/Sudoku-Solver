@@ -1,6 +1,6 @@
 ﻿namespace SudokuSolver
 {
-    partial class Form1
+    partial class Solver
     {
         /// <summary>
         /// Обязательная переменная конструктора.

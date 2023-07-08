@@ -7,7 +7,7 @@ using System.Windows.Forms;
 
 namespace SudokuSolver
 {
-    internal class Grid
+    public class Grid
     {
 
         readonly Cell[][] cells;
@@ -26,13 +26,13 @@ namespace SudokuSolver
         private int selectedDigitByClick = -1;
 
         public Graphics g;                  //ссылка на доступ к графике
-        public Form1 mainForm;              //ссылка на основную форму
+        public Solver mainForm;              //ссылка на основную форму
 
         private readonly int merStep = 5;
         private readonly int sizeCell = Cell.size;
 
 
-        public Grid(Form1 f)
+        public Grid(Solver f)
         {
             mainForm = f;
             //размеры сетки
@@ -623,7 +623,7 @@ namespace SudokuSolver
             }
         }
 
-        internal class Cell
+        public class Cell
         {
 
             private readonly Grid grid;                                      //ссылка на основное поле

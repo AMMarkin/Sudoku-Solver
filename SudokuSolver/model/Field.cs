@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SudokuSolver
 {
-    internal class Field
+    public class Field
     {
         public Cell[][] cells;
 
@@ -70,7 +70,18 @@ namespace SudokuSolver
             }
         }
         
-        internal class Cell
+        public void ResetField()
+        {
+            for(int i=0; i < 9; i++)
+            {
+                for(int j = 0; j < 9; j++)
+                {
+
+                }
+            }
+        }
+
+        public class Cell
         {
             //значение в ячейке
             public int value;
@@ -161,11 +172,18 @@ namespace SudokuSolver
                 //установил значение
                 value = v;
 
+                Buffer.AddChange(ind, v, -1);
+
                 //убрал кандидатов
                 for (int i = 0; i < candidates.Length; i++)
                 {
-                    candidates[i] = false;
+                    RemoveCandidat(i+1);
                 }
+            }
+
+            public void RemoveValue()
+            {
+                value = -1;
             }
 
             //исключение кандидата
@@ -175,6 +193,17 @@ namespace SudokuSolver
                 {
                     candidates[v - 1] = false;
                     remainingCandidates--;
+                    Buffer.AddChange(ind, v, 1);
+                }
+            }
+
+            //добавление кандидата
+            public void AddCandidat(int v)
+            {
+                if (!candidates[v - 1])
+                {
+                    candidates[v - 1] = true;
+                    remainingCandidates++;
                 }
             }
 

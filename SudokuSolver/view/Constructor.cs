@@ -1,30 +1,29 @@
-﻿using System;
-using System.IO;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
+﻿using SudokuSolver.controller;
+using System;
 using System.Drawing;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace SudokuSolver
 {
-    internal class Constructor : Form
+    public class Constructor : Form
     {
+        private readonly IController controller;
+
+
         private GroupBox inputField;        //поле для ввода чисел
         private TextBox[][] digits;         //текстовые поля
         private Button loadButton;          //кнопка Загрузить в солвер
         private Button saveButton;          //кнопка Сохранить в файл
         private Button exitButton;          //кнопка выхода
         private TextBox fileName;           //поля ввода имени файла для сохранения
-        private readonly Form1 mainForm;             //основное окно
+        private readonly Solver mainForm;             //основное окно
 
 
-        public Constructor(Form1 mainForm)
+        public Constructor(Solver mainForm, IController controller)
         {
             this.mainForm = mainForm;
+            this.controller = controller;
 
             //настройка окна
             this.StartPosition = FormStartPosition.CenterScreen;
@@ -48,7 +47,7 @@ namespace SudokuSolver
             CreateExitButton();
 
 
-            this.Size = new Size(60 + inputField.Width, exitButton.Location.Y+exitButton.Height+50);
+            this.Size = new Size(60 + inputField.Width, exitButton.Location.Y + exitButton.Height + 50);
 
             mainForm.Hide();
             this.ShowDialog();
@@ -57,9 +56,7 @@ namespace SudokuSolver
         //создание поля ввода
         private void CreateInputField()
         {
-            //Color first = Color.FromArgb(60, 179, 113);     // зеленый 
             Color first = Color.FromArgb(119, 221, 119);     // светло - зеленый 
-            //Color second = Color.FromArgb(123, 104, 238);   // синий
             Color second = Color.FromArgb(100, 149, 237);   // светло - синий
 
 
@@ -91,9 +88,9 @@ namespace SudokuSolver
                         Location = new Point(10 + j * (digitsSize + 5), 30 + i * (digitsSize + 5)),
                         Visible = true,
                         TextAlign = HorizontalAlignment.Center,
-                        Font = new Font(inputField.Font.Name,(int)(digitsSize*0.5))
+                        Font = new Font(inputField.Font.Name, (int)(digitsSize * 0.5))
                     };
-                    if ((i/3 + j/3) %2 != 0)
+                    if ((i / 3 + j / 3) % 2 != 0)
                     {
                         digits[i][j].BackColor = first;
                     }
@@ -117,7 +114,7 @@ namespace SudokuSolver
             TextBox txt = (TextBox)sender;
 
             char number = e.KeyChar;
-            if (!Char.IsDigit(number) && number != 8 && number != 32 || number==48)
+            if (!Char.IsDigit(number) && number != 8 && number != 32 || number == 48)
             {
                 e.Handled = true;
 
@@ -173,8 +170,8 @@ namespace SudokuSolver
                 TextAlign = HorizontalAlignment.Right,
                 Font = new Font(this.Font.Name, 10),
                 Width = inputField.Width / 2,
-                Location = new Point(inputField.Location.X+inputField.Width/2, inputField.Location.Y+inputField.Height+20)
-                
+                Location = new Point(inputField.Location.X + inputField.Width / 2, inputField.Location.Y + inputField.Height + 20)
+
             };
 
             this.Controls.Add(fileName);
@@ -186,7 +183,7 @@ namespace SudokuSolver
                 Font = new Font(this.Font.Name, 10),
                 Width = inputField.Width / 2,
                 TextAlign = ContentAlignment.MiddleRight,
-                Location = new Point(inputField.Location.X,fileName.Location.Y)
+                Location = new Point(inputField.Location.X, fileName.Location.Y)
             };
 
             this.Controls.Add(l);
@@ -223,11 +220,11 @@ namespace SudokuSolver
                 Text = "Сохранить",
                 Size = new Size((int)(inputField.Width * 0.45), 40),
                 Visible = true,
-                Font = new Font(this.Font.Name,10)
+                Font = new Font(this.Font.Name, 10)
             };
-            saveButton.Location = new Point(inputField.Location.X + inputField.Width - saveButton.Width, inputField.Location.Y + inputField.Height + 20+ fileName.Height+20);
+            saveButton.Location = new Point(inputField.Location.X + inputField.Width - saveButton.Width, inputField.Location.Y + inputField.Height + 20 + fileName.Height + 20);
             saveButton.Click += SaveButton_Click;
-            
+
             this.Controls.Add(saveButton);
 
             loadButton = new Button()
@@ -244,18 +241,18 @@ namespace SudokuSolver
         }
 
         //кнопка загрузки в солвер
-        private void LoadButton_Click(object sender,EventArgs e)
+        private void LoadButton_Click(object sender, EventArgs e)
         {
             Buffer.sudoku = new int[9][];
 
-            for(int i = 0; i < 9; i++)
+            for (int i = 0; i < 9; i++)
             {
                 Buffer.sudoku[i] = new int[9];
             }
 
-            for(int i = 0; i < 9; i++)
+            for (int i = 0; i < 9; i++)
             {
-                for(int j = 0; j < 9; j++)
+                for (int j = 0; j < 9; j++)
                 {
                     if (digits[i][j].Text.Length == 0)
                     {
@@ -268,8 +265,8 @@ namespace SudokuSolver
                 }
             }
 
-            mainForm.LoadSudokuFromBuffer();
-            
+            controller.LoadFrom("BUFFER");
+
         }
 
         //сохранить судоку в файл
@@ -277,56 +274,45 @@ namespace SudokuSolver
         {
             string name = fileName.Text;
 
-            string dir = @"E:\SudokuSolver\Sudoku\";
-            string path = dir+  name + ".txt";
-
+            //если не введено название файла
             if (name.Equals(""))
             {
                 MessageBox.Show("Введите название файла", "Ошибка!", MessageBoxButtons.OK);
                 fileName.Focus();
             }
+            //если введено
             else
             {
-                if (File.Exists(path))
+                StringBuilder sb = new StringBuilder();
+
+                for (int i = 0; i < 9; i++)
                 {
-                    MessageBox.Show("Файл "+ name + " уже существует", "Ошибка!", MessageBoxButtons.OK);
-                    fileName.Focus();
-                }
-                else
-                {
-                    using (FileStream f = File.Create(path))
+                    for (int j = 0; j < 9; j++)
                     {
-                        for(int i = 0; i < 9; i++)
+                        if (digits[i][j].Text.Length == 0)
                         {
-                            for(int j = 0; j < 9; j++)
-                            {
-                                if (digits[i][j].Text.Length == 0)
-                                {
-                                    WriteText(f, "0");
-                                }
-                                else
-                                {
-                                    WriteText(f, digits[i][j].Text);
-                                }
-                                if (j != 8)
-                                {
-                                    WriteText(f, " ");
-                                }
-                            }
-                            WriteText(f, "\n");
+                            sb.Append("0");
+                        }
+                        else
+                        {
+                            sb.Append(digits[i][j].Text);
+                        }
+                        if (j != 8)
+                        {
+                            sb.Append(" ");
                         }
                     }
-                    MessageBox.Show("Файл "+name+" успешно сохранен.","Сохранение",MessageBoxButtons.OK);
-                    exitButton.Focus();
+                    sb.Append("\n");
                 }
+
+                controller.SaveToFile(name, sb.ToString());
+
+                MessageBox.Show("Файл " + name + " успешно сохранен.", "Сохранение", MessageBoxButtons.OK);
+                exitButton.Focus();
+
             }
         }
-        //запись в файл
-        private static void WriteText(FileStream f,string s)
-        {
-            byte[] byteS = Encoding.UTF8.GetBytes(s);
-            f.Write(byteS, 0, byteS.Length);
-        }
+
 
 
     }
