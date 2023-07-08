@@ -59,7 +59,33 @@ namespace SudokuSolver
                 }
             }
         }
-        
+        //применение записанных изменений
+        public void ApplyChanges(int[][] changes)
+        {
+            if (changes == null) return;
+
+            int i;
+            int j;
+            foreach (int[] change in changes)
+            {
+                //нахожу нужную ячейку по индексу
+                i = change[0] / 9;
+                j = change[0] % 9;
+
+                //исключение кандидата
+                if (change[2] == 1)
+                {
+                    cells[i][j].RemoveCandidat(change[1]);
+                }
+                //установка значения
+                if (change[2] == -1)
+                {
+                    cells[i][j].SetValue(change[1]);
+                }
+            }
+        }
+
+
         //обнуление поля
         public void ResetField()
         {
@@ -161,21 +187,31 @@ namespace SudokuSolver
                 }
             }
 
+            
+
             //установка значения
             public void SetValue(int v)
             {
                 //установил значение
                 value = v;
 
-                Buffer.AddChange(ind, v, -1);
+                //Buffer.AddSettingValueChange(ind, v);
 
-                //убрал кандидатов
+                //убираю оставшихся кандидатов
                 for (int i = 0; i < candidates.Length; i++)
                 {
-                    RemoveCandidat(i+1);
+                    //если есть
+                    if (candidates[i])
+                    {
+                        //исключаю
+                        RemoveCandidat(i+1);
+                        //записываю
+                        Buffer.AddRemovingChange(ind, i+1);
+                    }
                 }
             }
-            //восстановление значения
+
+            //удаление значения(откат утановки)
             public void RemoveValue()
             {
                 value = -1;
@@ -188,11 +224,11 @@ namespace SudokuSolver
                 {
                     candidates[v - 1] = false;
                     remainingCandidates--;
-                    Buffer.AddChange(ind, v, 1);
+                    
                 }
             }
 
-            //добавление кандидата
+            //добавление кандидата (откат исключения)
             public void AddCandidat(int v)
             {
                 if (!candidates[v - 1])

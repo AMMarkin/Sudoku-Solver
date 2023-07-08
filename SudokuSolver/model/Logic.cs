@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace SudokuSolver
 {
@@ -54,13 +50,18 @@ namespace SudokuSolver
             string tmp = "";
             ClearChainBuffer();
 
+            //потом буду включать через настройки как функцию
+            if (SimpleRestriction(field) && false)
+            {
+                //field.ApplyChanges(Buffer.GetLastChanges());
+
+                return "Найдены простые исключения";
+            }
+
             //открытые одиночки
             if (tecFlags[tech["Открытые одиночки"]])
             {
                 tmp = NakedSingle(field);
-
-                //проверка простых исключений
-                SimpleRestriction(field);
 
                 if (!tmp.Equals(""))
                 {
@@ -72,9 +73,6 @@ namespace SudokuSolver
             if (tecFlags[tech["Скрытые одиночки"]])
             {
                 tmp = HiddenSingle(field);
-
-                //проверка простых исключений
-                SimpleRestriction(field);
 
                 if (!tmp.Equals(""))
                 {
@@ -288,7 +286,7 @@ namespace SudokuSolver
             //нахожу три ячейки с четыремя кандидатами в строке или столбце
             //по очереди пытаюсь выбрать одну из ячеек корнем
             //в регионе корня ищу ячейку которая "закроет" четверку
-            
+
             //внутри четверки считаю колличество "несвязанных" чисел
             //если несвязанных !=1 то скип
             //если ==1 то ищу исключения среди ячеек которые видимы всеми ячейками с несвязанным числом 
@@ -316,7 +314,7 @@ namespace SudokuSolver
             int[] subChains;
             int subChainCounter;
 
-            for(int k = 0; k < 9; k++)
+            for (int k = 0; k < 9; k++)
             {
                 //сильные связи для числа
                 CreateChain(field, k);
@@ -354,7 +352,7 @@ namespace SudokuSolver
 
 
             }
-            
+
 
 
             return answer;
@@ -528,7 +526,7 @@ namespace SudokuSolver
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
-                            field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            Buffer.AddRemovingChange(rem[0], rem[1] + 1);
                             removed.Add(new int[] { i1, j1, rem[1] });
                         }
                         ON.Clear();
@@ -561,7 +559,7 @@ namespace SudokuSolver
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
-                            field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            Buffer.AddRemovingChange(rem[0], rem[1] + 1);
                             removed.Add(new int[] { i1, j1, rem[1] });
                         }
                         OFF.Clear();
@@ -687,7 +685,8 @@ namespace SudokuSolver
 
                             answer = (k + 1) + " в ячейке (" + (i1 + 1) + ";" + (j1 + 1) + ") " +
                                      "видит один цвет и свою пару в ячейке (" + (i2 + 1) + ";" + (j2 + 1) + ")";
-                            field[i1, j1].RemoveCandidat(k + 1);
+                            //field[i1, j1].RemoveCandidat(k + 1);
+                            Buffer.AddRemovingChange(i1, j1, k + 1);
                             removed.Add(new int[] { i1, j1, k });
                             return answer;
                         }
@@ -733,7 +732,8 @@ namespace SudokuSolver
 
                             answer = (k + 1) + " в ячейке (" + (i1 + 1) + ";" + (j1 + 1) + ") " +
                                      "видит один цвет и свою пару в ячейке (" + (i2 + 1) + ";" + (j2 + 1) + ")";
-                            field[i1, j1].RemoveCandidat(k + 1);
+                            //field[i1, j1].RemoveCandidat(k + 1);
+                            Buffer.AddRemovingChange(i1, j1, k + 1);
                             removed.Add(new int[] { i1, j1, k });
                             return answer;
                         }
@@ -800,7 +800,8 @@ namespace SudokuSolver
                         {
                             if (k != unit1[1] && k != unit2[1] && field[i, j].candidates[k])
                             {
-                                field[i, j].RemoveCandidat(k + 1);
+                                //field[i, j].RemoveCandidat(k + 1);
+                                Buffer.AddRemovingChange(i, j, k + 1);
                                 removed.Add(new int[] { i, j, k });
                                 impact = true;
                             }
@@ -846,7 +847,8 @@ namespace SudokuSolver
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
-                            field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            //field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
                             removed.Add(new int[] { i1, j1, rem[1] });
                         }
                         //для красоты перекидываем оставшееся в ON
@@ -880,7 +882,8 @@ namespace SudokuSolver
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
-                            field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            //field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
                             removed.Add(new int[] { i1, j1, rem[1] });
                         }
                         //для красоты перекидываем оставшееся в ON
@@ -1130,7 +1133,8 @@ namespace SudokuSolver
                 if (field[i, j].candidates[k])
                 {
                     answer += "(" + (i + 1) + ";" + (j + 1) + ") ";
-                    field[i, j].RemoveCandidat(k + 1);
+                    //field[i, j].RemoveCandidat(k + 1);
+                    Buffer.AddRemovingChange(i, j, k + 1);
                     impact = true;
                 }
                 removed.Add(new int[] { i, j, k });
@@ -1189,7 +1193,8 @@ namespace SudokuSolver
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
-                            field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            //field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
                             removed.Add(new int[] { i1, j1, rem[1] });
                         }
                         //для красоты перекидываем оставшееся в ON
@@ -1231,7 +1236,8 @@ namespace SudokuSolver
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
-                            field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            //field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
                             removed.Add(new int[] { i1, j1, rem[1] });
                         }
                         OFF.Clear();
@@ -1271,7 +1277,8 @@ namespace SudokuSolver
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
-                            field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            //field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
                             removed.Add(new int[] { i1, j1, rem[1] });
                         }
                         //для красоты перекидываем оставшееся в ON
@@ -1312,7 +1319,8 @@ namespace SudokuSolver
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
-                            field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            //field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
                             removed.Add(new int[] { i1, j1, rem[1] });
                         }
                         //для красоты перекидываем оставшееся в ON
@@ -1356,7 +1364,8 @@ namespace SudokuSolver
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
-                            field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            //field[i1, j1].RemoveCandidat(rem[1] + 1);
+                            Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
                             removed.Add(new int[] { i1, j1, rem[1] });
                         }
                         //для красоты перекидываем оставшееся в ON
@@ -1400,7 +1409,8 @@ namespace SudokuSolver
                             {
                                 i1 = rem[0] / 9;
                                 j1 = rem[0] % 9;
-                                field[i1, j1].RemoveCandidat(rem[1] + 1);
+                                //field[i1, j1].RemoveCandidat(rem[1] + 1);
+                                Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
                                 removed.Add(new int[] { i1, j1, rem[1] });
                             }
                             //для красоты перекидываем оставшееся в ON
@@ -1503,7 +1513,7 @@ namespace SudokuSolver
         }
 
         //создание сильной цепи 
-        public static void CreateChain(Field field,params int[] kArray)
+        public static void CreateChain(Field field, params int[] kArray)
         {
             int[][] matrix = new int[9][];
 
@@ -2082,7 +2092,8 @@ namespace SudokuSolver
                                     //исключаем его
                                     if (field[i, 3 * (j / 3) + r].candidates[rem])
                                     {
-                                        field[i, 3 * (j / 3) + r].RemoveCandidat(rem + 1);
+                                        //field[i, 3 * (j / 3) + r].RemoveCandidat(rem + 1);
+                                        Buffer.AddRemovingChange(i, 3 * (j / 3) + r, rem + 1);
                                         removed.Add(new int[] { i, 3 * (j / 3) + r, rem });
 
 
@@ -2184,7 +2195,8 @@ namespace SudokuSolver
                                     //исключаем его
                                     if (field[3 * (i / 3) + r, j].candidates[rem])
                                     {
-                                        field[3 * (i / 3) + r, j].RemoveCandidat(rem + 1);
+                                        //field[3 * (i / 3) + r, j].RemoveCandidat(rem + 1);
+                                        Buffer.AddRemovingChange(3 * (i / 3) + r, j, rem + 1);
                                         removed.Add(new int[] { 3 * (i / 3) + r, j, rem });
 
 
@@ -2233,7 +2245,7 @@ namespace SudokuSolver
             {
                 for (int j = 0; j < 9; j++)
                 {
-                    if (field[i,j].remainingCandidates == 2)
+                    if (field[i, j].remainingCandidates == 2)
                     {
                         list.Add(field[i, j]);
                     }
@@ -2290,7 +2302,7 @@ namespace SudokuSolver
 
                     //Берем вторую точку
                     X1 = Y.seenCell[j];
-                    
+
                     if (X1.remainingCandidates != 2) continue;
 
                     //если 0 совпадений то flag=false  -- пропускаем
@@ -2395,7 +2407,8 @@ namespace SudokuSolver
                                             foundet = true;
 
                                             removed.Add(new int[] { X1.seenCell[n].row, X1.seenCell[n].column, c });
-                                            X1.seenCell[n].RemoveCandidat(c + 1);
+                                            //X1.seenCell[n].RemoveCandidat(c + 1);
+                                            Buffer.AddRemovingChange(X1.seenCell[n].row, X1.seenCell[n].column, c + 1);
 
                                         }
 
@@ -2523,7 +2536,8 @@ namespace SudokuSolver
                     removed.Add(new int[] { bugI, bugJ, k });
                 }
             }
-            field[bugI, bugJ].SetValue(bugDigit + 1);
+            //field[bugI, bugJ].SetValue(bugDigit + 1);
+            Buffer.AddSettingValueChange(bugI, bugJ, bugDigit + 1);
 
             return answer;
         }
@@ -2572,15 +2586,30 @@ namespace SudokuSolver
                     {
                         if (i != shape[0][0] && i != shape[0][1] && i != shape[0][2] && i != shape[0][3])
                         {
-                            field[i, shape[1][0]].RemoveCandidat(k + 1);
-                            field[i, shape[1][1]].RemoveCandidat(k + 1);
-                            field[i, shape[1][2]].RemoveCandidat(k + 1);
-                            field[i, shape[1][3]].RemoveCandidat(k + 1);
-
-                            removed.Add(new int[] { i, shape[1][0], k });
-                            removed.Add(new int[] { i, shape[1][1], k });
-                            removed.Add(new int[] { i, shape[1][2], k });
-                            removed.Add(new int[] { i, shape[1][3], k });
+                            //field[i, shape[1][0]].RemoveCandidat(k + 1);
+                            //field[i, shape[1][1]].RemoveCandidat(k + 1);
+                            //field[i, shape[1][2]].RemoveCandidat(k + 1);
+                            //field[i, shape[1][3]].RemoveCandidat(k + 1);
+                            if (field[i, shape[1][0]].candidates[k])
+                            {
+                                Buffer.AddRemovingChange(i, shape[1][0], k + 1);
+                                removed.Add(new int[] { i, shape[1][0], k });
+                            }
+                            if (field[i, shape[1][1]].candidates[k])
+                            {
+                                Buffer.AddRemovingChange(i, shape[1][1], k + 1);
+                                removed.Add(new int[] { i, shape[1][1], k });
+                            }
+                            if (field[i, shape[1][2]].candidates[k])
+                            {
+                                Buffer.AddRemovingChange(i, shape[1][2], k + 1);
+                                removed.Add(new int[] { i, shape[1][2], k });
+                            }
+                            if (field[i, shape[1][3]].candidates[k])
+                            {
+                                Buffer.AddRemovingChange(i, shape[1][3], k + 1);
+                                removed.Add(new int[] { i, shape[1][3], k });
+                            }
                         }
                     }
 
@@ -2631,15 +2660,31 @@ namespace SudokuSolver
                     {
                         if (i != shape[0][0] && i != shape[0][1] && i != shape[0][2] && i != shape[0][3])
                         {
-                            field[shape[1][0], i].RemoveCandidat(k + 1);
-                            field[shape[1][1], i].RemoveCandidat(k + 1);
-                            field[shape[1][2], i].RemoveCandidat(k + 1);
-                            field[shape[1][3], i].RemoveCandidat(k + 1);
+                            //field[shape[1][0], i].RemoveCandidat(k + 1);
+                            //field[shape[1][1], i].RemoveCandidat(k + 1);
+                            //field[shape[1][2], i].RemoveCandidat(k + 1);
+                            //field[shape[1][3], i].RemoveCandidat(k + 1);
+                            if (field[shape[1][0], i].candidates[k])
+                            {
+                                Buffer.AddRemovingChange(shape[1][0], i, k + 1);
+                                removed.Add(new int[] { shape[1][0], i, k });
+                            }
+                            if (field[shape[1][1], i].candidates[k])
+                            {
+                                Buffer.AddRemovingChange(shape[1][1], i, k + 1);
+                                removed.Add(new int[] { shape[1][1], i, k });
+                            }
+                            if (field[shape[1][2], i].candidates[k])
+                            {
+                                Buffer.AddRemovingChange(shape[1][2], i, k + 1);
+                                removed.Add(new int[] { shape[1][2], i, k });
+                            }
+                            if (field[shape[1][3], i].candidates[k])
+                            {
+                                Buffer.AddRemovingChange(shape[1][3], i, k + 1);
+                                removed.Add(new int[] { shape[1][3], i, k });
+                            }
 
-                            removed.Add(new int[] { shape[1][0], i, k });
-                            removed.Add(new int[] { shape[1][1], i, k });
-                            removed.Add(new int[] { shape[1][2], i, k });
-                            removed.Add(new int[] { shape[1][3], i, k });
                         }
                     }
 
@@ -2771,15 +2816,31 @@ namespace SudokuSolver
                 {
                     if (i != shape[0][0] && i != shape[0][1] && i != shape[0][2] && i != shape[0][3])
                     {
-                        group[shape[1][0]].RemoveCandidat(i + 1);
-                        group[shape[1][1]].RemoveCandidat(i + 1);
-                        group[shape[1][2]].RemoveCandidat(i + 1);
-                        group[shape[1][3]].RemoveCandidat(i + 1);
+                        //group[shape[1][0]].RemoveCandidat(i + 1);
+                        //group[shape[1][1]].RemoveCandidat(i + 1);
+                        //group[shape[1][2]].RemoveCandidat(i + 1);
+                        //group[shape[1][3]].RemoveCandidat(i + 1);
+                        if (group[shape[1][0]].candidates[i])
+                        {
+                            Buffer.AddRemovingChange(group[shape[1][0]].row, group[shape[1][0]].column, i + 1);
+                            removed.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, i });
+                        }
+                        if (group[shape[1][1]].candidates[i])
+                        {
+                            Buffer.AddRemovingChange(group[shape[1][1]].row, group[shape[1][0]].column, i + 1);
+                            removed.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, i });
+                        }
+                        if (group[shape[1][2]].candidates[i])
+                        {
+                            Buffer.AddRemovingChange(group[shape[1][2]].row, group[shape[1][0]].column, i + 1);
+                            removed.Add(new int[] { group[shape[1][2]].row, group[shape[1][2]].column, i });
+                        }
+                        if (group[shape[1][3]].candidates[i])
+                        {
+                            Buffer.AddRemovingChange(group[shape[1][3]].row, group[shape[1][0]].column, i + 1);
+                            removed.Add(new int[] { group[shape[1][3]].row, group[shape[1][3]].column, i });
+                        }
 
-                        removed.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, i });
-                        removed.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, i });
-                        removed.Add(new int[] { group[shape[1][2]].row, group[shape[1][2]].column, i });
-                        removed.Add(new int[] { group[shape[1][3]].row, group[shape[1][3]].column, i });
                     }
                 }
                 for (int x = 0; x < shape[1].Length; x++)
@@ -2908,15 +2969,32 @@ namespace SudokuSolver
                 {
                     if (i != shape[0][0] && i != shape[0][1] && i != shape[0][2] && i != shape[0][3])
                     {
-                        group[i].RemoveCandidat(shape[1][0] + 1);
-                        group[i].RemoveCandidat(shape[1][1] + 1);
-                        group[i].RemoveCandidat(shape[1][2] + 1);
-                        group[i].RemoveCandidat(shape[1][3] + 1);
+                        //group[i].RemoveCandidat(shape[1][0] + 1);
+                        //group[i].RemoveCandidat(shape[1][1] + 1);
+                        //group[i].RemoveCandidat(shape[1][2] + 1);
+                        //group[i].RemoveCandidat(shape[1][3] + 1);
+                        if (group[i].candidates[shape[1][0]])
+                        {
+                            Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][0] + 1);
+                            removed.Add(new int[] { group[i].row, group[i].column, shape[1][0] });
+                        }
+                        if (group[i].candidates[shape[1][1]])
+                        {
+                            Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][1] + 1);
+                            removed.Add(new int[] { group[i].row, group[i].column, shape[1][1] });
+                        }
+                        if (group[i].candidates[shape[1][2]])
+                        {
+                            Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][2] + 1);
+                            removed.Add(new int[] { group[i].row, group[i].column, shape[1][2] });
+                        }
+                        if (group[i].candidates[shape[1][3]])
+                        {
+                            Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][3] + 1);
+                            removed.Add(new int[] { group[i].row, group[i].column, shape[1][3] });
+                        }
 
-                        removed.Add(new int[] { group[i].row, group[i].column, shape[1][0] });
-                        removed.Add(new int[] { group[i].row, group[i].column, shape[1][1] });
-                        removed.Add(new int[] { group[i].row, group[i].column, shape[1][2] });
-                        removed.Add(new int[] { group[i].row, group[i].column, shape[1][3] });
+
                     }
                 }
 
@@ -3121,13 +3199,27 @@ namespace SudokuSolver
                     {
                         if (i != shape[0][0] && i != shape[0][1] && i != shape[0][2])
                         {
-                            field[i, shape[1][0]].RemoveCandidat(k + 1);
-                            field[i, shape[1][1]].RemoveCandidat(k + 1);
-                            field[i, shape[1][2]].RemoveCandidat(k + 1);
+                            //field[i, shape[1][0]].RemoveCandidat(k + 1);
+                            //field[i, shape[1][1]].RemoveCandidat(k + 1);
+                            //field[i, shape[1][2]].RemoveCandidat(k + 1);
 
-                            removed.Add(new int[] { i, shape[1][0], k });
-                            removed.Add(new int[] { i, shape[1][1], k });
-                            removed.Add(new int[] { i, shape[1][2], k });
+                            if (field[i, shape[1][0]].candidates[k])
+                            {
+                                Buffer.AddRemovingChange(i, shape[1][0], k + 1);
+                                removed.Add(new int[] { i, shape[1][0], k });
+                            }
+                            if (field[i, shape[1][1]].candidates[k])
+                            {
+                                Buffer.AddRemovingChange(i, shape[1][1], k + 1);
+                                removed.Add(new int[] { i, shape[1][1], k });
+                            }
+                            if (field[i, shape[1][2]].candidates[k])
+                            {
+                                Buffer.AddRemovingChange(i, shape[1][2], k + 1);
+                                removed.Add(new int[] { i, shape[1][2], k });
+                            }
+
+
                         }
                     }
 
@@ -3178,13 +3270,27 @@ namespace SudokuSolver
                     {
                         if (i != shape[0][0] && i != shape[0][1] && i != shape[0][2])
                         {
-                            field[shape[1][0], i].RemoveCandidat(k + 1);
-                            field[shape[1][1], i].RemoveCandidat(k + 1);
-                            field[shape[1][2], i].RemoveCandidat(k + 1);
+                            //field[shape[1][0], i].RemoveCandidat(k + 1);
+                            //field[shape[1][1], i].RemoveCandidat(k + 1);
+                            //field[shape[1][2], i].RemoveCandidat(k + 1);
 
-                            removed.Add(new int[] { shape[1][0], i, k });
-                            removed.Add(new int[] { shape[1][1], i, k });
-                            removed.Add(new int[] { shape[1][2], i, k });
+                            if (field[shape[1][0], i].candidates[k])
+                            {
+                                Buffer.AddRemovingChange(shape[1][0], i, k + 1);
+                                removed.Add(new int[] { shape[1][0], i, k });
+                            }
+                            if (field[shape[1][1], i].candidates[k])
+                            {
+                                Buffer.AddRemovingChange(shape[1][1], i, k + 1);
+                                removed.Add(new int[] { shape[1][1], i, k });
+                            }
+                            if (field[shape[1][2], i].candidates[k])
+                            {
+                                Buffer.AddRemovingChange(shape[1][2], i, k + 1);
+                                removed.Add(new int[] { shape[1][2], i, k });
+                            }
+
+
                         }
                     }
 
@@ -3316,13 +3422,26 @@ namespace SudokuSolver
                 {
                     if (i != shape[0][0] && i != shape[0][1] && i != shape[0][2])
                     {
-                        group[shape[1][0]].RemoveCandidat(i + 1);
-                        group[shape[1][1]].RemoveCandidat(i + 1);
-                        group[shape[1][2]].RemoveCandidat(i + 1);
+                        //group[shape[1][0]].RemoveCandidat(i + 1);
+                        //group[shape[1][1]].RemoveCandidat(i + 1);
+                        //group[shape[1][2]].RemoveCandidat(i + 1);
 
-                        removed.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, i });
-                        removed.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, i });
-                        removed.Add(new int[] { group[shape[1][2]].row, group[shape[1][2]].column, i });
+                        if (group[shape[1][0]].candidates[i])
+                        {
+                            Buffer.AddRemovingChange(group[shape[1][0]].row, group[shape[1][0]].column, i + 1);
+                            removed.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, i });
+                        }
+                        if (group[shape[1][1]].candidates[i])
+                        {
+                            Buffer.AddRemovingChange(group[shape[1][1]].row, group[shape[1][1]].column, i + 1);
+                            removed.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, i });
+                        }
+                        if (group[shape[1][1]].candidates[i])
+                        {
+                            Buffer.AddRemovingChange(group[shape[1][2]].row, group[shape[1][2]].column, i + 1);
+                            removed.Add(new int[] { group[shape[1][2]].row, group[shape[1][2]].column, i });
+                        }
+
                     }
                 }
 
@@ -3452,13 +3571,25 @@ namespace SudokuSolver
                 {
                     if (i != shape[0][0] && i != shape[0][1] && i != shape[0][2])
                     {
-                        group[i].RemoveCandidat(shape[1][0] + 1);
-                        group[i].RemoveCandidat(shape[1][1] + 1);
-                        group[i].RemoveCandidat(shape[1][2] + 1);
+                        //group[i].RemoveCandidat(shape[1][0] + 1);
+                        //group[i].RemoveCandidat(shape[1][1] + 1);
+                        //group[i].RemoveCandidat(shape[1][2] + 1);
+                        if (group[i].candidates[shape[1][0]])
+                        {
+                            Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][0] + 1);
+                            removed.Add(new int[] { group[i].row, group[i].column, shape[1][0] });
+                        }
+                        if (group[i].candidates[shape[1][1]])
+                        {
+                            Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][1] + 1);
+                            removed.Add(new int[] { group[i].row, group[i].column, shape[1][1] });
+                        }
+                        if (group[i].candidates[shape[1][2]])
+                        {
+                            Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][2] + 1);
+                            removed.Add(new int[] { group[i].row, group[i].column, shape[1][2] });
+                        }
 
-                        removed.Add(new int[] { group[i].row, group[i].column, shape[1][0] });
-                        removed.Add(new int[] { group[i].row, group[i].column, shape[1][1] });
-                        removed.Add(new int[] { group[i].row, group[i].column, shape[1][2] });
                     }
                 }
 
@@ -3652,11 +3783,20 @@ namespace SudokuSolver
                     {
                         if (i != shape[0][0] && i != shape[0][1])
                         {
-                            field[i, shape[1][0]].RemoveCandidat(k + 1);
-                            field[i, shape[1][1]].RemoveCandidat(k + 1);
+                            //field[i, shape[1][0]].RemoveCandidat(k + 1);
+                            //field[i, shape[1][1]].RemoveCandidat(k + 1);
 
-                            removed.Add(new int[] { i, shape[1][0], k });
-                            removed.Add(new int[] { i, shape[1][1], k });
+                            if (field[i, shape[1][0]].candidates[k])
+                            {
+                                Buffer.AddRemovingChange(i, shape[1][0], k + 1);
+                                removed.Add(new int[] { i, shape[1][0], k });
+                            }
+                            if (field[i, shape[1][1]].candidates[k])
+                            {
+                                Buffer.AddRemovingChange(i, shape[1][1], k + 1);
+                                removed.Add(new int[] { i, shape[1][1], k });
+                            }
+
                         }
                     }
                     for (int x = 0; x < 2; x++)
@@ -3703,11 +3843,20 @@ namespace SudokuSolver
                     {
                         if (i != shape[0][0] && i != shape[0][1])
                         {
-                            field[shape[1][0], i].RemoveCandidat(k + 1);
-                            field[shape[1][1], i].RemoveCandidat(k + 1);
+                            //field[shape[1][0], i].RemoveCandidat(k + 1);
+                            //field[shape[1][1], i].RemoveCandidat(k + 1);
 
-                            removed.Add(new int[] { shape[1][0], i, k });
-                            removed.Add(new int[] { shape[1][1], i, k });
+                            if (field[shape[1][0], i].candidates[k])
+                            {
+                                Buffer.AddRemovingChange(shape[1][0], i, k + 1);
+                                removed.Add(new int[] { shape[1][0], i, k });
+                            }
+                            if (field[shape[1][1], i].candidates[k])
+                            {
+                                Buffer.AddRemovingChange(shape[1][1], i, k + 1);
+                                removed.Add(new int[] { shape[1][1], i, k });
+                            }
+
                         }
                     }
 
@@ -3836,11 +3985,19 @@ namespace SudokuSolver
                 {
                     if (i != shape[0][0] && i != shape[0][1])
                     {
-                        group[shape[1][0]].RemoveCandidat(i + 1);
-                        group[shape[1][1]].RemoveCandidat(i + 1);
+                        //group[shape[1][0]].RemoveCandidat(i + 1);
+                        //group[shape[1][1]].RemoveCandidat(i + 1);
+                        if (group[shape[1][0]].candidates[i])
+                        {
+                            Buffer.AddRemovingChange(group[shape[1][0]].row, group[shape[1][0]].column, i + 1);
+                            removed.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, i });
+                        }
+                        if (group[shape[1][1]].candidates[i])
+                        {
+                            Buffer.AddRemovingChange(group[shape[1][1]].row, group[shape[1][1]].column, i + 1);
+                            removed.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, i });
+                        }
 
-                        removed.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, i });
-                        removed.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, i });
                     }
                 }
 
@@ -4051,9 +4208,11 @@ namespace SudokuSolver
                                     {
                                         if (field[startY + y, startX + x].candidates[k])
                                         {
-                                            field[startY + y, startX + x].RemoveCandidat(k + 1);
                                             impact = true;
 
+
+                                            //field[startY + y, startX + x].RemoveCandidat(k + 1);
+                                            Buffer.AddRemovingChange(startY + y, startX + x, k + 1);
 
                                             removed.Add(new int[] { startY + y, startX + x, k });
                                         }
@@ -4147,8 +4306,10 @@ namespace SudokuSolver
                                     {
                                         if (field[startY + y, startX + x].candidates[k])
                                         {
-                                            field[startY + y, startX + x].RemoveCandidat(k + 1);
                                             impact = true;
+
+                                            //field[startY + y, startX + x].RemoveCandidat(k + 1);
+                                            Buffer.AddRemovingChange(startY + y, startX + x, k + 1);
 
                                             removed.Add(new int[] { startY + y, startX + x, k });
                                         }
@@ -4254,8 +4415,10 @@ namespace SudokuSolver
                                     {
                                         if (field[indexes[0], n].candidates[k])
                                         {
-                                            field[indexes[0], n].RemoveCandidat(k + 1);
                                             impact = true;
+
+                                            //field[indexes[0], n].RemoveCandidat(k + 1);
+                                            Buffer.AddRemovingChange(indexes[0], n, k + 1);
 
                                             removed.Add(new int[] { indexes[0], n, k });
                                         }
@@ -4325,8 +4488,10 @@ namespace SudokuSolver
                                     {
                                         if (field[n, indexes[0]].candidates[k])
                                         {
-                                            field[n, indexes[0]].RemoveCandidat(k + 1);
                                             impact = true;
+
+                                            //field[n, indexes[0]].RemoveCandidat(k + 1);
+                                            Buffer.AddRemovingChange(n, indexes[0], k + 1);
 
                                             removed.Add(new int[] { n, indexes[0], k });
                                         }
@@ -4458,11 +4623,19 @@ namespace SudokuSolver
                 {
                     if (i != shape[0][0] && i != shape[0][1])
                     {
-                        group[i].RemoveCandidat(shape[1][0] + 1);
-                        group[i].RemoveCandidat(shape[1][1] + 1);
+                        //group[i].RemoveCandidat(shape[1][0] + 1);
+                        //group[i].RemoveCandidat(shape[1][1] + 1);
+                        if (group[i].candidates[shape[1][0]])
+                        {
+                            Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][0] + 1);
+                            removed.Add(new int[] { group[i].row, group[i].column, shape[1][0] });
+                        }
+                        if (group[i].candidates[shape[1][1]])
+                        {
+                            Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][1] + 1);
+                            removed.Add(new int[] { group[i].row, group[i].column, shape[1][1] });
+                        }
 
-                        removed.Add(new int[] { group[i].row, group[i].column, shape[1][0] });
-                        removed.Add(new int[] { group[i].row, group[i].column, shape[1][1] });
                     }
                 }
 
@@ -4573,7 +4746,9 @@ namespace SudokuSolver
                 if (count == 1)
                 {
                     v = k + 1;
-                    group[index].SetValue(v);
+                    //group[index].SetValue(v);
+                    Buffer.AddSettingValueChange(group[index].row, group[index].column, v);
+
                     clues.Add(new int[] { group[index].row, group[index].column, v - 1 });
                     answer = "Найдена скрытая одиночка: " + v.ToString() + " в (" + (group[index].row + 1).ToString() + ";" + (group[index].column + 1).ToString() + ")";
                     return answer;
@@ -4593,20 +4768,9 @@ namespace SudokuSolver
             {
                 for (int j = 0; j < 9; j++)
                 {
-                    //подсчет колличества кандидатов
-                    int count = 0;
-                    if (field[i, j].value == -1)
-                    {
-                        for (int k = 0; k < 9; k++)
-                        {
-                            if (field[i, j].candidates[k])
-                            {
-                                count++;
-                            }
-                        }
-                    }
+
                     //если остался один кандидат, выставляем значение
-                    if (count == 1)
+                    if (field[i, j].remainingCandidates == 1)
                     {
                         int v = 0;
                         for (int k = 0; k < 9; k++)
@@ -4617,8 +4781,8 @@ namespace SudokuSolver
                             }
                         }
 
-                        field[i, j].SetValue(v);
-
+                        //field[i, j].SetValue(v);
+                        Buffer.AddSettingValueChange(i, j, v);
                         clues.Add(new int[] { i, j, v - 1 });
 
                         answer = "Найдена открытая одиночка: " + v.ToString() + " в (" + (i + 1).ToString() + ";" + (j + 1).ToString() + ")";
@@ -4631,9 +4795,10 @@ namespace SudokuSolver
 
         //простые ислючения
         //способ на списке
-        public static void SimpleRestriction(Field field)
+        public static bool SimpleRestriction(Field field)
         {
             int value = 0;
+            bool impact = false;
             //обход всего поля
             for (int i = 0; i < 9; i++)
             {
@@ -4650,12 +4815,16 @@ namespace SudokuSolver
                             //если есть исключение то исключаем
                             if (field[i, j].seenCell[k].candidates[value - 1])
                             {
-                                field[i, j].seenCell[k].RemoveCandidat(value);
+
+                                //field[i, j].seenCell[k].RemoveCandidat(value);
+                                impact = true;
+                                Buffer.AddRemovingChange(field[i, j].seenCell[k].row, field[i, j].seenCell[k].column, value);
                             }
                         }
                     }
                 }
             }
+            return impact;
         }
 
         //проверка
@@ -4734,7 +4903,7 @@ namespace SudokuSolver
             return answer;
         }
 
-        public static string makeAnswer(int i, int j, int v,Field field)
+        public static string makeAnswer(int i, int j, int v, Field field)
         {
             return "Исключена " + v.ToString() + " из ячейки (" + (i + 1).ToString() + ";" + (j + 1).ToString() + ")";
         }

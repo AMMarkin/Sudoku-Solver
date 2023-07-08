@@ -48,14 +48,23 @@ namespace SudokuSolver.controller
             //если решено то ничего не делаю
             if (Logic.done) return;
 
-            //убираю исключенных кандидатов
-            _grid.UpdateGrid(_field);
+            //применяю записанные на прошлом шаге изменения
+            _field.ApplyChanges(Buffer.GetLastChanges());
 
-            //нахожу исключения
+            //нахожу новые исключения
             //пишу найденное в консоль
+
+            if (Logic.SimpleRestriction(_field))
+            {
+                _field.ApplyChanges(Buffer.GetLastChanges());
+            }
+
             string answer = Logic.findElimination(_field, usedTechs);
             _solver.PrintToConsole(answer);
+            
 
+            //убираю исключенных кандидатов
+            _grid.UpdateGrid(_field);
             //выделяю найденные исключения
             _grid.HighlighteRemoved(Logic.clues, Logic.removed);
 
@@ -91,6 +100,7 @@ namespace SudokuSolver.controller
                 int i;
                 int j;
                 int[][] changes = Buffer.GetLastChanges();
+                Buffer.RemoveLastChanges();
                 foreach (int[] change in changes)
                 {
                     //нахожу нужную ячейку
@@ -103,10 +113,12 @@ namespace SudokuSolver.controller
                     }
                     if (change[2] == -1)
                     {
+                        
                         _field[i, j].RemoveValue();
                     }
                 }
                 changes = Buffer.GetLastChanges();
+                Buffer.RemoveLastChanges();
                 foreach (int[] change in changes)
                 {
                     //нахожу нужную ячейку
@@ -119,11 +131,10 @@ namespace SudokuSolver.controller
                     }
                     if (change[2] == -1)
                     {
+
                         _field[i, j].RemoveValue();
                     }
                 }
-
-
                 Do(null);
 
             }
@@ -189,6 +200,10 @@ namespace SudokuSolver.controller
             Logic.ClearChainBuffer();
             //провожу простые ислкючения
             Logic.SimpleRestriction(_field);
+            //сохраняю проведенные исключения
+            Buffer.SaveChanges();
+            //применяю
+            _field.ApplyChanges(Buffer.GetLastChanges());
             //обновляю поле
             _grid.UpdateGrid(_field);
             //перерисовываю форму
