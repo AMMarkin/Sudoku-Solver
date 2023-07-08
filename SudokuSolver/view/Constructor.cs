@@ -17,7 +17,8 @@ namespace SudokuSolver
         private Button saveButton;          //кнопка Сохранить в файл
         private Button exitButton;          //кнопка выхода
         private TextBox fileName;           //поля ввода имени файла для сохранения
-        private readonly Solver mainForm;             //основное окно
+
+        private readonly Solver mainForm;   //основное окно
 
 
         public Constructor(Solver mainForm, IController controller)

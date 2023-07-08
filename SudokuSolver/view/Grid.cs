@@ -80,6 +80,7 @@ namespace SudokuSolver
             internal Grid grid;
         }
 
+        //создаем строку ячеек
         private void CreateRowOfCell(object obj)
         {
             Info info = (Info)obj;
@@ -133,7 +134,7 @@ namespace SudokuSolver
                             //выделяем
                             isHighlighted[digit] = true;
                         }
-                        HighlighteGrid(isHighlighted);
+                        HighlighteGrid();
                         //если уже выделено то ничего не делаем
 
 
@@ -146,7 +147,7 @@ namespace SudokuSolver
                 else if (label.Name.Equals("candidate"))
                 {
                     isHighlighted = new bool[9];
-                    HighlighteGrid(isHighlighted);
+                    HighlighteGrid();
 
                     Point location = label.Parent.Location;
                     ind = GetIndexFromLocation(location.X, location.Y);
@@ -156,7 +157,7 @@ namespace SudokuSolver
             if (sender is Panel)
             {
                 isHighlighted = new bool[9];
-                HighlighteGrid(isHighlighted);
+                HighlighteGrid();
 
                 Panel panel = sender as Panel;
                 Point location = panel.Location;
@@ -324,17 +325,6 @@ namespace SudokuSolver
 
 
         //подсветка кандидатов
-        public void HighlighteGrid(bool[] flags)
-        {
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    cells[i][j].HighlighteCell(flags);
-                }
-            }
-        }
-
         public void HighlighteGrid()
         {
             for (int i = 0; i < 9; i++)
@@ -349,8 +339,6 @@ namespace SudokuSolver
         //подсветка исключений
         public void HighlighteRemoved(List<int[]> clues, List<int[]> removed)
         {
-
-
             for (int i = 0; i < clues.Count; i++)
             {
                 cells[clues[i][0]][clues[i][1]].HighlighteAsClue();
@@ -372,7 +360,7 @@ namespace SudokuSolver
                 {
                     int i1 = unit[0] / 9;
                     int j1 = unit[0] % 9;
-                    cells[i1][j1].HighlighteUnit(unit[1], true);
+                    cells[i1][j1].HighlighteAsUnit(unit[1], true);
                 }
             }
             if (Logic.OFF != null && Logic.OFF.Count != 0)
@@ -381,25 +369,13 @@ namespace SudokuSolver
                 {
                     int i1 = unit[0] / 9;
                     int j1 = unit[0] % 9;
-                    cells[i1][j1].HighlighteUnit(unit[1], false);
+                    cells[i1][j1].HighlighteAsUnit(unit[1], false);
                 }
             }
         }
-        //обновить сетку
-        public void UpdateGrid(int[][] grid)
-        {
-            for (int i = 0; i < grid.Length; i++)
-            {
-                for (int j = 0; j < grid[i].Length; j++)
-                {
-                    if (grid[i][j] != 0)
-                    {
-                        cells[i][j].SetValue(grid[i][j]);
-                    }
-                }
-            }
-        }
+        
 
+        //обновить сетку
         public void UpdateGrid(Field field)
         {
             for (int i = 0; i < cells.Length; i++)
@@ -413,29 +389,8 @@ namespace SudokuSolver
             }
         }
 
-        public void ReloadGrid()
-        {
-            isHighlighted = new bool[isHighlighted.Length];
-
-            for (int i = 0; i < 9; i++)
-            {
-                ReloadRow(new Info() { i = i });
-            }
-
-        }
-
-        private void ReloadRow(Object obj)
-        {
-
-            int i = ((Info)obj).i;
-
-            for (int j = 0; j < 9; j++)
-            {
-                cells[i][j].ReloadCell();
-            }
-        }
-
-
+        
+        //отрисовка границ сетки
         public void DrawLines()
         {
 
@@ -463,6 +418,7 @@ namespace SudokuSolver
             }
 
         }
+
         //отрисовка найденных связей
         public void DrawChain(int Xshift, int Yshift, PaintEventArgs e)
         {
@@ -626,7 +582,7 @@ namespace SudokuSolver
         public class Cell
         {
 
-            private readonly Grid grid;                                      //ссылка на основное поле
+            private readonly Grid grid;                             //ссылка на основное поле
             public static readonly int size = 55;                   //размер ячейки
             readonly int x;                                         //координаты ячейки
             readonly int y;
@@ -656,7 +612,7 @@ namespace SudokuSolver
             //заглушка для лока потоков
             private static readonly object locker = new object();
 
-            //конструктор
+            //конструктор ячейки
             public Cell(int x, int y, Form f, Grid grid)
             {
                 //переписываю параметры
@@ -734,7 +690,7 @@ namespace SudokuSolver
             }
 
             //подсветка цепи
-            internal void HighlighteUnit(int digit, bool flag)
+            internal void HighlighteAsUnit(int digit, bool flag)
             {
                 //если ON то 
                 if (flag)
@@ -750,10 +706,9 @@ namespace SudokuSolver
 
             }
 
-            //подсветка кандидатов
+            //подсветка выделенных кандидатов
             internal void HighlighteCell(bool[] flags)
             {
-
                 //обхожу всех кандидатов
                 for (int i = 0; i < 9; i++)
                 {
@@ -998,21 +953,6 @@ namespace SudokuSolver
                 }
             }
 
-            //полный сброс ячейки
-            internal void ReloadCell()
-            {
-                digit = 0;
-                p.BackColor = defaultColor;
-                value.BackColor = defaultColor;
-                value.Visible = false;
-
-                for (int i = 0; i < candidates.Length; i++)
-                {
-                    candidates[i].BackColor = defaultColor;
-                    candidates[i].Visible = true;
-                }
-            }
-
             //отрисовка всего что нужно поверх элемента
             internal void DrawChain(object sender, PaintEventArgs e)
             {
@@ -1035,6 +975,5 @@ namespace SudokuSolver
             }
 
         }
-
     }
 }

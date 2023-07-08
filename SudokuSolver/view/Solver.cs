@@ -142,24 +142,25 @@ namespace SudokuSolver
             this.Controls.Add(menu);
         }
 
-
         //рестарт
         private void RestartButton_Click(object sender, EventArgs e)
         {
             controller.Restart();
         }
-
         //----------------------------------------------------------------------------------------------------------------------
         //следующий шаг решения
 
         private void DoButtonClick(object sender, EventArgs e)
         {
+
+            //записываю выбранные техники
             bool[] flags = new bool[tecniques.Length];
             for(int i = 0; i < tecniques.Length; i++)
             {
                 flags[i] = tecniques[i].Checked;
             }
 
+            //отправляю 
             controller.Do(flags);
         }
 
@@ -344,8 +345,10 @@ namespace SudokuSolver
         //включение подсветки
         private void HighlightButtonClick(object sender, EventArgs e)
         {
+            //нашел выбранное число
             Button b = sender as Button;
             int digit = Convert.ToInt32(b.Text);
+            //подсветил
             controller.HighlightDigit(digit);
         }
 

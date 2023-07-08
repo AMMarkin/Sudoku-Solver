@@ -45,18 +45,8 @@ namespace SudokuSolver
 
         }
 
-        public void CopyFrom(Field sourse)
-        {
-            for(int i = 0; i < 9; i++)
-            {
-                for(int j = 0; j < 9; j++)
-                {
-                    cells[i][j].CopyFrom(sourse.cells[i][j]);
-                }
-            }
-        }
-
-        public void updateField(int[][] sudoku)
+        //заполнить поле заданными значениями
+        public void UpdateField(int[][] sudoku)
         {
             for(int i = 0; i < sudoku.Length; i++)
             {
@@ -70,21 +60,28 @@ namespace SudokuSolver
             }
         }
         
+        //обнуление поля
         public void ResetField()
         {
-            for(int i=0; i < 9; i++)
+            for(int i = 0; i < 9; i++)
             {
                 for(int j = 0; j < 9; j++)
                 {
-
+                    cells[i][j].value = -1;
+                    cells[i][j].remainingCandidates = 9;
+                    for(int k = 0; k < 9; k++)
+                    {
+                        cells[i][j].candidates[k] = true;
+                    }
                 }
             }
         }
 
+
         public class Cell
         {
             //значение в ячейке
-            public int value;
+            public int value = -1;
 
             public readonly int row;         //i
             public readonly int column;      //j
@@ -92,18 +89,16 @@ namespace SudokuSolver
 
             //массив кандидатов
             public bool[] candidates;
-            public int remainingCandidates;
+            public int remainingCandidates = 9;
 
             //массив индексов ячеек которые видно отсюда
             public int[][] seenInd;
-            public Field.Cell[] seenCell;
+            public Cell[] seenCell;
 
             public Cell(int row, int column)
             {
                 //неизвестное значение
-                value = -1;
                 candidates = new bool[9];
-                remainingCandidates = 9;
 
                 //добавление всех кандидатов
                 for (int i = 0; i < candidates.Length; i++)
@@ -180,7 +175,7 @@ namespace SudokuSolver
                     RemoveCandidat(i+1);
                 }
             }
-
+            //восстановление значения
             public void RemoveValue()
             {
                 value = -1;
@@ -207,16 +202,7 @@ namespace SudokuSolver
                 }
             }
 
-            internal void CopyFrom(Cell sourse)
-            {
-                value = sourse.value;
-                remainingCandidates = sourse.remainingCandidates;
-
-                for(int k = 0; k < 9; k++)
-                {
-                    candidates[k] = sourse.candidates[k];
-                }
-            }
+            
         }
     }
 

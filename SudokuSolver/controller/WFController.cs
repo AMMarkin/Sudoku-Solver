@@ -9,13 +9,18 @@ namespace SudokuSolver.controller
 {
     internal class WFController : IController
     {
+
+        //ссылки на компоненты
         private Field _field;                           //поле (данные)
         private Grid _grid;                             //поле (VIEW)
         private Solver _solver;                         //форма солвера
         private Constructor _constructor;               //форма конструктора
         private Loader _loader;                         //форма загрузчика
+
+        //массив используемых в решении техник
         private bool[] usedtechs;
 
+        
         Field IController.Field { get => _field; set => _field = value; }
         Grid IController.Grid { get => _grid; set => _grid = value; }
         Solver IController.Solver { get => _solver; set => _solver = value; }
@@ -75,6 +80,7 @@ namespace SudokuSolver.controller
 
         }
 
+        //предыдущий шаг решения
         public void Undo()
         {
             Logic.done = false;
@@ -123,12 +129,14 @@ namespace SudokuSolver.controller
             }
         }
 
+        //подсветка числа
         public void HighlightDigit(int digit)
         {
             _grid.isHighlighted[digit - 1] = !_grid.isHighlighted[digit - 1];
             _grid.HighlighteGrid();
         }
 
+        //подсветка связей
         public void HighlightLinks(int[] links)
         {
             Logic.CreateChain(_field, links);
@@ -137,6 +145,7 @@ namespace SudokuSolver.controller
 
         }
 
+        //загрузка головоломки
         public void LoadFrom(string filename)
         {
             if (!filename.Equals("BUFFER"))
@@ -158,33 +167,37 @@ namespace SudokuSolver.controller
                 }
                 Buffer.Init();
                 //записал в буфер
-                for (int i = 0; i < lines.Length; i++)
-                {
-                    lines[i].Trim();
-                    string[] digits = lines[i].Split(' ');
 
-                    for (int j = 0; j < digits.Length; j++)
-                    {
-                        Buffer.sudoku[i][j] = Convert.ToInt32(digits[j]);
-                    }
+                for(int i=0;i<lines.Length; i++)
+                {
+                    Buffer.sudoku[i] = lines[i].Where(c => Char.IsDigit(c)).Select(c => c-48).ToArray();
+
                 }
             }
 
             //очищаю консоль
             _solver.ClearConsole();
 
-            //обновляю поле
-            _field = new Field();
-            _field.updateField(Buffer.sudoku);
+            //очищаю поле
+            _field?.ResetField();
+            //создаю если не создано
+            _field = _field ?? new Field();
+            //заполняю значениями
+            _field.UpdateField(Buffer.sudoku);
 
+            //очищаю буфферы цепей
             Logic.ClearChainBuffer();
+            //провожу простые ислкючения
             Logic.SimpleRestriction(_field);
-            _grid.ReloadGrid();
+            //обновляю поле
             _grid.UpdateGrid(_field);
+            //перерисовываю форму
             _solver.Refresh();
+            //ставлю флаг что не решено
             Logic.done = false;
         }
 
+        //получить список всех сохраненных головоломок
         public List<string> GetListSaved()
         {
             //загружаем все имена
@@ -198,6 +211,7 @@ namespace SudokuSolver.controller
             return filenames;
         }
 
+        //удалить сохраненные головоломки
         public void Delete(string[] filenames)
         {
             for(int i = 0; i < filenames.Length; i++)
@@ -206,6 +220,7 @@ namespace SudokuSolver.controller
             }
         }
 
+        //сохранить головоломку
         public void SaveToFile(string filename, string data)
         {
             string fullpath = dirpath + filename + ".txt";
@@ -217,6 +232,7 @@ namespace SudokuSolver.controller
             }
         }
 
+        //рестарт
         public void Restart()
         {
             LoadFrom("BUFFER");
