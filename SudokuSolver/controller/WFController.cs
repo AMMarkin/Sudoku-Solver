@@ -19,6 +19,7 @@ namespace SudokuSolver.controller
 
         //массив используемых в решении техник
         private bool[] usedtechs;
+        private bool[] shownLinks;
 
         
         Field IController.Field { get => _field; set => _field = value; }
@@ -31,6 +32,11 @@ namespace SudokuSolver.controller
         private bool needRefresh = false;
 
         private readonly string dirpath = @"E:\SudokuSolver\Sudoku\";
+
+        public WFController()
+        {
+            shownLinks = new bool[9];
+        }
 
         //cледующий шаг решения
         public void Do(bool[] usedTechs)
@@ -59,7 +65,7 @@ namespace SudokuSolver.controller
                 _field.ApplyChanges(Buffer.GetLastChanges());
             }
 
-            string answer = Logic.findElimination(_field, usedTechs);
+            string answer = Logic.FindElimination(_field, usedTechs);
             _solver.PrintToConsole(answer);
             
 
@@ -70,6 +76,16 @@ namespace SudokuSolver.controller
 
             //сохраняю сделанные изменения
             Buffer.SaveChanges();
+
+
+            //если есть включенные связи то пересчитываю и вывожу
+            if (Logic.chain.Count == 0 && shownLinks.FirstOrDefault(x=>x==true))
+            {
+                int[] links = shownLinks.Select((x, idx) => new { value = x, id = idx }).Where(x => x.value).Select(x => x.id).ToArray();
+
+                Logic.CreateChain(_field, links);
+                Logic.fillWeakLinks();
+            }
 
 
             //расчет требуется ли перерисовывать цепи
@@ -148,8 +164,14 @@ namespace SudokuSolver.controller
         }
 
         //подсветка связей
-        public void HighlightLinks(int[] links)
+        public void HighlightLinks(int digit)
         {
+            //меняю флаг
+            shownLinks[digit - 1] = !shownLinks[digit - 1];
+
+            //массив связей по колличеству включенных
+            int[] links = shownLinks.Select((x, idx) => new { value = x, id = idx}).Where(x=>x.value).Select(x=>x.id).ToArray();
+
             Logic.CreateChain(_field, links);
             Logic.fillWeakLinks();
             _solver.Refresh();

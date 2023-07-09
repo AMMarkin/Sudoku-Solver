@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace SudokuSolver
 {
@@ -41,7 +43,7 @@ namespace SudokuSolver
         public static bool done = false;
 
         //перебор всех техник внесенных по возрастанию сложности
-        public static string findElimination(Field field, bool[] tecFlags)
+        public static string FindElimination(Field field, bool[] tecFlags)
         {
 
             string answer = noFound;
@@ -532,8 +534,8 @@ namespace SudokuSolver
                         ON.Clear();
                         ON.AddRange(OFF);
                         OFF.Clear();
-
-                        answer = "все числа в ячейке (" + (i + 1) + ";" + (j + 1) + ") видны цветом";
+                        clues.Add(new int[] { i, j });
+                        answer = $"все числа в ячейке ({(i + 1)};{(j + 1)}) видны цветом";
                         return answer;
 
                     }
@@ -563,8 +565,8 @@ namespace SudokuSolver
                             removed.Add(new int[] { i1, j1, rem[1] });
                         }
                         OFF.Clear();
-
-                        answer = "все числа в ячейке (" + (i + 1) + ";" + (j + 1) + ") видны цветом";
+                        clues.Add(new int[] { i, j});
+                        answer = $"все числа в ячейке ({(i + 1)};{(j + 1)}) видны цветом";
                         return answer;
 
                     }
@@ -683,8 +685,7 @@ namespace SudokuSolver
                             i2 = unit2[0] / 9;
                             j2 = unit2[0] % 9;
 
-                            answer = (k + 1) + " в ячейке (" + (i1 + 1) + ";" + (j1 + 1) + ") " +
-                                     "видит один цвет и свою пару в ячейке (" + (i2 + 1) + ";" + (j2 + 1) + ")";
+                            answer = $"{(k + 1)} в ячейке ({(i1 + 1)};{(j1 + 1)}) видит один цвет и свою пару в ячейке ({(i2 + 1)};{(j2 + 1)})";
                             //field[i1, j1].RemoveCandidat(k + 1);
                             Buffer.AddRemovingChange(i1, j1, k + 1);
                             removed.Add(new int[] { i1, j1, k });
@@ -730,8 +731,7 @@ namespace SudokuSolver
                             i2 = unit2[0] / 9;
                             j2 = unit2[0] % 9;
 
-                            answer = (k + 1) + " в ячейке (" + (i1 + 1) + ";" + (j1 + 1) + ") " +
-                                     "видит один цвет и свою пару в ячейке (" + (i2 + 1) + ";" + (j2 + 1) + ")";
+                            answer = $"{(k + 1)} в ячейке ({(i1 + 1)};{(j1 + 1)}) видит один цвет и свою пару в ячейке ({(i2 + 1)};{(j2 + 1)})";
                             //field[i1, j1].RemoveCandidat(k + 1);
                             Buffer.AddRemovingChange(i1, j1, k + 1);
                             removed.Add(new int[] { i1, j1, k });
@@ -808,7 +808,7 @@ namespace SudokuSolver
                         }
                         if (impact)
                         {
-                            answer = "два цвета в ячейке (" + (i + 1) + ";" + (j + 1) + ")";
+                            answer = $"два цвета в ячейке ({(i + 1)};{(j + 1)})";
                             return answer;
                         }
                     }
@@ -857,7 +857,7 @@ namespace SudokuSolver
                         OFF.Clear();
                         clues.Add(new int[] { unit2[0] / 9, unit2[0] % 9, unit2[1] });
                         clues.Add(new int[] { unit2[0] / 9, unit2[0] % 9, unit1[1] });
-                        answer = "повторение цвета в ячейке (" + (unit2[0] / 9 + 1) + ";" + (unit2[0] % 9 + 1) + ")";
+                        answer = $"повторение цвета в ячейке ({(unit2[0] / 9 + 1)};{(unit2[0] % 9 + 1)})";
                         return answer;
                     }
                 }
@@ -891,7 +891,7 @@ namespace SudokuSolver
 
                         clues.Add(new int[] { unit2[0] / 9, unit2[0] % 9, unit2[1] });
                         clues.Add(new int[] { unit2[0] / 9, unit2[0] % 9, unit1[1] });
-                        answer = "повторение цвета в ячейке (" + (unit2[0] / 9 + 1) + ";" + (unit2[0] % 9 + 1) + ")";
+                        answer = $"повторение цвета в ячейке ({(unit2[0] / 9 + 1)};{(unit2[0] % 9 + 1)})";
                         return answer;
                     }
                 }
@@ -990,7 +990,7 @@ namespace SudokuSolver
                     i = link[0] / 9;
                     j = link[0] % 9;
 
-                    answer += "\n(" + (i + 1) + ";" + (j + 1) + ") => " + (link[1] + 1) + " - " + (link[3] + 1);
+                    answer += $"\n({(i + 1)};{(j + 1)}) => {(link[1] + 1)} - {(link[3] + 1)}";
                 }
             }
 
@@ -1125,14 +1125,14 @@ namespace SudokuSolver
                 }
             }
             bool impact = false;
-            answer = (k + 1) + " в ячейках: ";
+            answer = $"{(k + 1)} в ячейках: ";
             foreach (int ind in intersec)
             {
                 i = ind / 9;
                 j = ind % 9;
                 if (field[i, j].candidates[k])
                 {
-                    answer += "(" + (i + 1) + ";" + (j + 1) + ") ";
+                    answer += $"({(i + 1)};{(j + 1)}) ";
                     //field[i, j].RemoveCandidat(k + 1);
                     Buffer.AddRemovingChange(i, j, k + 1);
                     impact = true;
@@ -1206,7 +1206,7 @@ namespace SudokuSolver
                 }
                 if (repeat)
                 {
-                    answer = "повторение цвета в строке " + (row + 1);
+                    answer = $"повторение цвета в строке {(row + 1)}";
                     return answer;
                 }
 
@@ -1246,7 +1246,7 @@ namespace SudokuSolver
                 }
                 if (repeat)
                 {
-                    answer = "повторение цвета в строке " + (row + 1);
+                    answer = $"повторение цвета в строке {(row + 1)}";
                     return answer;
                 }
                 //------------------------------------------------------------------------------
@@ -1290,7 +1290,7 @@ namespace SudokuSolver
                 }
                 if (repeat)
                 {
-                    answer = "повторение цвета в столбце " + (col + 1);
+                    answer = $"повторение цвета в столбце {(col + 1)}";
                     return answer;
                 }
 
@@ -1331,7 +1331,7 @@ namespace SudokuSolver
                 //если повторение в столбцах то 
                 if (repeat)
                 {
-                    answer = "повторение цвета в столбце " + (col + 1);
+                    answer = $"повторение цвета в столбце {(col + 1)}";
                     return answer;
                 }
                 //------------------------------------------------------------------------------
@@ -1377,7 +1377,7 @@ namespace SudokuSolver
                 }
                 if (repeat)
                 {
-                    answer = "повторение цвета в регионе " + (reg + 1);
+                    answer = $"повторение цвета в регионе {(reg + 1)}";
                     return answer;
                 }
                 //для OFF
@@ -1423,7 +1423,7 @@ namespace SudokuSolver
                 //если повторение в регионе
                 if (repeat)
                 {
-                    answer = "повторение цвета в регионе " + (reg + 1);
+                    answer = $"повторение цвета в регионе {(reg + 1)}";
                     return answer;
                 }
             }
@@ -1711,11 +1711,11 @@ namespace SudokuSolver
         //DEBUG
         private static string pringLinks(int ind, int k, int[][] links)
         {
-            string ans = "(" + (ind / 9 + 1) + ";" + (ind % 9 + 1) + ") => "
+            string ans = $"({(ind / 9 + 1)};{(ind % 9 + 1)}) => "
                 ;
             for (int i = 0; i < links.Length; i++)
             {
-                ans += "(" + (links[i][0] / 9 + 1) + ";" + (links[i][0] % 9 + 1) + ") ";
+                ans += $"({(links[i][0] / 9 + 1)};{(links[i][0] % 9 + 1)}) ";
             }
 
 
@@ -1766,14 +1766,14 @@ namespace SudokuSolver
             string ans = "";
             for (int i = 0; i < subChainCounter; i++)
             {
-                ans += "\n---------------" + (i + 1) + "---------------\n";
+                ans += $"\n---------------{(i + 1)}---------------\n";
                 for (int j = 0; j < chainUnits.Count; j++)
                 {
                     if (i == subChains[j])
                     {
                         int x = chainUnits[j][0] / 9;
                         int y = chainUnits[j][0] % 9;
-                        ans += "(" + (x + 1) + ";" + (y + 1) + ") ";
+                        ans += $"({(x + 1)};{(y + 1)}) ";
 
                     }
                 }
@@ -2075,7 +2075,7 @@ namespace SudokuSolver
 
                                 if (rem == -1)
                                 {
-                                    answer = "ОШИБКА ЛОХ";
+                                    answer = "XYZ-Wing ОШИБКА";
                                 }
 
                                 //исключения производим в регионе корня, строке второго крыла
@@ -2114,7 +2114,7 @@ namespace SudokuSolver
                                             }
                                         }
 
-                                        answer = "XYZ-Wing: исключена " + (rem + 1) + " из (" + (i + 1) + ";" + (3 * (j / 3) + r + 1) + ")";
+                                        answer = $"XYZ-Wing: исключена {(rem + 1)} из ({(i + 1)};{(3 * (j / 3) + r + 1)})";
                                         return answer;
                                     }
                                 }
@@ -2217,7 +2217,7 @@ namespace SudokuSolver
                                             }
                                         }
 
-                                        answer = "XYZ-Wing: исключена " + (rem + 1) + " из (" + (3 * (i / 3) + r + 1) + ";" + (j + 1) + ")";
+                                        answer = $"XYZ-Wing: исключена {(rem + 1)} из ({(3 * (i / 3) + r + 1)};{(j + 1)})";
                                         return answer;
                                     }
                                 }
@@ -2256,9 +2256,9 @@ namespace SudokuSolver
             Field.Cell X1;
             Field.Cell X2;
 
-            int a = 0;
-            int b = 0;
-            int c = 0;
+            int a;
+            int b;
+            int c;
 
 
             bool foundet = false;
@@ -2425,11 +2425,8 @@ namespace SudokuSolver
                                 clues.Add(new int[] { X2.row, X2.column, b });
                                 clues.Add(new int[] { X2.row, X2.column, c });
 
-                                answer = "Y-Wings по " + (c + 1) + " : " +
-                                         "(" + (Y.row + 1) + ";" + (Y.column + 1) + ") => " +
-                                         "(" + (X1.row + 1) + ";" + (X1.column + 1) + ") - " +
-                                         "(" + (X2.row + 1) + ";" + (X2.column + 1) + ")"
-                                         ;
+                                
+                                answer = $"Y-Wings по {(c + 1)} : ({(Y.row + 1)};{(Y.column + 1)}) => ({(X1.row + 1)};{(X1.column + 1)}) - ({(X2.row + 1)};{(X2.column + 1)})";
                                 return answer;
 
                             }
@@ -2525,7 +2522,7 @@ namespace SudokuSolver
                 return "BUG: ОШИБКА";
             }
 
-            answer = "BUG: если в ячейке (" + (bugI + 1) + ";" + (bugJ + 1) + ") установить не " + (bugDigit + 1) + ", то судоку будет иметь 2 решения";
+            answer = $"BUG: если в ячейке ({(bugI + 1)};{(bugJ + 1)}) установить не {(bugDigit + 1)}, то судоку будет иметь 2 решения";
             clues.Add(new int[] { bugI, bugJ, bugDigit });
             for (int k = 0; k < 9; k++)
             {
@@ -2621,10 +2618,19 @@ namespace SudokuSolver
                         }
                     }
 
-                    answer = "Jellyfish по " + (k + 1) +
-                            " в (" + (shape[0][0] + 1) + "-" + (shape[0][1] + 1) + "-" + (shape[0][2] + 1) + "-" + (shape[0][3] + 1) + ";"
-                                   + (shape[1][0] + 1) + "-" + (shape[1][1] + 1) + "-" + (shape[1][2] + 1) + "-" + (shape[1][3] + 1) + ")"
-                            ;
+                    int digit = k + 1;
+
+                    int i1 = shape[0][0] + 1;
+                    int i2 = shape[0][1] + 1;
+                    int i3 = shape[0][2] + 1;
+                    int i4 = shape[0][3] + 1;
+
+                    int j1 = shape[1][0] + 1;
+                    int j2 = shape[1][1] + 1;
+                    int j3 = shape[1][2] + 1;
+                    int j4 = shape[1][3] + 1;
+
+                    answer = $"Jellyfish по {digit} в ({i1}-{i2}-{i3}-{i4};{j1}-{j2}-{j3}-{j4})";
                     return answer;
 
                 }
@@ -2696,9 +2702,19 @@ namespace SudokuSolver
                         }
                     }
 
-                    answer = "Jellyfish по" + (k + 1) +
-                             " в (" + (shape[1][0] + 1) + "-" + (shape[1][1] + 1) + "-" + (shape[1][2] + 1) + "-" + (shape[1][3] + 1) + ";"
-                                    + (shape[0][0] + 1) + "-" + (shape[0][1] + 1) + "-" + (shape[0][2] + 1) + "-" + (shape[0][3] + 1) + ")";
+                    int digit = k + 1;
+
+                    int i1 = shape[1][0] + 1;
+                    int i2 = shape[1][1] + 1;
+                    int i3 = shape[1][2] + 1;
+                    int i4 = shape[1][3] + 1;
+
+                    int j1 = shape[0][0] + 1;
+                    int j2 = shape[0][1] + 1;
+                    int j3 = shape[0][2] + 1;
+                    int j4 = shape[0][3] + 1;
+
+                    answer = $"Jellyfish по {digit} в ({i1}-{i2}-{i3}-{i4};{j1}-{j2}-{j3}-{j4})";
                     return answer;
 
                 }
@@ -2733,7 +2749,7 @@ namespace SudokuSolver
                 answer = HiddenQuadsInGroup(group);
                 if (!answer.Equals(""))
                 {
-                    answer = "Строка  " + (i + 1).ToString() + ": " + answer;
+                    answer = $"Строка  {(i + 1)}: " + answer;
                     return answer;
                 }
             }
@@ -2748,7 +2764,7 @@ namespace SudokuSolver
                 answer = HiddenQuadsInGroup(group);
                 if (!answer.Equals(""))
                 {
-                    answer = "Столбец " + (i + 1).ToString() + ": " + answer;
+                    answer = $"Столбец {(i + 1)}: " + answer;
                     return answer;
                 }
             }
@@ -2771,7 +2787,7 @@ namespace SudokuSolver
                     answer = HiddenQuadsInGroup(group);
                     if (!answer.Equals(""))
                     {
-                        answer = "Регион  " + ((i) * 3 + j + 1).ToString() + ": " + ": " + answer;
+                        answer = $"Регион  {((i) * 3 + j + 1)}: " + answer;
                         return answer;
                     }
                 }
@@ -2851,12 +2867,22 @@ namespace SudokuSolver
                     clues.Add(new int[] { group[shape[1][3]].row, group[shape[1][3]].column, shape[0][x] });
                 }
 
-                answer = "Скрытая четверка " + (shape[0][0] + 1) + "/" + (shape[0][1] + 1) + "/" + (shape[0][2] + 1) + "/" + (shape[0][3] + 1) +
-                         " в (" + (group[shape[1][0]].row + 1) + ";" + (group[shape[1][0]].column + 1) +
-                         ") и (" + (group[shape[1][1]].row + 1) + ";" + (group[shape[1][1]].column + 1) +
-                         ") и (" + (group[shape[1][2]].row + 1) + ";" + (group[shape[1][2]].column + 1) +
-                         ") и (" + (group[shape[1][3]].row + 1) + ";" + (group[shape[1][3]].column + 1) + ")"
-                         ;
+                int digit1 = shape[0][0] + 1;
+                int digit2 = shape[0][1] + 1;
+                int digit3 = shape[0][2] + 1;
+                int digit4 = shape[0][3] + 1;
+
+                int i1 = group[shape[1][0]].row + 1;
+                int i2 = group[shape[1][1]].row + 1;
+                int i3 = group[shape[1][2]].row + 1;
+                int i4 = group[shape[1][3]].row + 1;
+
+                int j1 = group[shape[1][0]].column + 1;
+                int j2 = group[shape[1][1]].column + 1;
+                int j3 = group[shape[1][2]].column + 1;
+                int j4 = group[shape[1][3]].column + 1;
+
+                answer = $"Скрытая четверка {digit1}/{digit2}/{digit3}/{digit4} в ({i1};{j1}) и ({i2};{j2}) и ({i3};{j3}) и ({i4};{j4})";
             }
 
 
@@ -2886,7 +2912,7 @@ namespace SudokuSolver
                 answer = NakedQuadsInGroup(group);
                 if (!answer.Equals(""))
                 {
-                    answer = "Строка  " + (i + 1).ToString() + ": " + answer;
+                    answer = $"Строка  {(i + 1)}: " + answer;
                     return answer;
                 }
             }
@@ -2901,7 +2927,7 @@ namespace SudokuSolver
                 answer = NakedQuadsInGroup(group);
                 if (!answer.Equals(""))
                 {
-                    answer = "Столбец " + (i + 1).ToString() + ": " + answer;
+                    answer = $"Столбец {(i + 1)}: " + answer;
                     return answer;
                 }
             }
@@ -2924,7 +2950,7 @@ namespace SudokuSolver
                     answer = NakedQuadsInGroup(group);
                     if (!answer.Equals(""))
                     {
-                        answer = "Регион  " + ((i) * 3 + j + 1).ToString() + ": " + ": " + answer;
+                        answer = $"Регион  {((i) * 3 + j + 1)}: " + answer;
                         return answer;
                     }
                 }
@@ -3006,12 +3032,22 @@ namespace SudokuSolver
                     clues.Add(new int[] { group[shape[0][3]].row, group[shape[0][3]].column, shape[1][x] });
                 }
 
-                answer = "Открытая четверка " + (shape[1][0] + 1) + "/" + (shape[1][1] + 1) + "/" + (shape[1][2] + 1) + "/" + (shape[1][3] + 1) +
-                         " в (" + (group[shape[0][0]].row + 1) + ";" + (group[shape[0][0]].column + 1) +
-                         ") и (" + (group[shape[0][1]].row + 1) + ";" + (group[shape[0][1]].column + 1) +
-                         ") и (" + (group[shape[0][2]].row + 1) + ";" + (group[shape[0][2]].column + 1) +
-                         ") и (" + (group[shape[0][3]].row + 1) + ";" + (group[shape[0][3]].column + 1) + ")"
-                         ;
+                int digit1 = shape[1][0] + 1;
+                int digit2 = shape[1][1] + 1;
+                int digit3 = shape[1][2] + 1;
+                int digit4 = shape[1][3] + 1;
+
+                int i1 = group[shape[0][0]].row + 1;
+                int i2 = group[shape[0][1]].row + 1;
+                int i3 = group[shape[0][2]].row + 1;
+                int i4 = group[shape[0][3]].row + 1;
+
+                int j1 = group[shape[0][0]].column + 1;
+                int j2 = group[shape[0][1]].column + 1;
+                int j3 = group[shape[0][2]].column + 1;
+                int j4 = group[shape[0][3]].column + 1;
+
+                answer = $"Открытая четверка {digit1}/{digit2}/{digit3}/{digit4} в ({i1};{j1}) и ({i2};{j2}) и ({i3};{j3}) и ({i4};{j4})";
             }
 
 
@@ -3231,10 +3267,17 @@ namespace SudokuSolver
                         }
                     }
 
-                    answer = "Swordfish по " + (k + 1) +
-                            " в (" + (shape[0][0] + 1) + "-" + (shape[0][1] + 1) + "-" + (shape[0][2] + 1) + ";"
-                                   + (shape[1][0] + 1) + "-" + (shape[1][1] + 1) + "-" + (shape[1][2] + 1) + ")"
-                            ;
+                    int digit = k + 1;
+
+                    int i1 = shape[0][0] + 1;
+                    int i2 = shape[0][1] + 1;
+                    int i3 = shape[0][2] + 1;
+
+                    int j1 = shape[1][0] + 1;
+                    int j2 = shape[1][1] + 1;
+                    int j3 = shape[1][2] + 1;
+
+                    answer = $"Swordfish по {digit} в ({i1}-{i2}-{i3};{j1}-{j2}-{j3})";
                     return answer;
 
                 }
@@ -3302,9 +3345,17 @@ namespace SudokuSolver
                         }
                     }
 
-                    answer = "Swordfish по" + (k + 1) +
-                             " в (" + (shape[1][0] + 1) + "-" + (shape[1][1] + 1) + "-" + (shape[1][2] + 1) + ";"
-                                    + (shape[0][0] + 1) + "-" + (shape[0][1] + 1) + "-" + (shape[0][2] + 1) + ")";
+                    int digit = k + 1;
+
+                    int i1 = shape[1][0] + 1;
+                    int i2 = shape[1][1] + 1;
+                    int i3 = shape[1][2] + 1;
+
+                    int j1 = shape[0][0] + 1;
+                    int j2 = shape[0][1] + 1;
+                    int j3 = shape[0][2] + 1;
+
+                    answer = $"Swordfish по {digit} в ({i1}-{i2}-{i3};{j1}-{j2}-{j3})";
                     return answer;
 
                 }
@@ -3339,7 +3390,7 @@ namespace SudokuSolver
                 answer = HiddenTriplesInGroup(group);
                 if (!answer.Equals(""))
                 {
-                    answer = "Строка  " + (i + 1).ToString() + ": " + answer;
+                    answer = $"Строка  {(i + 1)}: " + answer;
                     return answer;
                 }
             }
@@ -3354,7 +3405,7 @@ namespace SudokuSolver
                 answer = HiddenTriplesInGroup(group);
                 if (!answer.Equals(""))
                 {
-                    answer = "Столбец " + (i + 1).ToString() + ": " + answer;
+                    answer = $"Столбец {(i + 1)}: " + answer;
                     return answer;
                 }
             }
@@ -3377,7 +3428,7 @@ namespace SudokuSolver
                     answer = HiddenTriplesInGroup(group);
                     if (!answer.Equals(""))
                     {
-                        answer = "Регион  " + ((i) * 3 + j + 1).ToString() + ": " + ": " + answer;
+                        answer = $"Регион  {((i) * 3 + j + 1)}: " + answer;
                         return answer;
                     }
                 }
@@ -3452,12 +3503,19 @@ namespace SudokuSolver
                     clues.Add(new int[] { group[shape[1][2]].row, group[shape[1][2]].column, shape[0][x] });
                 }
 
+                int digit1 = shape[0][0] + 1;
+                int digit2 = shape[0][1] + 1;
+                int digit3 = shape[0][2] + 1;
 
-                answer = "Скрытая тройка " + (shape[0][0] + 1) + "/" + (shape[0][1] + 1) + "/" + (shape[0][2] + 1) +
-                         " в (" + (group[shape[1][0]].row + 1) + ";" + (group[shape[1][0]].column + 1) +
-                         ") и (" + (group[shape[1][1]].row + 1) + ";" + (group[shape[1][1]].column + 1) +
-                         ") и (" + (group[shape[1][2]].row + 1) + ";" + (group[shape[1][2]].column + 1) + ")"
-                         ;
+                int i1 = group[shape[1][0]].row + 1;
+                int i2 = group[shape[1][1]].row + 1;
+                int i3 = group[shape[1][2]].row + 1;
+
+                int j1 = group[shape[1][0]].column + 1;
+                int j2 = group[shape[1][1]].column + 1;
+                int j3 = group[shape[1][2]].column + 1;
+
+                answer = $"Скрытая тройка {digit1}/{digit2}/{digit3} в ({i1};{j1}) и ({i2};{j2}) и ({i3};{j3})";
             }
 
 
@@ -3488,7 +3546,7 @@ namespace SudokuSolver
                 answer = NakedTripesInGroup(group);
                 if (!answer.Equals(""))
                 {
-                    answer = "Строка  " + (i + 1).ToString() + ": " + answer;
+                    answer = $"Строка  {(i + 1)}: " + answer;
                     return answer;
                 }
             }
@@ -3503,7 +3561,7 @@ namespace SudokuSolver
                 answer = NakedTripesInGroup(group);
                 if (!answer.Equals(""))
                 {
-                    answer = "Столбец " + (i + 1).ToString() + ": " + answer;
+                    answer = $"Столбец {(i + 1)}: " + answer;
                     return answer;
                 }
             }
@@ -3526,7 +3584,7 @@ namespace SudokuSolver
                     answer = NakedTripesInGroup(group);
                     if (!answer.Equals(""))
                     {
-                        answer = "Регион  " + ((i) * 3 + j + 1).ToString() + ": " + ": " + answer;
+                        answer = $"Регион  {((i) * 3 + j + 1)}: " + answer;
                         return answer;
                     }
                 }
@@ -3600,11 +3658,19 @@ namespace SudokuSolver
                     clues.Add(new int[] { group[shape[0][2]].row, group[shape[0][2]].column, shape[1][x] });
                 }
 
-                answer = "Открытая тройка " + (shape[1][0] + 1) + "/" + (shape[1][1] + 1) + "/" + (shape[1][2] + 1) +
-                         " в (" + (group[shape[0][0]].row + 1) + ";" + (group[shape[0][0]].column + 1) +
-                         ") и (" + (group[shape[0][1]].row + 1) + ";" + (group[shape[0][1]].column + 1) +
-                         ") и (" + (group[shape[0][2]].row + 1) + ";" + (group[shape[0][2]].column + 1) + ")"
-                         ;
+                int i1 = (group[shape[0][0]].row + 1);
+                int i2 = (group[shape[0][1]].row + 1);
+                int i3 = (group[shape[0][2]].row + 1);
+
+                int j1 = (group[shape[0][0]].column + 1);
+                int j2 = (group[shape[0][1]].column + 1);
+                int j3 = (group[shape[0][2]].column + 1);
+
+                int digit1 = shape[1][0] + 1;
+                int digit2 = shape[1][1] + 1;
+                int digit3 = shape[1][2] + 1;
+
+                answer = $"Открытая тройка {digit1}/{digit2}/{digit3} в ({i1};{j1}) и ({i2};{j2}) и ({i3};{j3})";
             }
 
 
@@ -3806,8 +3872,16 @@ namespace SudokuSolver
                             clues.Add(new int[] { shape[0][x], shape[1][y], k });
                         }
                     }
-                    answer = "X-Wings по " + (k + 1) + " в (" + (shape[0][0] + 1) + "-" + (shape[0][1] + 1) +
-                             ";" + (shape[1][0] + 1) + "-" + (shape[1][1] + 1) + ")";
+
+                    int digit = k + 1;
+
+                    int i1 = shape[0][0] + 1;
+                    int i2 = shape[0][1] + 1;
+
+                    int j1 = shape[1][0] + 1;
+                    int j2 = shape[1][1] + 1;
+
+                    answer = $"X-Wings по {digit} в ({i1}-{i2};{j1}-{j2})";
                     return answer;
 
                 }
@@ -3868,8 +3942,15 @@ namespace SudokuSolver
                         }
                     }
 
-                    answer = "X-Wings по" + (k + 1) + " в (" + (shape[1][0] + 1) + "-" + (shape[1][1] + 1) +
-                             ";" + (shape[0][0] + 1) + "-" + (shape[0][1] + 1) + ")";
+                    int digit = k + 1;
+
+                    int i1 = shape[1][0] + 1;
+                    int i2 = shape[1][1] + 1;
+
+                    int j1 = shape[0][0] + 1;
+                    int j2 = shape[0][1] + 1;
+
+                    answer = $"X-Wings по{digit} в ({i1}-{i2};{j1}-{j2})";
                     return answer;
 
                 }
@@ -3904,7 +3985,7 @@ namespace SudokuSolver
                 answer = HiddenPairsInGroup(group);
                 if (!answer.Equals(""))
                 {
-                    answer = "Строка  " + (i + 1).ToString() + ": " + answer;
+                    answer = $"Строка  {(i + 1)}: " + answer;
                     return answer;
                 }
             }
@@ -3919,7 +4000,7 @@ namespace SudokuSolver
                 answer = HiddenPairsInGroup(group);
                 if (!answer.Equals(""))
                 {
-                    answer = "Столбец " + (i + 1).ToString() + ": " + answer;
+                    answer = $"Столбец {(i + 1)}: " + answer;
                     return answer;
                 }
             }
@@ -3942,7 +4023,7 @@ namespace SudokuSolver
                     answer = HiddenPairsInGroup(group);
                     if (!answer.Equals(""))
                     {
-                        answer = "Регион  " + ((i) * 3 + j + 1).ToString() + ": " + ": " + answer;
+                        answer = $"Регион  {((i) * 3 + j + 1)}: " + answer;
                         return answer;
                     }
                 }
@@ -4006,10 +4087,16 @@ namespace SudokuSolver
                 clues.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, shape[0][0] });
                 clues.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, shape[0][1] });
 
-                answer = "Скрытая пара " + (shape[0][0] + 1) + "/" + (shape[0][1] + 1) +
-                         " в (" + (group[shape[1][0]].row + 1) + ";" + (group[shape[1][0]].column + 1) +
-                         ") и (" + (group[shape[1][1]].row + 1) + ";" + (group[shape[1][1]].column + 1) + ")"
-                         ;
+                int digit1 = shape[0][0] + 1;
+                int digit2 = shape[0][1] + 1;
+
+                int i1 = (group[shape[1][0]].row + 1);
+                int i2 = (group[shape[1][1]].row + 1);
+
+                int j1 = (group[shape[1][0]].column + 1);
+                int j2 = (group[shape[1][1]].column + 1);
+
+                answer = $"Скрытая пара {digit1}/{digit2} в ({i1};{j1}) и ({i2};{j2})";
             }
 
             return answer;
@@ -4230,8 +4317,7 @@ namespace SudokuSolver
                         //если найдено исключение то формируем ответ
                         if (impact)
                         {
-                            answer = "Cтрока  " + (i + 1) + ": виртуальная одиночка " + (k + 1) + " в регионе " + (3 * startY / 3 + startX / 3 + 1)
-                                + "";
+                            answer = $"Cтрока  {(i + 1)}: виртуальная одиночка {(k + 1)} в регионе {(3 * startY / 3 + startX / 3 + 1)}";
                             return answer;
                         }
                     }
@@ -4327,8 +4413,7 @@ namespace SudokuSolver
                         //если найдено исключение то формируем ответ
                         if (impact)
                         {
-                            answer = "Cтолбец " + (j + 1) + ": виртуальная одиночка " + (k + 1) + " в регионе " + (3 * startY / 3 + startX / 3 + 1)
-                                + "";
+                            answer = $"Cтолбец {(j + 1)}: виртуальная одиночка {(k + 1)} в регионе {(3 * startY / 3 + startX / 3 + 1)}";
                             return answer;
                         }
                     }
@@ -4432,7 +4517,7 @@ namespace SudokuSolver
                                 {
                                     clues.Add(new int[] { indexes[0], cluesInd[n], k });
                                 }
-                                answer = "Регион  " + (y * 3 + x + 1) + ": виртуальная одиночка " + (k + 1) + " в строке " + (indexes[0] + 1) + "";
+                                answer = $"Регион  {(y * 3 + x + 1)}: виртуальная одиночка {(k + 1)} в строке {(indexes[0] + 1)}";
                                 return answer;
                             }
 
@@ -4505,7 +4590,7 @@ namespace SudokuSolver
                                 {
                                     clues.Add(new int[] { cluesInd[n], indexes[0], k });
                                 }
-                                answer = "Регион " + (y * 3 + x + 1) + ": виртуальная одиночка " + (k + 1) + " в столбце " + (indexes[0] + 1) + "";
+                                answer = $"Регион {(y * 3 + x + 1)}: виртуальная одиночка {(k + 1)} в столбце {(indexes[0] + 1)}";
                                 return answer;
                             }
 
@@ -4541,7 +4626,7 @@ namespace SudokuSolver
                 answer = NakedPairsInGroup(group);
                 if (!answer.Equals(""))
                 {
-                    answer = "Строка  " + (i + 1).ToString() + ": " + answer;
+                    answer = $"Строка  {(i + 1)}: " + answer;
                     return answer;
                 }
             }
@@ -4556,7 +4641,7 @@ namespace SudokuSolver
                 answer = NakedPairsInGroup(group);
                 if (!answer.Equals(""))
                 {
-                    answer = "Столбец " + (i + 1).ToString() + ": " + answer;
+                    answer = $"Столбец {(i + 1)}: " + answer;
                     return answer;
                 }
             }
@@ -4579,7 +4664,7 @@ namespace SudokuSolver
                     answer = NakedPairsInGroup(group);
                     if (!answer.Equals(""))
                     {
-                        answer = "Регион  " + ((i) * 3 + j + 1).ToString() + ": " + ": " + answer;
+                        answer = $"Регион  {((i) * 3 + j + 1)}: " + answer;
                         return answer;
                     }
                 }
@@ -4644,10 +4729,9 @@ namespace SudokuSolver
                 clues.Add(new int[] { group[shape[0][1]].row, group[shape[0][1]].column, shape[1][0] });
                 clues.Add(new int[] { group[shape[0][1]].row, group[shape[0][1]].column, shape[1][1] });
 
-                answer = "Открытая пара " + (shape[1][0] + 1) + "/" + (shape[1][1] + 1) +
-                         " в (" + (group[shape[0][0]].row + 1) + ";" + (group[shape[0][0]].column + 1) +
-                         ") и (" + (group[shape[0][1]].row + 1) + ";" + (group[shape[0][1]].column + 1) + ")"
-                         ;
+                answer = $"Открытая пара {(shape[1][0] + 1)}/{(shape[1][1] + 1)}" +
+                         $" в ({(group[shape[0][0]].row + 1)};{(group[shape[0][0]].column + 1)}" +
+                         $") и ({(group[shape[0][1]].row + 1)};{(group[shape[0][1]].column + 1)})";
             }
 
             return answer;
@@ -4676,7 +4760,7 @@ namespace SudokuSolver
                 answer = HiddenSingleGroup(group);
                 if (!answer.Equals(""))
                 {
-                    answer = "Строка  " + (i + 1).ToString() + ": " + answer;
+                    answer = $"Строка  {(i + 1)}: " + answer;
                     return answer;
                 }
             }
@@ -4691,7 +4775,7 @@ namespace SudokuSolver
                 answer = HiddenSingleGroup(group);
                 if (!answer.Equals(""))
                 {
-                    answer = "Столбец " + (i + 1).ToString() + ": " + answer;
+                    answer = $"Столбец {(i + 1)}: " + answer;
                     return answer;
                 }
             }
@@ -4714,7 +4798,7 @@ namespace SudokuSolver
                     answer = HiddenSingleGroup(group);
                     if (!answer.Equals(""))
                     {
-                        answer = "Регион  " + ((i) * 3 + j + 1).ToString() + ": " + answer;
+                        answer = $"Регион  {((i) * 3 + j + 1)}: " + answer;
                         return answer;
                     }
                 }
@@ -4750,7 +4834,8 @@ namespace SudokuSolver
                     Buffer.AddSettingValueChange(group[index].row, group[index].column, v);
 
                     clues.Add(new int[] { group[index].row, group[index].column, v - 1 });
-                    answer = "Найдена скрытая одиночка: " + v.ToString() + " в (" + (group[index].row + 1).ToString() + ";" + (group[index].column + 1).ToString() + ")";
+
+                    answer = $"Найдена скрытая одиночка: ({group[index].row + 1};{(group[index].column + 1)}) => {v}";
                     return answer;
                 }
             }
@@ -4762,7 +4847,13 @@ namespace SudokuSolver
         //открытые одиночки
         private static string NakedSingle(Field field)
         {
-            string answer = "";
+            //флаг что было исключение
+            bool impact = false;
+
+            StringBuilder sb = new StringBuilder();
+
+            //счетчик строк
+            int counter = 0;
             //обход всех ячеек
             for (int i = 0; i < 9; i++)
             {
@@ -4785,12 +4876,33 @@ namespace SudokuSolver
                         Buffer.AddSettingValueChange(i, j, v);
                         clues.Add(new int[] { i, j, v - 1 });
 
-                        answer = "Найдена открытая одиночка: " + v.ToString() + " в (" + (i + 1).ToString() + ";" + (j + 1).ToString() + ")";
-                        return answer;
+                        impact = true;
+
+                        sb.Append($"\r\n    ({(i + 1)};{(j + 1)}) => {v}");
+                        counter++;
                     }
                 }
             }
-            return answer;
+
+            if (impact)
+            {
+                if (counter >1)
+                {
+                    string s = "Найдены открытые одиночки: ";
+                    sb.Insert(0,s);
+                }
+                else
+                {
+                    string s = "Найдена открытая одиночка: ";
+                    sb.Insert(0, s);
+                }
+
+                return sb.ToString();
+            }
+            else
+            {
+                return "";
+            }
         }
 
         //простые ислючения

@@ -4,7 +4,6 @@ using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
 
-
 namespace SudokuSolver
 {
     public class Grid
@@ -40,68 +39,26 @@ namespace SudokuSolver
 
 
             //создание ячеек
-            //9 строк создаются в 9и потоках
             cells = new Cell[9][];
-            Thread[] threads = new Thread[9];
 
             for (int i = 0; i < cells.Length; i++)
             {
-                cells[i] = new Cell[9];
-                Info info = new Info()
+                cells[i] = new Cell[9]; 
+                for (int j = 0; j < cells[i].Length; j++)
                 {
-                    i = i,
-                    merStep = merStep,
-                    sizeCell = sizeCell,
-                    f = f,
-                    grid = this
-                };
-                threads[i] = new Thread(CreateRowOfCell)
-                {
-                    Name = "Row " + (i + 1)
-                };
-                threads[i].Start(info);
-            }
+                    cells[i][j] = new Cell(startX + j * (merStep + sizeCell), startY + i * (merStep + sizeCell), mainForm, this);
 
-            for (int i = 0; i < 9; i++)
-            {
-                threads[i].Join();
+                    //устанавливаю событие клика
+                    cells[i][j].value.Click += HighlighteEvent;
+                    cells[i][j].p.Click += HighlighteEvent;
+                    for (int k = 0; k < 9; k++) 
+                    { 
+                        cells[i][j].candidates[k].Click += HighlighteEvent;
+                    }
+                }
             }
 
             isHighlighted = new bool[9];
-        }
-
-        //пакет с инфой для потоков
-        private class Info
-        {
-            internal int i;
-            internal int merStep;
-            internal int sizeCell;
-            internal Form f;
-            internal Grid grid;
-        }
-
-        //создаем строку ячеек
-        private void CreateRowOfCell(object obj)
-        {
-            Info info = (Info)obj;
-
-            int i = info.i;
-            int merStep = info.merStep;
-            int sizeCell = info.sizeCell;
-            Form f = info.f;
-            Grid grid = info.grid;
-
-
-            for (int j = 0; j < cells[i].Length; j++)
-            {
-                cells[i][j] = new Cell(startX + j * (merStep + sizeCell), startY + i * (merStep + sizeCell), f, this);
-
-                //устанавливаю событие клика
-                cells[i][j].value.Click += HighlighteEvent;
-                cells[i][j].p.Click += HighlighteEvent;
-                for (int k = 0; k < 9; k++)
-                    cells[i][j].candidates[k].Click += HighlighteEvent;
-            }
         }
 
         internal void HighlighteEvent(object sender, EventArgs e)
@@ -109,7 +66,6 @@ namespace SudokuSolver
             int ind;
             if (sender is Label)
             {
-
                 Label label = sender as Label;
                 if (label.Name.Equals("value"))
                 {
@@ -345,7 +301,10 @@ namespace SudokuSolver
             }
             for (int i = 0; i < clues.Count; i++)
             {
-                cells[clues[i][0]][clues[i][1]].HighlighteDigitsAsClue(clues[i][2]);
+                if (clues[i].Length > 2)
+                {
+                    cells[clues[i][0]][clues[i][1]].HighlighteDigitsAsClue(clues[i][2]);
+                }
             }
 
             for (int i = 0; i < removed.Count; i++)
@@ -593,7 +552,7 @@ namespace SudokuSolver
 
             public PointF[] centers;                                //координаты центра ячейки
 
-            internal readonly Panel p;                               //панелька ячейки
+            internal readonly Panel p;                              //панелька ячейки
             private readonly Form mainForm;                         //ссылка на основную форму
 
             //цвета на все случаи жизни
@@ -608,9 +567,6 @@ namespace SudokuSolver
 
             private bool seen;
 
-
-            //заглушка для лока потоков
-            private static readonly object locker = new object();
 
             //конструктор ячейки
             public Cell(int x, int y, Form f, Grid grid)
@@ -632,10 +588,9 @@ namespace SudokuSolver
                 p.Paint += DrawChain;
 
                 //добавляем панельки на форму
-                lock (locker)
-                {
-                    mainForm.Controls.Add(p);
-                }
+                
+                mainForm.Controls.Add(p);
+                
 
                 //лейбл значения
                 value = new Label()

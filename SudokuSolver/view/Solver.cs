@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.IO;
 using System.Text;
+using System.Collections.Generic;
 using System.Windows.Forms;
 using SudokuSolver.controller;
 using SudokuSolver.view;
@@ -284,32 +285,9 @@ namespace SudokuSolver
             Button b = sender as Button;
             int digit = Convert.ToInt32(b.Text);
 
-            //меняю флаг
-            shownLinks[digit - 1] = !shownLinks[digit - 1];
-            //составляю массив отображаемых связей
-
-            //считаю сколько связей влкючено
-            int counter = 0;
-            for (int i = 0; i < shownLinks.Length; i++)
-            {
-                if (shownLinks[i])
-                {
-                    counter++;
-                }
-            }
-            int[] links = new int[counter];
-            //записываю включенные связи
-            counter = 0;
-            for (int i = 0; i < shownLinks.Length; i++)
-            {
-                if (shownLinks[i])
-                {
-                    links[counter] = i;
-                    counter++;
-                }
-            }
+            
             //передаю в контроллер
-            controller.HighlightLinks(links);
+            controller.HighlightLinks(digit);
         }
 
         //----------------------------------------------------------------------------------------------------------------------
@@ -428,36 +406,55 @@ namespace SudokuSolver
         {
             console.Text = "";
             linesCount = 0;
+            output_lines.Clear();
+            lines_in_output.Clear();
         }
 
         //написать в консоль
         int linesCount = 0;
-        public void PrintToConsole(string s)
+        Queue<string> output_lines = new Queue<string>();
+        Queue<int> lines_in_output = new Queue<int>();
+
+        public void PrintToConsole(string output)
         {
-            console.Text = s + Environment.NewLine + console.Text;
 
-            //считаю строки
-            linesCount++;
+            //считаю строки в поступившем сообщении
+            int line_counter =output.Split('\n').Length;
 
+            //добавляю в очередь сообщение
+            output_lines.Enqueue(output);
+            //запоминаю сколько в нем строк
+            lines_in_output.Enqueue(line_counter);
+            //считаю общее колличество строк
+            linesCount+=line_counter;
+
+            //максимальное колличество строк
+            int maxLineCount = 60;
 
             //если строк больше допустимого, обрезаю 
-            int maxLineCount = 60;
             if (linesCount > maxLineCount)
             {
-                var lines = console.Text.Split('\n');
-
-                lines[linesCount - 1] = "";
-                linesCount--;
-                StringBuilder stringBuilder = new StringBuilder();
-                foreach (string line in lines)
+                //пока не влезает
+                while(linesCount > maxLineCount)
                 {
-                    stringBuilder.Append(line);
-                    if (line.Length > 0)
-                        stringBuilder.Append(Environment.NewLine);
+                    //удаляю то последний
+                    output_lines.Dequeue();
+                    //считаю сколько строк осталось
+                    linesCount -= lines_in_output.Dequeue();
                 }
-                console.Text = stringBuilder.ToString();
             }
 
+            //собираю общий вывод
+            StringBuilder stringBuilder = new StringBuilder();
+            foreach (string line in output_lines)
+            {
+                //переписываю очередь
+                //так как вывод сверху вниз то вставляю сообщения в начало строки
+                stringBuilder.Insert(0, Environment.NewLine);
+                stringBuilder.Insert(0, line);
+            }
+            //вывожу ответ
+            console.Text = stringBuilder.ToString();
         }
 
         //----------------------------------------------------------------------------------------------------------------------

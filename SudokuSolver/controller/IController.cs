@@ -23,7 +23,7 @@ namespace SudokuSolver.controller
 
         void HighlightDigit(int digit);
 
-        void HighlightLinks(int[] links);
+        void HighlightLinks(int digit);
 
         void LoadFrom(string filename);
 
