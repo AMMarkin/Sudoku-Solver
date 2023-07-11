@@ -4,10 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SudokuSolver.view
+namespace SolverLibrary.Interfaces
 {
-    internal interface IView
+    public interface ILoader
     {
-        void Update();
     }
 }

@@ -46,31 +46,26 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="controller\IController.cs" />
     <Compile Include="controller\WFController.cs" />
-    <Compile Include="model\Buffer.cs" />
-    <Compile Include="view\Constructor.cs">
+    <Compile Include="views\Constructor.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="model\Field.cs" />
-    <Compile Include="view\Solver.cs">
+    <Compile Include="views\Solver.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="view\Solver.Designer.cs">
+    <Compile Include="views\Solver.Designer.cs">
       <DependentUpon>Solver.cs</DependentUpon>
     </Compile>
-    <Compile Include="view\Grid.cs" />
-    <Compile Include="view\IView.cs" />
-    <Compile Include="view\Loader.cs">
+    <Compile Include="views\Grid.cs" />
+    <Compile Include="views\Loader.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="model\Logic.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="view\Solver.resx">
+    <EmbeddedResource Include="views\Solver.resx">
       <DependentUpon>Solver.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="view\Loader.resx">
+    <EmbeddedResource Include="views\Loader.resx">
       <DependentUpon>Loader.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -94,6 +89,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SolverLibrary\SolverLibrary.csproj">
+      <Project>{e3e821cd-d26a-4b92-a273-404857df9dd0}</Project>
+      <Name>SolverLibrary</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

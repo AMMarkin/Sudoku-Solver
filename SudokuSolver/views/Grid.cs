@@ -1,63 +1,115 @@
-﻿using System;
+﻿using SolverLibrary.Interfaces;
+using SolverLibrary.model;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Threading;
 using System.Windows.Forms;
 
 namespace SudokuSolver
 {
-    public class Grid
+    public class Grid : IGridView
     {
 
-        readonly Cell[][] cells;
+        private readonly Panel panel;           //общая панель
+        private readonly Cell[][] cells;        //ячейки
+        private readonly Label[][] axis_label;  //подписи для осей
 
-        public Cell this[int i, int j]
-        {
-            get => cells[i][j];
-        }
 
-        public readonly int sizeGrid;       //размер поля
-        public readonly int startX = 20;    //левый верхний угол начала рисования
-        public readonly int startY = 40;
-        public bool[] isHighlighted;        //массив флагов для подсветки
+        public readonly int sizeGrid;           //размер поля
+        public readonly int startX = 40;        //левый верхний угол начала рисования
+        public readonly int startY = 60;
+        public bool[] isHighlighted;            //массив флагов для подсветки
 
-        private int selectedInd = -1;            //индекс выбранной ячейки
+        private int selectedInd = -1;           //индекс выбранной ячейки
         private int selectedDigitByClick = -1;
 
-        public Graphics g;                  //ссылка на доступ к графике
-        public Solver mainForm;              //ссылка на основную форму
+        public Graphics g;                      //ссылка на доступ к графике
+        public Form mainForm;                 //ссылка на основную форму
 
-        private readonly int merStep = 5;
+        private readonly int margin = 5;
+        private readonly int pading = 20;
         private readonly int sizeCell = Cell.size;
 
+        private SolverLibrary.model.Buffer _buffer;
+        private IController _controller;
+        private Field _field;
 
-        public Grid(Solver f)
+        public IController Controller
         {
-            mainForm = f;
-            //размеры сетки
-            sizeGrid = 9 * (merStep + sizeCell);
+            get => _controller;
+            set
+            {
+                _controller = value;
+                _field = value.Field;
+                _buffer = value.Field.Buffer;
+            }
+        }
+        public Field Field { get => _field; set => _field = value; }
 
+
+        internal Grid(ISolverView f)
+        {
+            mainForm = f as Form;
+
+            //размеры сетки
+            sizeGrid = 9 * (margin + sizeCell);
+
+            //общая панелька
+            panel = new Panel()
+            {
+                Location = new Point(startX - pading - margin, startY - pading - margin),
+                Size = new Size(sizeGrid + 2 * pading + 2 * margin, sizeGrid + 2 * pading + 2 * margin)
+            };
+
+            panel.Paint += DrawLines;
+            mainForm.Controls.Add(panel);
+
+            //создаю подписи для осей
+            axis_label = new Label[2][];
+            axis_label[0] = new Label[9]; //X
+            axis_label[1] = new Label[9]; //Y
+
+            for (int i = 0; i < axis_label[0].Length; i++)
+            {
+                //X
+                axis_label[0][i] = new Label()
+                {
+                    Location = new Point(pading + i * (sizeCell + margin) + sizeCell / 2, pading / 2 - margin),
+                    Size = new Size(15, 15),
+                    Font = new Font("Microsoft Sans Serif", 8),
+                    Text = $"{i + 1}"
+                };
+                panel.Controls.Add(axis_label[0][i]);
+
+                //Y
+                axis_label[1][i] = new Label()
+                {
+                    Location = new Point(pading / 2 - margin, pading + i * (sizeCell + margin) + sizeCell / 2),
+                    Size = new Size(15, 15),
+                    Font = new Font("Microsoft Sans Serif", 8),
+                    Text = $"{i + 1}"
+                };
+                panel.Controls.Add(axis_label[1][i]);
+            }
 
             //создание ячеек
             cells = new Cell[9][];
-
             for (int i = 0; i < cells.Length; i++)
             {
-                cells[i] = new Cell[9]; 
+                cells[i] = new Cell[9];
                 for (int j = 0; j < cells[i].Length; j++)
                 {
-                    cells[i][j] = new Cell(startX + j * (merStep + sizeCell), startY + i * (merStep + sizeCell), mainForm, this);
+                    cells[i][j] = new Cell(pading + margin + j * (margin + sizeCell), pading + margin + i * (margin + sizeCell), panel, this);
 
                     //устанавливаю событие клика
                     cells[i][j].value.Click += HighlighteEvent;
                     cells[i][j].p.Click += HighlighteEvent;
-                    for (int k = 0; k < 9; k++) 
-                    { 
+                    for (int k = 0; k < 9; k++)
+                    {
                         cells[i][j].candidates[k].Click += HighlighteEvent;
                     }
                 }
             }
-
             isHighlighted = new bool[9];
         }
 
@@ -136,15 +188,15 @@ namespace SudokuSolver
                 int j = index % 9;
 
                 //крашу регион ячейки
-                for(int x=0; x < 3; x++)
+                for (int x = 0; x < 3; x++)
                 {
-                    for(int y = 0; y < 3; y++)
+                    for (int y = 0; y < 3; y++)
                     {
                         cells[3 * (i / 3) + y][3 * (j / 3) + x].HighlightAsSeen(false);
                     }
                 }
                 //крашу строку и столбец
-                for(int x = 0; x < 9; x++)
+                for (int x = 0; x < 9; x++)
                 {
                     //если не в регионе выбранной
                     if (x / 3 != j / 3)
@@ -160,7 +212,7 @@ namespace SudokuSolver
 
             }
             //если уже выбрана эта ячейка
-            else if(selectedInd == index)
+            else if (selectedInd == index)
             {
                 selectedInd = -1;
                 //нужно снять выделение
@@ -264,16 +316,13 @@ namespace SudokuSolver
         {
             //координаты левого верхнего угла ячейки
 
-            //x = startX + j * (merStep + sizeCell)
-            //y = startY + i * (merStep + sizeCell)
-
             //строка
             //столбец
             int i;
             int j;
 
-            j = (x - startX) / (merStep + sizeCell);
-            i = (y - startY) / (merStep + sizeCell);
+            j = (x - margin - pading) / (margin + sizeCell);
+            i = (y - margin - pading) / (margin + sizeCell);
 
             //индекс
             return 9 * i + j;
@@ -293,7 +342,7 @@ namespace SudokuSolver
         }
 
         //подсветка исключений
-        public void HighlighteRemoved(List<int[]> clues, List<int[]> removed)
+        public void HighlighteRemoved(List<int[]> clues, List<int[]> removed, List<int[]> ON, List<int[]> OFF)
         {
             for (int i = 0; i < clues.Count; i++)
             {
@@ -313,18 +362,18 @@ namespace SudokuSolver
             }
 
             //если цепь не null и не пустая то отмечаем звенья
-            if (Logic.ON != null && Logic.ON.Count != 0)
+            if (ON != null && ON.Count != 0)
             {
-                foreach (int[] unit in Logic.ON)
+                foreach (int[] unit in ON)
                 {
                     int i1 = unit[0] / 9;
                     int j1 = unit[0] % 9;
                     cells[i1][j1].HighlighteAsUnit(unit[1], true);
                 }
             }
-            if (Logic.OFF != null && Logic.OFF.Count != 0)
+            if (OFF != null && OFF.Count != 0)
             {
-                foreach (int[] unit in Logic.OFF)
+                foreach (int[] unit in OFF)
                 {
                     int i1 = unit[0] / 9;
                     int j1 = unit[0] % 9;
@@ -332,11 +381,12 @@ namespace SudokuSolver
                 }
             }
         }
-        
+
 
         //обновить сетку
         public void UpdateGrid(Field field)
         {
+
             for (int i = 0; i < cells.Length; i++)
             {
                 for (int j = 0; j < cells[i].Length; j++)
@@ -348,32 +398,38 @@ namespace SudokuSolver
             }
         }
 
-        
+
         //отрисовка границ сетки
-        public void DrawLines()
+        public void DrawLines(object sender, PaintEventArgs e)
         {
-
-            using (Pen p = new Pen(Color.Black))
+            using (Graphics g = panel.CreateGraphics())
             {
-                p.Width = 3;
-                int X = startX - 3;
-                int Y = startY - 3;
 
-                for (int i = 0; i < 4; i++)
+                using (Pen p = new Pen(Color.Black))
                 {
-                    g.DrawLine(p, X + i * sizeGrid / 3, Y, X + i * sizeGrid / 3, Y + sizeGrid);
-                    g.DrawLine(p, X, Y + i * sizeGrid / 3, X + sizeGrid, Y + i * sizeGrid / 3);
-                }
+                    p.Width = 3;
+                    //int X = startX - 3;
+                    //int Y = startY - 3;
+                    int X = pading + margin / 2;
+                    int Y = pading + margin / 2;
 
-                //если есть цепь, то рисуем цепь
-                if (Logic.chain != null)
-                {
-                    if (Logic.chain.Count != 0)
+
+                    for (int i = 0; i < 4; i++)
                     {
-                        DrawChain(-1, -1, null);
+                        g.DrawLine(p, X + i * sizeGrid / 3, Y, X + i * sizeGrid / 3, Y + sizeGrid);
+                        g.DrawLine(p, X, Y + i * sizeGrid / 3, X + sizeGrid, Y + i * sizeGrid / 3);
                     }
-                }
 
+                    //если есть цепь, то рисуем цепь
+                    if (_buffer.chain != null)
+                    {
+                        if (_buffer.chain.Count != 0)
+                        {
+                            DrawChain(-1, -1, e);
+                        }
+                    }
+
+                }
             }
 
         }
@@ -404,14 +460,14 @@ namespace SudokuSolver
 
                 float PX, PY;
 
-                for (int i = 0; i < Logic.chain.Count; i++)
+                for (int i = 0; i < _buffer.chain.Count; i++)
                 {
-                    i1 = Logic.chain[i][0] / 9;
-                    j1 = Logic.chain[i][0] % 9;
-                    k1 = Logic.chain[i][1];
-                    i2 = Logic.chain[i][2] / 9;
-                    j2 = Logic.chain[i][2] % 9;
-                    k2 = Logic.chain[i][3];
+                    i1 = _buffer.chain[i][0] / 9;
+                    j1 = _buffer.chain[i][0] % 9;
+                    k1 = _buffer.chain[i][1];
+                    i2 = _buffer.chain[i][2] / 9;
+                    j2 = _buffer.chain[i][2] % 9;
+                    k2 = _buffer.chain[i][3];
 
                     X1 = cells[i1][j1].centers[k1].X - Xshift;
                     Y1 = cells[i1][j1].centers[k1].Y - Yshift;
@@ -469,17 +525,17 @@ namespace SudokuSolver
                     }
                 }
                 //отрисовка слабых связей
-                if (Logic.weak != null)
+                if (_buffer.weak != null)
                 {
                     p.Color = Color.FromArgb(170, Color.Gray);
-                    for (int i = 0; i < Logic.weak.Count; i++)
+                    for (int i = 0; i < _buffer.weak.Count; i++)
                     {
-                        i1 = Logic.weak[i][0] / 9;
-                        j1 = Logic.weak[i][0] % 9;
-                        k1 = Logic.weak[i][1];
-                        i2 = Logic.weak[i][2] / 9;
-                        j2 = Logic.weak[i][2] % 9;
-                        k2 = Logic.weak[i][3];
+                        i1 = _buffer.weak[i][0] / 9;
+                        j1 = _buffer.weak[i][0] % 9;
+                        k1 = _buffer.weak[i][1];
+                        i2 = _buffer.weak[i][2] / 9;
+                        j2 = _buffer.weak[i][2] % 9;
+                        k2 = _buffer.weak[i][3];
 
                         X1 = cells[i1][j1].centers[k1].X - Xshift;
                         Y1 = cells[i1][j1].centers[k1].Y - Yshift;
@@ -553,7 +609,6 @@ namespace SudokuSolver
             public PointF[] centers;                                //координаты центра ячейки
 
             internal readonly Panel p;                              //панелька ячейки
-            private readonly Form mainForm;                         //ссылка на основную форму
 
             //цвета на все случаи жизни
             private readonly Color defaultColor = Color.FromArgb(173, 216, 230);        //обычный цвет
@@ -569,11 +624,10 @@ namespace SudokuSolver
 
 
             //конструктор ячейки
-            public Cell(int x, int y, Form f, Grid grid)
+            public Cell(int x, int y, Control parent, Grid grid)
             {
                 //переписываю параметры
                 this.grid = grid;
-                this.mainForm = f;
                 this.x = x;
                 this.y = y;
 
@@ -588,9 +642,9 @@ namespace SudokuSolver
                 p.Paint += DrawChain;
 
                 //добавляем панельки на форму
-                
-                mainForm.Controls.Add(p);
-                
+
+                parent.Controls.Add(p);
+
 
                 //лейбл значения
                 value = new Label()
@@ -923,10 +977,11 @@ namespace SudokuSolver
                     Yshift += c.Top;
                 }
 
-                if (Logic.chain != null && Logic.chain.Count != 0)
-                {
-                    grid.DrawChain(Xshift, Yshift, e);
-                }
+                grid.DrawChain(Xshift, Yshift, e);
+                //if (_buffer.chain != null && _buffer.chain.Count != 0)
+                //{
+                //    grid.DrawChain(Xshift, Yshift, e);
+                //}
             }
 
         }

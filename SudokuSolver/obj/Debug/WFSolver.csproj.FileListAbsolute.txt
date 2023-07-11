@@ -1,0 +1,15 @@
+E:\SudokuSolver\SudokuSolver\obj\Debug\WFSolver.csproj.AssemblyReference.cache
+E:\SudokuSolver\SudokuSolver\obj\Debug\WFSolver.csproj.SuggestedBindingRedirects.cache
+E:\SudokuSolver\SudokuSolver\obj\Debug\SudokuSolver.Solver.resources
+E:\SudokuSolver\SudokuSolver\obj\Debug\SudokuSolver.Loader.resources
+E:\SudokuSolver\SudokuSolver\obj\Debug\SudokuSolver.Properties.Resources.resources
+E:\SudokuSolver\SudokuSolver\obj\Debug\WFSolver.csproj.GenerateResource.cache
+E:\SudokuSolver\SudokuSolver\obj\Debug\WFSolver.csproj.CoreCompileInputs.cache
+E:\SudokuSolver\SudokuSolver\obj\Debug\SudokuSolver.exe
+E:\SudokuSolver\SudokuSolver\obj\Debug\SudokuSolver.pdb
+E:\SudokuSolver\SudokuSolver\bin\Debug\SudokuSolver.exe.config
+E:\SudokuSolver\SudokuSolver\bin\Debug\SudokuSolver.exe
+E:\SudokuSolver\SudokuSolver\bin\Debug\SudokuSolver.pdb
+E:\SudokuSolver\SudokuSolver\bin\Debug\SolverLibrary.dll
+E:\SudokuSolver\SudokuSolver\bin\Debug\SolverLibrary.pdb
+E:\SudokuSolver\SudokuSolver\obj\Debug\WFSolver.csproj.CopyComplete

@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Drawing;
-using System.IO;
 using System.Text;
 using System.Collections.Generic;
 using System.Windows.Forms;
 using SudokuSolver.controller;
-using SudokuSolver.view;
+using SolverLibrary.model;
+using SolverLibrary.Interfaces;
 
 namespace SudokuSolver
 {
-    public partial class Solver : Form
+    public partial class Solver : Form, ISolverView
     {
-        private readonly IController controller;
+        private IController _controller;
+        IController ISolverView.Controller { get => _controller; set => _controller = value; }
 
 
         private Grid grid;                      //нарисованная сетка
@@ -29,13 +30,17 @@ namespace SudokuSolver
 
         private Size formSize;                  //размер формы
         
-        private bool[] shownLinks;              //отображаемые связи
-        
-        
 
-        public Solver(IController controller)
+        private readonly string[] tech_names;   //список названия техник
+        private int linesCount = 0;
+        private Queue<string> output_lines = new Queue<string>();
+        private Queue<int> lines_in_output = new Queue<int>();
+
+        //передаю ссылку на контроллер и 
+        public Solver(IController controller, string[] tech_names)
         {
-            this.controller = controller;
+            this._controller = controller;
+            this.tech_names = tech_names;
             
             InitializeComponent();
 
@@ -52,7 +57,7 @@ namespace SudokuSolver
             //13 Y-Wings
             //14 Jellyfish
             //------------------------------------------------------------------------------------------------------------
-            controller.LoadFrom("13");
+            _controller.LoadFrom("13");
             //------------------------------------------------------------------------------------------------------------
 
         }
@@ -64,11 +69,12 @@ namespace SudokuSolver
             
             //создание интерфейса сетки
             grid = new Grid(this);
-
+            
 
             //добавляю ссылки в контроллер
-            controller.Grid = grid;
-            controller.Solver = this;
+            _controller.Grid = grid;
+            _controller.Solver = this;
+
 
             //создание консоли
             CreateConsole();
@@ -146,7 +152,7 @@ namespace SudokuSolver
         //рестарт
         private void RestartButton_Click(object sender, EventArgs e)
         {
-            controller.Restart();
+            _controller.Restart();
         }
         //----------------------------------------------------------------------------------------------------------------------
         //следующий шаг решения
@@ -162,27 +168,27 @@ namespace SudokuSolver
             }
 
             //отправляю 
-            controller.Do(flags);
+            _controller.Do(flags);
         }
 
         //нажатие кнопки назад
         private void UndoButtonClick(object sender, EventArgs e)
         {
-            controller.Undo();
+            _controller.Undo();
         }
 
         //----------------------------------------------------------------------------------------------------------------------
         //нажатие кнопки вызова загрузчика
         private void LoaderOpenButton_Click(object sender, EventArgs e)
         {
-            _ = new Loader(controller);
+            _ = new Loader(_controller);
         }
 
         //----------------------------------------------------------------------------------------------------------------------
         //нажатие на кнопку вызова конструктора
         private void ConstrOpenClick(object sender, EventArgs e)
         {
-            _ = new Constructor(this, controller);
+            _ = new Constructor(this, _controller);
         }
 
         //----------------------------------------------------------------------------------------------------------------------
@@ -199,21 +205,19 @@ namespace SudokuSolver
             };
             this.Controls.Add(tecniquesPanel);
 
-            tecniques = new CheckBox[Logic.tecniques.Count];
+            tecniques = new CheckBox[tech_names.Length];
             int checkBoxSize = 20;
             for (int i = 0; i < tecniques.Length; i++)
             {
                 tecniques[i] = new CheckBox()
                 {
-                    Text = Logic.tecniques[i],
+                    Text = tech_names[i],
                     Size = new Size(150, checkBoxSize),
                     Location = new Point(20, 25 + i * (checkBoxSize + 5))
                 };
                 tecniques[i].Font = new Font(tecniques[i].Font.Name, tecniques[i].Font.Size, FontStyle.Underline);
                 tecniques[i].Checked = true;
                 tecniquesPanel.Controls.Add(tecniques[i]);
-
-                Logic.tech.Add(Logic.tecniques[i], i);
             }
 
             //проверка последней техники
@@ -250,8 +254,6 @@ namespace SudokuSolver
         //создание панели связей
         private void CreateLinksPanel()
         {
-            shownLinks = new bool[9];
-
             linksPanel = new GroupBox()
             {
                 Location = new Point(highlightingPanel.Location.X + highlightingPanel.Width + 20, highlightingPanel.Location.Y),
@@ -287,7 +289,7 @@ namespace SudokuSolver
 
             
             //передаю в контроллер
-            controller.HighlightLinks(digit);
+            _controller.HighlightLinks(digit);
         }
 
         //----------------------------------------------------------------------------------------------------------------------
@@ -327,7 +329,7 @@ namespace SudokuSolver
             Button b = sender as Button;
             int digit = Convert.ToInt32(b.Text);
             //подсветил
-            controller.HighlightDigit(digit);
+            _controller.HighlightDigit(digit);
         }
 
         //----------------------------------------------------------------------------------------------------------------------
@@ -411,10 +413,6 @@ namespace SudokuSolver
         }
 
         //написать в консоль
-        int linesCount = 0;
-        Queue<string> output_lines = new Queue<string>();
-        Queue<int> lines_in_output = new Queue<int>();
-
         public void PrintToConsole(string output)
         {
 
@@ -463,7 +461,6 @@ namespace SudokuSolver
             base.OnPaint(e);
 
             grid.g = e.Graphics;
-            grid.DrawLines();
         }
         //----------------------------------------------------------------------------------------------------------------------
     }

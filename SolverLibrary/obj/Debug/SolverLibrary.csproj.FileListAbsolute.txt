@@ -1,0 +1,6 @@
+E:\SudokuSolver\SolverLibrary\bin\Debug\SolverLibrary.dll
+E:\SudokuSolver\SolverLibrary\bin\Debug\SolverLibrary.pdb
+E:\SudokuSolver\SolverLibrary\obj\Debug\SolverLibrary.csproj.AssemblyReference.cache
+E:\SudokuSolver\SolverLibrary\obj\Debug\SolverLibrary.csproj.CoreCompileInputs.cache
+E:\SudokuSolver\SolverLibrary\obj\Debug\SolverLibrary.dll
+E:\SudokuSolver\SolverLibrary\obj\Debug\SolverLibrary.pdb

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using SudokuSolver.controller;
+using SolverLibrary.model;
 
 namespace SudokuSolver
 {
@@ -21,9 +22,10 @@ namespace SudokuSolver
 
             //создаю контроллер WINFORMS
             WFController controller = new WFController();
-
+            //заполняю нужные массивы
+            Logic.Init();
             //запускаю форму
-            Application.Run(new Solver(controller));
+            Application.Run(new Solver(controller,Logic.tecniques.ToArray()));
         }
     }
 }

@@ -1,8 +1,8 @@
-﻿using SudokuSolver.controller;
-using System;
+﻿using System;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
+using SolverLibrary.Interfaces;
 
 namespace SudokuSolver
 {
@@ -25,6 +25,7 @@ namespace SudokuSolver
         {
             this.mainForm = mainForm;
             this.controller = controller;
+
 
             //настройка окна
             this.StartPosition = FormStartPosition.CenterScreen;
@@ -244,11 +245,11 @@ namespace SudokuSolver
         //кнопка загрузки в солвер
         private void LoadButton_Click(object sender, EventArgs e)
         {
-            Buffer.sudoku = new int[9][];
+            controller.Field.Buffer.sudoku = new int[9][];
 
             for (int i = 0; i < 9; i++)
             {
-                Buffer.sudoku[i] = new int[9];
+                controller.Field.Buffer.sudoku[i] = new int[9];
             }
 
             for (int i = 0; i < 9; i++)
@@ -257,11 +258,11 @@ namespace SudokuSolver
                 {
                     if (digits[i][j].Text.Length == 0)
                     {
-                        Buffer.sudoku[i][j] = 0;
+                        controller.Field.Buffer.sudoku[i][j] = 0;
                     }
                     else
                     {
-                        Buffer.sudoku[i][j] = Convert.ToInt32(digits[i][j].Text);
+                        controller.Field.Buffer.sudoku[i][j] = Convert.ToInt32(digits[i][j].Text);
                     }
                 }
             }
@@ -308,7 +309,7 @@ namespace SudokuSolver
 
                 controller.SaveToFile(name, sb.ToString());
 
-                MessageBox.Show("Файл " + name + " успешно сохранен.", "Сохранение", MessageBoxButtons.OK);
+                MessageBox.Show($"Файл {name} успешно сохранен.", "Сохранение", MessageBoxButtons.OK);
                 exitButton.Focus();
 
             }

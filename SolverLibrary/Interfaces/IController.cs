@@ -3,18 +3,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
+using SolverLibrary.model;
 
-namespace SudokuSolver.controller
+namespace SolverLibrary.Interfaces
 {
-    public  interface IController
+    public interface IController
     {
         Field Field { get; set; }
-        Grid Grid { get; set; }
-        Solver Solver { get; set; }
-        Loader Loader { get; set; }
-        Constructor Constructor { get; set; }
+        IGridView Grid { get; set; }
+        ISolverView Solver { get; set; }
+        ILoader Loader { get; set; }
+        IConstructor Constructor { get; set; }
 
-
+        
         bool[] UsedTechs { get; set; }
 
         void Do(bool[] usedTechs);

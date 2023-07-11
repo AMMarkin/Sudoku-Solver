@@ -2,46 +2,45 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SudokuSolver
+namespace SolverLibrary.model
 {
-    internal static class Logic
+
+    //класс с техниками
+    //получает на вход объект класса Field содержащий поле, а так же список используемых техник
+    //находит возможные исключения кандидатов или возможные установки значений
+    //записывает найденные ходы в буффер поля
+    public static class Logic
     {
 
         public const string noFound = "Исключений не найдено";
+        public const string done = "Судоку решено!";
 
         //массив и библиотека названий техник
-        public static List<string> tecniques = new List<string>() {
-            "Открытые одиночки", "Скрытые одиночки","Виртуальные одиночки",
-            "Открытые пары", "Cкрытые пары",
-            "Открытые тройки", "Скрытые тройки",
-            "Открытые четверки", "Скрытые четверки",
-            "BUG",
-            //"X-Cycles",
-            "X-Wings","Swordfish","Jellyfish",
-            "Y-Wings","XYZ-Wing",
-            "Simple Coloring","Extended Simple Coloring"
-        };
+        public static List<string> tecniques;
 
         public static Dictionary<string, int> tech = new Dictionary<string, int>();
 
-        //список ключей и исключенных кандидатов
-        public static List<int[]> clues;        //i,j -- где ключ,         k -- что ключ
-        public static List<int[]> removed;      //i,j -- откуда исключаем, k -- что исключаем
+        //заполениен библиотеки
+        public static void Init()
+        {
+            tecniques = new List<string>() {
+                "Открытые одиночки", "Скрытые одиночки","Виртуальные одиночки",
+                "Открытые пары", "Cкрытые пары",
+                "Открытые тройки", "Скрытые тройки",
+                "Открытые четверки", "Скрытые четверки",
+                "BUG",
+                //"X-Cycles",
+                "X-Wings","Swordfish","Jellyfish",
+                "Y-Wings","XYZ-Wing",
+                "Simple Coloring","Extended Simple Coloring"
+            };
 
-
-        //для цепных техник
-        //список связей и звеньев цепи 
-        //ind = 9 * i + j
-        public static List<int[]> chain;        //ind, k => ind, k    сильные связи !A =>  B
-        public static List<int[]> weak;         //ind, k => ind, k     слабые связи  A => !B
-        public static List<int[]> chainUnits;   //ind, k
-
-        //цепи по двум цветам
-        public static List<int[]> ON;           //ind, k
-        public static List<int[]> OFF;          //ind, k
-
-        public static bool done = false;
-
+            //заполняю библиотеку
+            for (int i = 0; i < tecniques.Count; i++)
+            {
+                tech.Add(tecniques[i], i);
+            }
+        }
         //перебор всех техник внесенных по возрастанию сложности
         public static string FindElimination(Field field, bool[] tecFlags)
         {
@@ -49,8 +48,8 @@ namespace SudokuSolver
             string answer = noFound;
 
             //очистка переменных
-            string tmp = "";
-            ClearChainBuffer();
+            string tmp;
+            field.Buffer.ClearChainBuffer();
 
             //потом буду включать через настройки как функцию
             if (SimpleRestriction(field) && false)
@@ -222,9 +221,9 @@ namespace SudokuSolver
                 }
                 else
                 {
-                    ON.Clear();
-                    OFF.Clear();
-                    chain.Clear();
+                    field.Buffer.ON.Clear();
+                    field.Buffer.OFF.Clear();
+                    field.Buffer.chain.Clear();
                 }
             }
 
@@ -238,14 +237,14 @@ namespace SudokuSolver
                 }
                 else
                 {
-                    ON.Clear();
-                    OFF.Clear();
-                    chain.Clear();
+                    field.Buffer.ON.Clear();
+                    field.Buffer.OFF.Clear();
+                    field.Buffer.chain.Clear();
                 }
             }
 
             //проверка решения
-            tmp = check(field);
+            tmp = Check(field);
             if (!tmp.Equals(""))
             {
                 return tmp;
@@ -254,58 +253,7 @@ namespace SudokuSolver
             return answer;
         }
 
-        public static void ClearChainBuffer()
-        {
-            clues?.Clear();
-            clues = clues ?? new List<int[]>();
-
-            removed?.Clear();
-            removed = removed ?? new List<int[]>();
-
-            chain?.Clear();
-            chain = chain ?? new List<int[]>();
-
-            weak?.Clear();
-            weak = weak ?? new List<int[]>();
-
-            chainUnits?.Clear();
-            chainUnits = chainUnits ?? new List<int[]>();
-
-            ON?.Clear();
-            ON = ON ?? new List<int[]>();
-
-            OFF?.Clear();
-            OFF = OFF ?? new List<int[]>();
-        }
-
-        //WXYZ-Wing
-        private static string WXYZ_Wing(Field field)
-        {
-            string answer = "";
-
-            //к моменту использования этой техники уже будут найдены все тройки и четверки
-
-            //нахожу три ячейки с четыремя кандидатами в строке или столбце
-            //по очереди пытаюсь выбрать одну из ячеек корнем
-            //в регионе корня ищу ячейку которая "закроет" четверку
-
-            //внутри четверки считаю колличество "несвязанных" чисел
-            //если несвязанных !=1 то скип
-            //если ==1 то ищу исключения среди ячеек которые видимы всеми ячейками с несвязанным числом 
-
-
-
-
-
-
-
-
-
-            return answer;
-        }
-
-
-
+        
         //X-Cycles
         //поиск циклов в цепи из сильных и слабых связей для одного числа
         //не готово
@@ -321,20 +269,20 @@ namespace SudokuSolver
                 //сильные связи для числа
                 CreateChain(field, k);
                 //нахожу слабые связи
-                fillWeakLinks();
+                FillWeakLinks(field);
 
 
                 //нахожу компоненты связности
-                subChains = new int[chainUnits.Count];
+                subChains = new int[field.Buffer.chainUnits.Count];
                 subChainCounter = 0;
 
-                bool[] visited = new bool[chainUnits.Count];
+                bool[] visited = new bool[field.Buffer.chainUnits.Count];
 
-                for (int v = 0; v < chainUnits.Count; v++)
+                for (int v = 0; v < field.Buffer.chainUnits.Count; v++)
                 {
                     if (!visited[v])
                     {
-                        dfsWeakStrong(ref visited, ref subChains, ref subChainCounter, v);
+                        DfsWeakStrong(ref visited, ref subChains, ref subChainCounter, v, field);
                         subChainCounter++;
                     }
                 }
@@ -345,10 +293,7 @@ namespace SudokuSolver
                     //раскрашиваю
                     //SubChainColoring(i, subChains);
 
-                    ClearChainBySubChain(i, subChains);
-
-
-
+                    ClearChainBySubChain(i, subChains, field);
                 }
 
 
@@ -367,8 +312,8 @@ namespace SudokuSolver
         {
             string answer = "";
 
-            int[] subChains = null;
-            int subChainCounter = 0;
+            int[] subChains;
+            int subChainCounter;
 
             //добавляю все сильные связи
             CreateChain(field, 0, 1, 2, 3, 4, 5, 6, 7, 8);
@@ -379,16 +324,16 @@ namespace SudokuSolver
             //разделение по компонентам связности
 
             //нахожу компоненты связности
-            subChains = new int[chainUnits.Count];
+            subChains = new int[field.Buffer.chainUnits.Count];
             subChainCounter = 0;
 
-            bool[] visited = new bool[chainUnits.Count];
+            bool[] visited = new bool[field.Buffer.chainUnits.Count];
 
-            for (int v = 0; v < chainUnits.Count; v++)
+            for (int v = 0; v < field.Buffer.chainUnits.Count; v++)
             {
                 if (!visited[v])
                 {
-                    dfsStrong(ref visited, ref subChains, ref subChainCounter, v);
+                    DfsStrong(ref visited, ref subChains, ref subChainCounter, v,field);
                     subChainCounter++;
                 }
             }
@@ -402,28 +347,28 @@ namespace SudokuSolver
             {
 
                 //раскрашиваю
-                SubChainColoring(i, subChains);
+                SubChainColoring(i, subChains, field);
 
                 //поиск исключений
 
                 //проверка повторения цвета 
-                answer = chainLogicRepeatRule(field, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 });
+                answer = ChainLogicRepeatRule(field, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 });
                 if (!answer.Equals(""))
                 {
-                    ClearChainBySubChain(i, subChains);
+                    ClearChainBySubChain(i, subChains, field);
                     return ("Extended Simple Coloring: " + answer);
                 }
                 //повторение цвета в ячейке
                 answer = TwiceInCellRule(field);
                 if (!answer.Equals(""))
                 {
-                    ClearChainBySubChain(i, subChains);
+                    ClearChainBySubChain(i, subChains,field);
                     return ("Extended Simple Coloring: " + answer);
                 }
                 answer = TwoColorsInCell(field);
                 if (!answer.Equals(""))
                 {
-                    ClearChainBySubChain(i, subChains);
+                    ClearChainBySubChain(i, subChains,field);
                     return ("Extended Simple Coloring: " + answer);
                 }
                 //кандидаты видимые из двух цветов
@@ -432,7 +377,7 @@ namespace SudokuSolver
                     answer = TwoColorsElsewhere(field, k);
                     if (!answer.Equals(""))
                     {
-                        ClearChainBySubChain(i, subChains);
+                        ClearChainBySubChain(i, subChains, field);
                         return ("Extended Simple Coloring: " + answer);
                     }
                 }
@@ -440,14 +385,14 @@ namespace SudokuSolver
                 answer = TwoColorsUnitCell(field);
                 if (!answer.Equals(""))
                 {
-                    ClearChainBySubChain(i, subChains);
+                    ClearChainBySubChain(i, subChains, field);
                     return ("Extended Simple Coloring: " + answer);
                 }
                 //цвет полностью исключающий ячейку
                 answer = CellEmptiedByColor(field);
                 if (!answer.Equals(""))
                 {
-                    ClearChainBySubChain(i, subChains);
+                    ClearChainBySubChain(i, subChains, field);
                     return ("Extended Simple Coloring: " + answer);
                 }
 
@@ -478,7 +423,7 @@ namespace SudokuSolver
                     }
                     //проверка нет ли текущей ячейки в цепи
                     contains = false;
-                    foreach (int[] unit in ON)
+                    foreach (int[] unit in field.Buffer.ON)
                     {
                         if (9 * i + j == unit[0])
                         {
@@ -490,7 +435,7 @@ namespace SudokuSolver
                     {
                         continue;
                     }
-                    foreach (int[] unit in OFF)
+                    foreach (int[] unit in field.Buffer.OFF)
                     {
                         if (9 * i + j == unit[0])
                         {
@@ -506,7 +451,7 @@ namespace SudokuSolver
                     //если не закрашена то 
                     //иду по всем ее кандидатам
 
-                    //для ON
+                    //для field.Buffer.ON
                     emptyed = true;
                     for (int k = 0; k < 9; k++)
                     {
@@ -514,7 +459,7 @@ namespace SudokuSolver
                         {
                             continue;
                         }
-                        if (!seenByColor(9 * i + j, k, true))
+                        if (!SeenByColor(9 * i + j, k, true, field))
                         {
                             emptyed = false;
                             break;
@@ -524,30 +469,30 @@ namespace SudokuSolver
                     //то этот цвет исключается
                     if (emptyed)
                     {
-                        foreach (int[] rem in ON)
+                        foreach (int[] rem in field.Buffer.ON)
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
-                            Buffer.AddRemovingChange(rem[0], rem[1] + 1);
-                            removed.Add(new int[] { i1, j1, rem[1] });
+                            field.Buffer.AddRemovingChange(rem[0], rem[1] + 1);
+                            field.Buffer.removed.Add(new int[] { i1, j1, rem[1] });
                         }
-                        ON.Clear();
-                        ON.AddRange(OFF);
-                        OFF.Clear();
-                        clues.Add(new int[] { i, j });
+                        field.Buffer.ON.Clear();
+                        field.Buffer.ON.AddRange(field.Buffer.OFF);
+                        field.Buffer.OFF.Clear();
+                        field.Buffer.clues.Add(new int[] { i, j });
                         answer = $"все числа в ячейке ({(i + 1)};{(j + 1)}) видны цветом";
                         return answer;
 
                     }
 
-                    //для OFF
+                    //для field.Buffer.OFF
                     for (int k = 0; k < 9; k++)
                     {
                         if (!field[i, j].candidates[k])
                         {
                             continue;
                         }
-                        if (!seenByColor(9 * i + j, k, false))
+                        if (!SeenByColor(9 * i + j, k, false, field))
                         {
                             emptyed = false;
                             break;
@@ -557,15 +502,15 @@ namespace SudokuSolver
                     //то этот цвет исключается
                     if (emptyed)
                     {
-                        foreach (int[] rem in OFF)
+                        foreach (int[] rem in field.Buffer.OFF)
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
-                            Buffer.AddRemovingChange(rem[0], rem[1] + 1);
-                            removed.Add(new int[] { i1, j1, rem[1] });
+                            field.Buffer.AddRemovingChange(rem[0], rem[1] + 1);
+                            field.Buffer.removed.Add(new int[] { i1, j1, rem[1] });
                         }
-                        OFF.Clear();
-                        clues.Add(new int[] { i, j});
+                        field.Buffer.OFF.Clear();
+                        field.Buffer.clues.Add(new int[] { i, j});
                         answer = $"все числа в ячейке ({(i + 1)};{(j + 1)}) видны цветом";
                         return answer;
 
@@ -579,16 +524,16 @@ namespace SudokuSolver
         }
 
         //виден ли кандидат в ячейке цветом
-        private static bool seenByColor(int ind, int k, bool OnOff)
+        private static bool SeenByColor(int ind, int k, bool OnOff, Field field)
         {
             //OnOff 
-            //true  - ON
-            //false - OFF
+            //true  - Buffer.ON
+            //false - Buffer.OFF
 
             bool res = false;
             if (OnOff)
             {
-                foreach (int[] unit in ON)
+                foreach (int[] unit in field.Buffer.ON)
                 {
                     //если не тот кандидат пропускаем
                     if (unit[1] != k)
@@ -601,7 +546,7 @@ namespace SudokuSolver
                         continue;
                     }
                     //если то же число, в другой ячейке из нужного цвета видит нужную ячейку, то возвращаем тру
-                    if (isSeen(ind, unit[0]))
+                    if (IsSeen(ind, unit[0]))
                     {
                         return true;
                     }
@@ -611,7 +556,7 @@ namespace SudokuSolver
             else
             {
                 //тоже самое для другого цвета
-                foreach (int[] unit in OFF)
+                foreach (int[] unit in field.Buffer.OFF)
                 {
                     //если не тот кандидат пропускаем
                     if (unit[1] != k)
@@ -624,7 +569,7 @@ namespace SudokuSolver
                         continue;
                     }
                     //если то же число, в другой ячейке из нужного цвета видит нужную ячейку, то возвращаем тру
-                    if (isSeen(ind, unit[0]))
+                    if (IsSeen(ind, unit[0]))
                     {
                         return true;
                     }
@@ -650,7 +595,7 @@ namespace SudokuSolver
             int i1, j1;
             int i2, j2;
             //обхожу весь первый цвет
-            foreach (int[] unit1 in ON)
+            foreach (int[] unit1 in field.Buffer.ON)
             {
                 i1 = unit1[0] / 9;
                 j1 = unit1[0] % 9;
@@ -661,7 +606,7 @@ namespace SudokuSolver
                     if (k != unit1[1] && field[i1, j1].candidates[k])
                     {
                         //ищем ему пару во втором цвете
-                        foreach (int[] unit2 in OFF)
+                        foreach (int[] unit2 in field.Buffer.OFF)
                         {
                             //если не тот кандидат 
                             //пропускаем
@@ -676,7 +621,7 @@ namespace SudokuSolver
                             }
                             //если не видит 
                             //пропускаем
-                            if (!isSeen(unit1[0], unit2[0]))
+                            if (!IsSeen(unit1[0], unit2[0]))
                             {
                                 continue;
                             }
@@ -687,8 +632,8 @@ namespace SudokuSolver
 
                             answer = $"{(k + 1)} в ячейке ({(i1 + 1)};{(j1 + 1)}) видит один цвет и свою пару в ячейке ({(i2 + 1)};{(j2 + 1)})";
                             //field[i1, j1].RemoveCandidat(k + 1);
-                            Buffer.AddRemovingChange(i1, j1, k + 1);
-                            removed.Add(new int[] { i1, j1, k });
+                            field.Buffer.AddRemovingChange(i1, j1, k + 1);
+                            field.Buffer.removed.Add(new int[] { i1, j1, k });
                             return answer;
                         }
                     }
@@ -696,7 +641,7 @@ namespace SudokuSolver
             }
 
             //то же самое для второго цвета
-            foreach (int[] unit1 in OFF)
+            foreach (int[] unit1 in field.Buffer.OFF)
             {
                 i1 = unit1[0] / 9;
                 j1 = unit1[0] % 9;
@@ -707,7 +652,7 @@ namespace SudokuSolver
                     if (k != unit1[1] && field[i1, j1].candidates[k])
                     {
                         //ищем ему пару во втором цвете
-                        foreach (int[] unit2 in ON)
+                        foreach (int[] unit2 in field.Buffer.ON)
                         {
                             //если не тот кандидат 
                             //пропускаем
@@ -722,7 +667,7 @@ namespace SudokuSolver
                             }
                             //если не видит 
                             //пропускаем
-                            if (!isSeen(unit1[0], unit2[0]))
+                            if (!IsSeen(unit1[0], unit2[0]))
                             {
                                 continue;
                             }
@@ -733,8 +678,8 @@ namespace SudokuSolver
 
                             answer = $"{(k + 1)} в ячейке ({(i1 + 1)};{(j1 + 1)}) видит один цвет и свою пару в ячейке ({(i2 + 1)};{(j2 + 1)})";
                             //field[i1, j1].RemoveCandidat(k + 1);
-                            Buffer.AddRemovingChange(i1, j1, k + 1);
-                            removed.Add(new int[] { i1, j1, k });
+                            field.Buffer.AddRemovingChange(i1, j1, k + 1);
+                            field.Buffer.removed.Add(new int[] { i1, j1, k });
                             return answer;
                         }
                     }
@@ -746,7 +691,7 @@ namespace SudokuSolver
         }
 
         //проверка видят ли ячейки друг друга
-        private static bool isSeen(int ind1, int ind2)
+        private static bool IsSeen(int ind1, int ind2)
         {
             bool res = false;
             int i1, i2;
@@ -785,10 +730,10 @@ namespace SudokuSolver
             int i, j;
             bool impact = false;
             //иду по первому цвету
-            foreach (int[] unit1 in ON)
+            foreach (int[] unit1 in field.Buffer.ON)
             {
                 //ищу такой же индекс во втором цвете 
-                foreach (int[] unit2 in OFF)
+                foreach (int[] unit2 in field.Buffer.OFF)
                 {
                     //если нахожу то исключаю из ячейки все кроме этих двух цветов
                     if (unit1[0] == unit2[0])
@@ -801,8 +746,8 @@ namespace SudokuSolver
                             if (k != unit1[1] && k != unit2[1] && field[i, j].candidates[k])
                             {
                                 //field[i, j].RemoveCandidat(k + 1);
-                                Buffer.AddRemovingChange(i, j, k + 1);
-                                removed.Add(new int[] { i, j, k });
+                                field.Buffer.AddRemovingChange(i, j, k + 1);
+                                field.Buffer.removed.Add(new int[] { i, j, k });
                                 impact = true;
                             }
                         }
@@ -829,10 +774,10 @@ namespace SudokuSolver
             int i1, j1;
 
             //полным перебором смотрю нет ли повторений индексов
-            foreach (int[] unit1 in ON)
+            foreach (int[] unit1 in field.Buffer.ON)
             {
 
-                foreach (int[] unit2 in ON)
+                foreach (int[] unit2 in field.Buffer.ON)
                 {
                     if (unit2.Equals(unit1))
                     {
@@ -842,21 +787,21 @@ namespace SudokuSolver
                     if (unit2[0] == unit1[0])
                     {
 
-                        //Все ON удаляются
-                        foreach (int[] rem in ON)
+                        //Все field.Buffer.ON удаляются
+                        foreach (int[] rem in field.Buffer.ON)
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
                             //field[i1, j1].RemoveCandidat(rem[1] + 1);
-                            Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
-                            removed.Add(new int[] { i1, j1, rem[1] });
+                            field.Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
+                            field.Buffer.removed.Add(new int[] { i1, j1, rem[1] });
                         }
-                        //для красоты перекидываем оставшееся в ON
-                        ON.Clear();
-                        ON.AddRange(OFF);
-                        OFF.Clear();
-                        clues.Add(new int[] { unit2[0] / 9, unit2[0] % 9, unit2[1] });
-                        clues.Add(new int[] { unit2[0] / 9, unit2[0] % 9, unit1[1] });
+                        //для красоты перекидываем оставшееся в field.Buffer.ON
+                        field.Buffer.ON.Clear();
+                        field.Buffer.ON.AddRange(field.Buffer.OFF);
+                        field.Buffer.OFF.Clear();
+                        field.Buffer.clues.Add(new int[] { unit2[0] / 9, unit2[0] % 9, unit2[1] });
+                        field.Buffer.clues.Add(new int[] { unit2[0] / 9, unit2[0] % 9, unit1[1] });
                         answer = $"повторение цвета в ячейке ({(unit2[0] / 9 + 1)};{(unit2[0] % 9 + 1)})";
                         return answer;
                     }
@@ -864,10 +809,10 @@ namespace SudokuSolver
             }
 
             //полным перебором смотрю нет ли повторений индексов
-            foreach (int[] unit1 in OFF)
+            foreach (int[] unit1 in field.Buffer.OFF)
             {
 
-                foreach (int[] unit2 in OFF)
+                foreach (int[] unit2 in field.Buffer.OFF)
                 {
                     if (unit2.Equals(unit1))
                     {
@@ -877,20 +822,20 @@ namespace SudokuSolver
                     if (unit2[0] == unit1[0])
                     {
 
-                        //Все ON удаляются
-                        foreach (int[] rem in OFF)
+                        //Все field.Buffer.ON удаляются
+                        foreach (int[] rem in field.Buffer.OFF)
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
                             //field[i1, j1].RemoveCandidat(rem[1] + 1);
-                            Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
-                            removed.Add(new int[] { i1, j1, rem[1] });
+                            field.Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
+                            field.Buffer.removed.Add(new int[] { i1, j1, rem[1] });
                         }
-                        //для красоты перекидываем оставшееся в ON
-                        OFF.Clear();
+                        //для красоты перекидываем оставшееся в field.Buffer.ON
+                        field.Buffer.OFF.Clear();
 
-                        clues.Add(new int[] { unit2[0] / 9, unit2[0] % 9, unit2[1] });
-                        clues.Add(new int[] { unit2[0] / 9, unit2[0] % 9, unit1[1] });
+                        field.Buffer.clues.Add(new int[] { unit2[0] / 9, unit2[0] % 9, unit2[1] });
+                        field.Buffer.clues.Add(new int[] { unit2[0] / 9, unit2[0] % 9, unit1[1] });
                         answer = $"повторение цвета в ячейке ({(unit2[0] / 9 + 1)};{(unit2[0] % 9 + 1)})";
                         return answer;
                     }
@@ -903,8 +848,8 @@ namespace SudokuSolver
         private static void AddBiValueToChain(Field field)
         {
             int counter = 0;
-            int a = -1;
-            int b = -1;
+            int a;
+            int b;
 
             for (int i = 0; i < 9; i++)
             {
@@ -938,9 +883,9 @@ namespace SudokuSolver
 
                         //добавляю в цепь сильную связь
 
-                        AddLinkToChain(9 * i + j, 9 * i + j, a, b);
-                        AddUnitToChain(9 * i + j, a);
-                        AddUnitToChain(9 * i + j, b);
+                        AddLinkToChain(9 * i + j, 9 * i + j, a, b, field);
+                        AddUnitToChain(9 * i + j, a, field);
+                        AddUnitToChain(9 * i + j, b, field);
 
                     }
                 }
@@ -948,7 +893,7 @@ namespace SudokuSolver
         }
 
         //очистка цепи для комфортного отображения
-        private static void ClearChainBySubChain(int subchainNumber, int[] subchains)
+        private static void ClearChainBySubChain(int subchainNumber, int[] subchains, Field field)
         {
             int ind, k;
             List<int[]> rem = new List<int[]>();
@@ -958,10 +903,10 @@ namespace SudokuSolver
                 if (subchains[i] != subchainNumber)
                 {
                     //запоминаем
-                    ind = chainUnits[i][0];
-                    k = chainUnits[i][1];
+                    ind = field.Buffer.chainUnits[i][0];
+                    k = field.Buffer.chainUnits[i][1];
 
-                    foreach (int[] link in chain)
+                    foreach (int[] link in field.Buffer.chain)
                     {
                         if ((link[0] == ind && link[1] == k) || (link[2] == ind && link[3] == k))
                         {
@@ -973,28 +918,9 @@ namespace SudokuSolver
 
             for (int i = 0; i < rem.Count; i++)
             {
-                chain.Remove(rem[i]);
+                field.Buffer.chain.Remove(rem[i]);
             }
 
-        }
-
-        //DEBUG
-        private static string printBiValue()
-        {
-            string answer = "";
-            int i, j;
-            foreach (int[] link in chain)
-            {
-                if (link[0] == link[2])
-                {
-                    i = link[0] / 9;
-                    j = link[0] % 9;
-
-                    answer += $"\n({(i + 1)};{(j + 1)}) => {(link[1] + 1)} - {(link[3] + 1)}";
-                }
-            }
-
-            return answer;
         }
 
         //Simple Coloring
@@ -1019,20 +945,20 @@ namespace SudokuSolver
                 //раскрашиваем цепь в 2 цвета
 
                 //списки цветов
-                ON.Clear();
-                OFF.Clear();
+                field.Buffer.ON.Clear();
+                field.Buffer.OFF.Clear();
 
                 //нахожу компоненты связности
-                subChains = new int[chainUnits.Count];
+                subChains = new int[field.Buffer.chainUnits.Count];
                 subChainCounter = 0;
 
-                bool[] visited = new bool[chainUnits.Count];
+                bool[] visited = new bool[field.Buffer.chainUnits.Count];
 
-                for (int v = 0; v < chainUnits.Count; v++)
+                for (int v = 0; v < field.Buffer.chainUnits.Count; v++)
                 {
                     if (!visited[v])
                     {
-                        dfsStrong(ref visited, ref subChains, ref subChainCounter, v);
+                        DfsStrong(ref visited, ref subChains, ref subChainCounter, v, field);
                         subChainCounter++;
                     }
                 }
@@ -1041,17 +967,17 @@ namespace SudokuSolver
                 {
 
                     //раскрашиваю
-                    SubChainColoring(i, subChains);
+                    SubChainColoring(i, subChains, field);
 
                     //поиск исключений
 
                     //повторения цвета
                     //для одного числа
 
-                    answer = chainLogicRepeatRule(field, new int[] { k });
+                    answer = ChainLogicRepeatRule(field, new int[] { k });
                     if (!answer.Equals(""))
                     {
-                        ClearChainBySubChain(i, subChains);
+                        ClearChainBySubChain(i, subChains, field);
                         return ("Simple Coloring: " + answer);
                     }
 
@@ -1059,7 +985,7 @@ namespace SudokuSolver
                     answer = TwoColorsElsewhere(field, k);
                     if (!answer.Equals(""))
                     {
-                        ClearChainBySubChain(i, subChains);
+                        ClearChainBySubChain(i, subChains, field);
                         return ("Simple Coloring: " + answer);
                     }
 
@@ -1072,15 +998,15 @@ namespace SudokuSolver
         //исключение кандидатов видимых двумя цветами
         private static string TwoColorsElsewhere(Field field, int k)
         {
-            string answer = "";
+            string answer;
 
             List<int> seenbyON = new List<int>();
             List<int> intersec = new List<int>();
 
             int i, j;
             int i1, j1;
-            //находим все ячейки которые видны кандидатом k в группе ON
-            foreach (int[] unit in ON)
+            //находим все ячейки которые видны кандидатом k в группе Buffer.ON
+            foreach (int[] unit in field.Buffer.ON)
             {
                 //если нашли нужное число
                 if (unit[1] == k)
@@ -1102,8 +1028,8 @@ namespace SudokuSolver
                 }
             }
 
-            //находим все ячейки которые видны кандидатом k в группе OFF
-            foreach (int[] unit in OFF)
+            //находим все ячейки которые видны кандидатом k в группе field.Buffer.OFF
+            foreach (int[] unit in field.Buffer.OFF)
             {
                 //если нашли нужное число
                 if (unit[1] == k)
@@ -1134,10 +1060,10 @@ namespace SudokuSolver
                 {
                     answer += $"({(i + 1)};{(j + 1)}) ";
                     //field[i, j].RemoveCandidat(k + 1);
-                    Buffer.AddRemovingChange(i, j, k + 1);
+                    field.Buffer.AddRemovingChange(i, j, k + 1);
                     impact = true;
                 }
-                removed.Add(new int[] { i, j, k });
+                field.Buffer.removed.Add(new int[] { i, j, k });
             }
             if (impact)
             {
@@ -1153,7 +1079,7 @@ namespace SudokuSolver
         }
 
         //повторение цвета 
-        private static string chainLogicRepeatRule(Field field, int[] kArray)
+        private static string ChainLogicRepeatRule(Field field, int[] kArray)
         {
             string answer = "";
 
@@ -1166,14 +1092,14 @@ namespace SudokuSolver
             {
                 //в строках
                 //------------------------------------------------------------------------------
-                //для ON
+                //для Buffer.ON
                 int row;
                 for (int j = 0; j < 9; j++)
                 {
                     flags[j] = false;
                 }
                 row = -1;
-                foreach (int[] unit in ON)
+                foreach (int[] unit in field.Buffer.ON)
                 {
                     row = unit[0] / 9;
 
@@ -1188,19 +1114,19 @@ namespace SudokuSolver
                     else
                     {
                         repeat = true;
-                        //Все ON удаляются
-                        foreach (int[] rem in ON)
+                        //Все field.Buffer.ON удаляются
+                        foreach (int[] rem in field.Buffer.ON)
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
                             //field[i1, j1].RemoveCandidat(rem[1] + 1);
-                            Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
-                            removed.Add(new int[] { i1, j1, rem[1] });
+                            field.Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
+                            field.Buffer.removed.Add(new int[] { i1, j1, rem[1] });
                         }
-                        //для красоты перекидываем оставшееся в ON
-                        ON.Clear();
-                        ON.AddRange(OFF);
-                        OFF.Clear();
+                        //для красоты перекидываем оставшееся в field.Buffer.ON
+                        field.Buffer.ON.Clear();
+                        field.Buffer.ON.AddRange(field.Buffer.OFF);
+                        field.Buffer.OFF.Clear();
                         break;
                     }
                 }
@@ -1210,13 +1136,13 @@ namespace SudokuSolver
                     return answer;
                 }
 
-                //для OFF
+                //для Buffer.OFF
                 for (int j = 0; j < 9; j++)
                 {
                     flags[j] = false;
                 }
                 row = -1;
-                foreach (int[] unit in OFF)
+                foreach (int[] unit in field.Buffer.OFF)
                 {
                     row = unit[0] / 9;
                     if (unit[1] != k)
@@ -1231,16 +1157,16 @@ namespace SudokuSolver
                     else
                     {
                         repeat = true;
-                        //Все ON удаляются
-                        foreach (int[] rem in OFF)
+                        //Все field.Buffer.ON удаляются
+                        foreach (int[] rem in field.Buffer.OFF)
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
                             //field[i1, j1].RemoveCandidat(rem[1] + 1);
-                            Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
-                            removed.Add(new int[] { i1, j1, rem[1] });
+                            field.Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
+                            field.Buffer.removed.Add(new int[] { i1, j1, rem[1] });
                         }
-                        OFF.Clear();
+                        field.Buffer.OFF.Clear();
                         break;
                     }
                 }
@@ -1252,13 +1178,13 @@ namespace SudokuSolver
                 //------------------------------------------------------------------------------
                 //в столбцах
                 int col;
-                //для ON
+                //для Buffer.ON
                 for (int j = 0; j < 9; j++)
                 {
                     flags[j] = false;
                 }
                 col = -1;
-                foreach (int[] unit in ON)
+                foreach (int[] unit in field.Buffer.ON)
                 {
                     col = unit[0] / 9;
                     if (unit[1] != k)
@@ -1272,19 +1198,19 @@ namespace SudokuSolver
                     else
                     {
                         repeat = true;
-                        //Все ON исключаются
-                        foreach (int[] rem in ON)
+                        //Все field.Buffer.ON исключаются
+                        foreach (int[] rem in field.Buffer.ON)
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
                             //field[i1, j1].RemoveCandidat(rem[1] + 1);
-                            Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
-                            removed.Add(new int[] { i1, j1, rem[1] });
+                            field.Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
+                            field.Buffer.removed.Add(new int[] { i1, j1, rem[1] });
                         }
-                        //для красоты перекидываем оставшееся в ON
-                        ON.Clear();
-                        ON.AddRange(OFF);
-                        OFF.Clear();
+                        //для красоты перекидываем оставшееся в field.Buffer.ON
+                        field.Buffer.ON.Clear();
+                        field.Buffer.ON.AddRange(field.Buffer.OFF);
+                        field.Buffer.OFF.Clear();
                         break;
                     }
                 }
@@ -1294,13 +1220,13 @@ namespace SudokuSolver
                     return answer;
                 }
 
-                //для OFF
+                //для Buffer.OFF
                 for (int j = 0; j < 9; j++)
                 {
                     flags[j] = false;
                 }
                 col = -1;
-                foreach (int[] unit in OFF)
+                foreach (int[] unit in field.Buffer.OFF)
                 {
                     col = unit[0] / 9;
                     if (unit[1] != k)
@@ -1314,17 +1240,17 @@ namespace SudokuSolver
                     else
                     {
                         repeat = true;
-                        //Все ON исключаются
-                        foreach (int[] rem in OFF)
+                        //Все field.Buffer.ON исключаются
+                        foreach (int[] rem in field.Buffer.OFF)
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
                             //field[i1, j1].RemoveCandidat(rem[1] + 1);
-                            Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
-                            removed.Add(new int[] { i1, j1, rem[1] });
+                            field.Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
+                            field.Buffer.removed.Add(new int[] { i1, j1, rem[1] });
                         }
-                        //для красоты перекидываем оставшееся в ON
-                        OFF.Clear();
+                        //для красоты перекидываем оставшееся в field.Buffer.ON
+                        field.Buffer.OFF.Clear();
                         break;
                     }
                 }
@@ -1337,13 +1263,13 @@ namespace SudokuSolver
                 //------------------------------------------------------------------------------
                 //в регионах
                 int reg;
-                //для ON
+                //для Buffer.ON
                 for (int j = 0; j < 9; j++)
                 {
                     flags[j] = false;
                 }
                 reg = -1;
-                foreach (int[] unit in ON)
+                foreach (int[] unit in field.Buffer.ON)
                 {
                     int x = unit[0] / 9;
                     int y = unit[0] % 9;
@@ -1359,19 +1285,19 @@ namespace SudokuSolver
                     else
                     {
                         repeat = true;
-                        //Все ON исключаются
-                        foreach (int[] rem in ON)
+                        //Все field.Buffer.ON исключаются
+                        foreach (int[] rem in field.Buffer.ON)
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
                             //field[i1, j1].RemoveCandidat(rem[1] + 1);
-                            Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
-                            removed.Add(new int[] { i1, j1, rem[1] });
+                            field.Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
+                            field.Buffer.removed.Add(new int[] { i1, j1, rem[1] });
                         }
-                        //для красоты перекидываем оставшееся в ON
-                        ON.Clear();
-                        ON.AddRange(OFF);
-                        OFF.Clear();
+                        //для красоты перекидываем оставшееся в field.Buffer.ON
+                        field.Buffer.ON.Clear();
+                        field.Buffer.ON.AddRange(field.Buffer.OFF);
+                        field.Buffer.OFF.Clear();
                         break;
                     }
                 }
@@ -1380,7 +1306,7 @@ namespace SudokuSolver
                     answer = $"повторение цвета в регионе {(reg + 1)}";
                     return answer;
                 }
-                //для OFF
+                //для Buffer.OFF
                 if (!repeat)
                 {
                     for (int j = 0; j < 9; j++)
@@ -1388,7 +1314,7 @@ namespace SudokuSolver
                         flags[j] = false;
                     }
                     col = -1;
-                    foreach (int[] unit in OFF)
+                    foreach (int[] unit in field.Buffer.OFF)
                     {
                         int x = unit[0] / 9;
                         int y = unit[0] % 9;
@@ -1404,17 +1330,17 @@ namespace SudokuSolver
                         else
                         {
                             repeat = true;
-                            //Все OFF исключаются
-                            foreach (int[] rem in OFF)
+                            //Все field.Buffer.OFF исключаются
+                            foreach (int[] rem in field.Buffer.OFF)
                             {
                                 i1 = rem[0] / 9;
                                 j1 = rem[0] % 9;
                                 //field[i1, j1].RemoveCandidat(rem[1] + 1);
-                                Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
-                                removed.Add(new int[] { i1, j1, rem[1] });
+                                field.Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
+                                field.Buffer.removed.Add(new int[] { i1, j1, rem[1] });
                             }
-                            //для красоты перекидываем оставшееся в ON
-                            OFF.Clear();
+                            //для красоты перекидываем оставшееся в field.Buffer.ON
+                            field.Buffer.OFF.Clear();
                             break;
                         }
                     }
@@ -1432,7 +1358,7 @@ namespace SudokuSolver
         }
 
         //раскраска
-        private static void SubChainColoring(int subChainNumber, int[] subchains)
+        private static void SubChainColoring(int subChainNumber, int[] subchains, Field field)
         {
             //переписываю кусок в массив для удобной работы
             int counter = 0;
@@ -1456,42 +1382,42 @@ namespace SudokuSolver
                 if (subchains[j] == subChainNumber)
                 {
                     subChain[counter] = new int[3];
-                    subChain[counter][0] = chainUnits[j][0];    //ind
-                    subChain[counter][1] = chainUnits[j][1];    //k
+                    subChain[counter][0] = field.Buffer.chainUnits[j][0];    //ind
+                    subChain[counter][1] = field.Buffer.chainUnits[j][1];    //k
                     subChain[counter][2] = 0;                   //color
                     counter++;
                 }
             }
 
-            //раскрашиваю начиная с ON
+            //раскрашиваю начиная с Buffer.ON
             subChain[0][2] = 1;
 
-            int[][] links = findStrongLinksInChain(subChain[0][0], subChain[0][1]);
+            int[][] links = FindStrongLinksInChain(subChain[0][0], subChain[0][1], field);
 
-            //ON  - true
-            //OFF - false
+            //Buffer.ON  - true
+            //Buffer.OFF - false
 
-            coloring(ref subChain, links, false);
+            Coloring(ref subChain, links, false, field);
 
 
 
-            ON.Clear();
-            OFF.Clear();
+            field.Buffer.ON.Clear();
+            field.Buffer.OFF.Clear();
             for (int j = 0; j < subChain.Length; j++)
             {
                 if (subChain[j][2] == 1)
                 {
-                    ON.Add(new int[] { subChain[j][0], subChain[j][1] });
+                    field.Buffer.ON.Add(new int[] { subChain[j][0], subChain[j][1] });
                 }
                 if (subChain[j][2] == -1)
                 {
-                    OFF.Add(new int[] { subChain[j][0], subChain[j][1] });
+                    field.Buffer.OFF.Add(new int[] { subChain[j][0], subChain[j][1] });
                 }
             }
         }
 
         //рекурсивный метод для раскраски цепи
-        private static void coloring(ref int[][] subChain, int[][] links, bool OnOff)
+        private static void Coloring(ref int[][] subChain, int[][] links, bool OnOff, Field field)
         {
             //для каждого ребра 
             for (int i = 0; i < links.Length; i++)
@@ -1504,7 +1430,7 @@ namespace SudokuSolver
                     if (subChain[j][2] == 0 && subChain[j][0] == links[i][0] && subChain[j][1] == links[i][1])
                     {
                         subChain[j][2] = OnOff ? 1 : -1;
-                        coloring(ref subChain, findStrongLinksInChain(subChain[j][0], subChain[j][1]), !OnOff);
+                        Coloring(ref subChain, FindStrongLinksInChain(subChain[j][0], subChain[j][1], field), !OnOff, field);
                         break;
                     }
                 }
@@ -1522,33 +1448,33 @@ namespace SudokuSolver
                 matrix[i] = new int[9];
             }
 
-            int counter = 0;
-            int a = -1;
-            int b = -1;
+            int counter;
+            int a;
+            int b;
 
-            if (chain != null)
+            if (field.Buffer.chain != null)
             {
-                chain.Clear();
+                field.Buffer.chain.Clear();
             }
             else
             {
-                chain = new List<int[]>();
+                field.Buffer.chain = new List<int[]>();
             }
-            if (weak != null)
+            if (field.Buffer.weak != null)
             {
-                weak.Clear();
-            }
-            else
-            {
-                weak = new List<int[]>();
-            }
-            if (chainUnits != null)
-            {
-                chainUnits.Clear();
+                field.Buffer.weak.Clear();
             }
             else
             {
-                chainUnits = new List<int[]>();
+                field.Buffer.weak = new List<int[]>();
+            }
+            if (field.Buffer.chainUnits != null)
+            {
+                field.Buffer.chainUnits.Clear();
+            }
+            else
+            {
+                field.Buffer.chainUnits = new List<int[]>();
             }
             //заполняем цепи для каждого числа отдельно
             foreach (int k in kArray)
@@ -1602,9 +1528,9 @@ namespace SudokuSolver
                         }
 
                         //добавил в цепь
-                        AddLinkToChain(a, b, k, k);
-                        AddUnitToChain(a, k);
-                        AddUnitToChain(b, k);
+                        AddLinkToChain(a, b, k, k, field);
+                        AddUnitToChain(a, k, field);
+                        AddUnitToChain(b, k, field);
                     }
                 }
 
@@ -1641,9 +1567,9 @@ namespace SudokuSolver
                             }
                         }
                         //добавил в цепь
-                        AddLinkToChain(a, b, k, k);
-                        AddUnitToChain(a, k);
-                        AddUnitToChain(b, k);
+                        AddLinkToChain(a, b, k, k, field);
+                        AddUnitToChain(a, k, field);
+                        AddUnitToChain(b, k, field);
 
                     }
 
@@ -1696,9 +1622,9 @@ namespace SudokuSolver
                                 }
                             }
                             //добавил в цепь
-                            AddLinkToChain(a, b, k, k);
-                            AddUnitToChain(a, k);
-                            AddUnitToChain(b, k);
+                            AddLinkToChain(a, b, k, k, field);
+                            AddUnitToChain(a, k, field);
+                            AddUnitToChain(b, k, field);
                         }
                     }
                 }
@@ -1708,27 +1634,13 @@ namespace SudokuSolver
             }
         }
 
-        //DEBUG
-        private static string pringLinks(int ind, int k, int[][] links)
-        {
-            string ans = $"({(ind / 9 + 1)};{(ind % 9 + 1)}) => "
-                ;
-            for (int i = 0; i < links.Length; i++)
-            {
-                ans += $"({(links[i][0] / 9 + 1)};{(links[i][0] % 9 + 1)}) ";
-            }
-
-
-
-            return ans;
-        }
-
+        
         //найти все сильные связи в цепи
-        private static int[][] findStrongLinksInChain(int ind, int k)
+        private static int[][] FindStrongLinksInChain(int ind, int k, Field field)
         {
             //считаю колличество связей
             int counter = 0;
-            foreach (int[] link in chain)
+            foreach (int[] link in field.Buffer.chain)
             {
                 if ((link[0] == ind && link[1] == k))
                 {
@@ -1741,7 +1653,7 @@ namespace SudokuSolver
 
             //ind, k
             counter = 0;
-            foreach (int[] link in chain)
+            foreach (int[] link in field.Buffer.chain)
             {
                 if ((link[0] == ind && link[1] == k))
                 {
@@ -1760,41 +1672,21 @@ namespace SudokuSolver
             return links;
         }
 
-        //DEBUG
-        private static string printSubChains(int subChainCounter, int[] subChains)
-        {
-            string ans = "";
-            for (int i = 0; i < subChainCounter; i++)
-            {
-                ans += $"\n---------------{(i + 1)}---------------\n";
-                for (int j = 0; j < chainUnits.Count; j++)
-                {
-                    if (i == subChains[j])
-                    {
-                        int x = chainUnits[j][0] / 9;
-                        int y = chainUnits[j][0] % 9;
-                        ans += $"({(x + 1)};{(y + 1)}) ";
-
-                    }
-                }
-
-            }
-            return ans;
-        }
+        
 
         //заполнение слабых связей
-        public static void fillWeakLinks()
+        public static void FillWeakLinks(Field field)
         {
             //полный перебор
 
-            foreach (int[] unit1 in chainUnits)
+            foreach (int[] unit1 in field.Buffer.chainUnits)
             {
-                foreach (int[] unit2 in chainUnits)
+                foreach (int[] unit2 in field.Buffer.chainUnits)
                 {
                     if (!unit1.Equals(unit2))
                     {
                         bool linked = false;
-                        foreach (int[] link in chain)
+                        foreach (int[] link in field.Buffer.chain)
                         {
                             //если сильно связаны то пропускаем
                             if ((link[0] == unit1[0] && link[1] == unit1[1] && link[2] == unit2[0] && link[3] == unit2[1])
@@ -1810,10 +1702,10 @@ namespace SudokuSolver
                         //проверяем видят ли они друг друга
                         if (!linked)
                         {
-                            if ((unit1[1] == unit2[1]) && isSeen(unit1[0], unit2[0]))
+                            if ((unit1[1] == unit2[1]) && IsSeen(unit1[0], unit2[0]))
                             {
                                 //добавляю слабую связь
-                                weak.Add(new int[] { unit1[0], unit1[1], unit2[0], unit2[1] });
+                                field.Buffer.weak.Add(new int[] { unit1[0], unit1[1], unit2[0], unit2[1] });
                             }
 
                         }
@@ -1823,25 +1715,25 @@ namespace SudokuSolver
         }
 
         //дфс по сильным и слабым связям
-        private static void dfsWeakStrong(ref bool[] visited, ref int[] component, ref int components, int v)
+        private static void DfsWeakStrong(ref bool[] visited, ref int[] component, ref int components, int v, Field field)
         {
             visited[v] = true;
             component[v] = components;
-            foreach (int[] link in chain)
+            foreach (int[] link in field.Buffer.chain)
             {
                 //нашли ребро
 
-                if (chainUnits[v][0] == link[0] && chainUnits[v][1] == link[1])
+                if (field.Buffer.chainUnits[v][0] == link[0] && field.Buffer.chainUnits[v][1] == link[1])
                 {
-                    //нахожу номер конца ребра в chainUnits
+                    //нахожу номер конца ребра в field.Buffer.chainUnits
                     int count = 0;
-                    foreach (int[] unit in chainUnits)
+                    foreach (int[] unit in field.Buffer.chainUnits)
                     {
                         if (unit[0] == link[2] && unit[1] == link[3])
                         {
                             if (!visited[count])
                             {
-                                dfsWeakStrong(ref visited, ref component, ref components, count);
+                                DfsWeakStrong(ref visited, ref component, ref components, count, field);
                             }
                         }
                         else
@@ -1853,21 +1745,21 @@ namespace SudokuSolver
                 }
             }
 
-            foreach (int[] link in weak)
+            foreach (int[] link in field.Buffer.weak)
             {
                 //нашли ребро
 
-                if (chainUnits[v][0] == link[0] && chainUnits[v][1] == link[1])
+                if (field.Buffer.chainUnits[v][0] == link[0] && field.Buffer.chainUnits[v][1] == link[1])
                 {
-                    //нахожу номер конца ребра в chainUnits
+                    //нахожу номер конца ребра в field.Buffer.chainUnits
                     int count = 0;
-                    foreach (int[] unit in chainUnits)
+                    foreach (int[] unit in field.Buffer.chainUnits)
                     {
                         if (unit[0] == link[2] && unit[1] == link[3])
                         {
                             if (!visited[count])
                             {
-                                dfsWeakStrong(ref visited, ref component, ref components, count);
+                                DfsWeakStrong(ref visited, ref component, ref components, count, field);
                             }
                         }
                         else
@@ -1881,25 +1773,25 @@ namespace SudokuSolver
         }
 
         //дфс по сильным связям
-        private static void dfsStrong(ref bool[] visited, ref int[] component, ref int components, int v)
+        private static void DfsStrong(ref bool[] visited, ref int[] component, ref int components, int v, Field field)
         {
             visited[v] = true;
             component[v] = components;
-            foreach (int[] link in chain)
+            foreach (int[] link in field.Buffer.chain)
             {
                 //нашли ребро
 
-                if (chainUnits[v][0] == link[0] && chainUnits[v][1] == link[1])
+                if (field.Buffer.chainUnits[v][0] == link[0] && field.Buffer.chainUnits[v][1] == link[1])
                 {
-                    //нахожу номер конца ребра в chainUnits
+                    //нахожу номер конца ребра в field.Buffer.chainUnits
                     int count = 0;
-                    foreach (int[] unit in chainUnits)
+                    foreach (int[] unit in field.Buffer.chainUnits)
                     {
                         if (unit[0] == link[2] && unit[1] == link[3])
                         {
                             if (!visited[count])
                             {
-                                dfsStrong(ref visited, ref component, ref components, count);
+                                DfsStrong(ref visited, ref component, ref components, count, field);
                             }
                         }
                         else
@@ -1913,10 +1805,10 @@ namespace SudokuSolver
         }
 
         //добавление в цепь новой связь
-        private static void AddLinkToChain(int ind1, int ind2, int k1, int k2)
+        private static void AddLinkToChain(int ind1, int ind2, int k1, int k2, Field field)
         {
             bool contains = false;
-            foreach (int[] item in chain)
+            foreach (int[] item in field.Buffer.chain)
             {
                 if (item[0] == ind1 && item[1] == k1 && item[2] == ind2 && item[3] == k2)
                 {
@@ -1926,10 +1818,10 @@ namespace SudokuSolver
             }
             if (!contains)
             {
-                chain.Add(new int[] { ind1, k1, ind2, k2 });
+                field.Buffer.chain.Add(new int[] { ind1, k1, ind2, k2 });
             }
             contains = false;
-            foreach (int[] item in chain)
+            foreach (int[] item in field.Buffer.chain)
             {
                 if (item[0] == ind2 && item[1] == k2 && item[2] == ind1 && item[3] == k1)
                 {
@@ -1939,15 +1831,15 @@ namespace SudokuSolver
             }
             if (!contains)
             {
-                chain.Add(new int[] { ind2, k2, ind1, k1 });
+                field.Buffer.chain.Add(new int[] { ind2, k2, ind1, k1 });
             }
         }
 
         //добавление в цепь нового звена
-        private static void AddUnitToChain(int ind, int k)
+        private static void AddUnitToChain(int ind, int k, Field field)
         {
             bool contains = false;
-            foreach (int[] unit in chainUnits)
+            foreach (int[] unit in field.Buffer.chainUnits)
             {
                 if (unit[0] == ind && unit[1] == k)
                 {
@@ -1957,7 +1849,7 @@ namespace SudokuSolver
             }
             if (!contains)
             {
-                chainUnits.Add(new int[] { ind, k });
+                field.Buffer.chainUnits.Add(new int[] { ind, k });
             }
         }
         //--------------------------------------------------------------------------------------------------------
@@ -1969,7 +1861,6 @@ namespace SudokuSolver
 
             //ищем все ячейки с тремя кандидатами
 
-            List<int> indexes = new List<int>();
             int counter;
             int i1, j1; //индексы первого крыла
             int i2, j2; //индексы второго крыла
@@ -2093,8 +1984,8 @@ namespace SudokuSolver
                                     if (field[i, 3 * (j / 3) + r].candidates[rem])
                                     {
                                         //field[i, 3 * (j / 3) + r].RemoveCandidat(rem + 1);
-                                        Buffer.AddRemovingChange(i, 3 * (j / 3) + r, rem + 1);
-                                        removed.Add(new int[] { i, 3 * (j / 3) + r, rem });
+                                        field.Buffer.AddRemovingChange(i, 3 * (j / 3) + r, rem + 1);
+                                        field.Buffer.removed.Add(new int[] { i, 3 * (j / 3) + r, rem });
 
 
 
@@ -2102,15 +1993,15 @@ namespace SudokuSolver
                                         {
                                             if (field[i, j].candidates[k])
                                             {
-                                                clues.Add(new int[] { i, j, k });
+                                                field.Buffer.clues.Add(new int[] { i, j, k });
                                             }
                                             if (field[i1, j1].candidates[k])
                                             {
-                                                clues.Add(new int[] { i1, j1, k });
+                                                field.Buffer.clues.Add(new int[] { i1, j1, k });
                                             }
                                             if (field[i2, j2].candidates[k])
                                             {
-                                                clues.Add(new int[] { i2, j2, k });
+                                                field.Buffer.clues.Add(new int[] { i2, j2, k });
                                             }
                                         }
 
@@ -2196,8 +2087,8 @@ namespace SudokuSolver
                                     if (field[3 * (i / 3) + r, j].candidates[rem])
                                     {
                                         //field[3 * (i / 3) + r, j].RemoveCandidat(rem + 1);
-                                        Buffer.AddRemovingChange(3 * (i / 3) + r, j, rem + 1);
-                                        removed.Add(new int[] { 3 * (i / 3) + r, j, rem });
+                                        field.Buffer.AddRemovingChange(3 * (i / 3) + r, j, rem + 1);
+                                        field.Buffer.removed.Add(new int[] { 3 * (i / 3) + r, j, rem });
 
 
 
@@ -2205,15 +2096,15 @@ namespace SudokuSolver
                                         {
                                             if (field[i, j].candidates[k])
                                             {
-                                                clues.Add(new int[] { i, j, k });
+                                                field.Buffer.clues.Add(new int[] { i, j, k });
                                             }
                                             if (field[i1, j1].candidates[k])
                                             {
-                                                clues.Add(new int[] { i1, j1, k });
+                                                field.Buffer.clues.Add(new int[] { i1, j1, k });
                                             }
                                             if (field[i2, j2].candidates[k])
                                             {
-                                                clues.Add(new int[] { i2, j2, k });
+                                                field.Buffer.clues.Add(new int[] { i2, j2, k });
                                             }
                                         }
 
@@ -2238,7 +2129,7 @@ namespace SudokuSolver
 
             List<Field.Cell> list = new List<Field.Cell>();
 
-            int counter = 0;
+            int counter;
 
 
             for (int i = 0; i < 9; i++)
@@ -2406,9 +2297,9 @@ namespace SudokuSolver
                                         {
                                             foundet = true;
 
-                                            removed.Add(new int[] { X1.seenCell[n].row, X1.seenCell[n].column, c });
+                                            field.Buffer.removed.Add(new int[] { X1.seenCell[n].row, X1.seenCell[n].column, c });
                                             //X1.seenCell[n].RemoveCandidat(c + 1);
-                                            Buffer.AddRemovingChange(X1.seenCell[n].row, X1.seenCell[n].column, c + 1);
+                                            field.Buffer.AddRemovingChange(X1.seenCell[n].row, X1.seenCell[n].column, c + 1);
 
                                         }
 
@@ -2418,12 +2309,12 @@ namespace SudokuSolver
 
                             if (foundet)
                             {
-                                clues.Add(new int[] { Y.row, Y.column, a });
-                                clues.Add(new int[] { Y.row, Y.column, b });
-                                clues.Add(new int[] { X1.row, X1.column, a });
-                                clues.Add(new int[] { X1.row, X1.column, c });
-                                clues.Add(new int[] { X2.row, X2.column, b });
-                                clues.Add(new int[] { X2.row, X2.column, c });
+                                field.Buffer.clues.Add(new int[] { Y.row, Y.column, a });
+                                field.Buffer.clues.Add(new int[] { Y.row, Y.column, b });
+                                field.Buffer.clues.Add(new int[] { X1.row, X1.column, a });
+                                field.Buffer.clues.Add(new int[] { X1.row, X1.column, c });
+                                field.Buffer.clues.Add(new int[] { X2.row, X2.column, b });
+                                field.Buffer.clues.Add(new int[] { X2.row, X2.column, c });
 
                                 
                                 answer = $"Y-Wings по {(c + 1)} : ({(Y.row + 1)};{(Y.column + 1)}) => ({(X1.row + 1)};{(X1.column + 1)}) - ({(X2.row + 1)};{(X2.column + 1)})";
@@ -2523,18 +2414,27 @@ namespace SudokuSolver
             }
 
             answer = $"BUG: если в ячейке ({(bugI + 1)};{(bugJ + 1)}) установить не {(bugDigit + 1)}, то судоку будет иметь 2 решения";
-            clues.Add(new int[] { bugI, bugJ, bugDigit });
+            field.Buffer.clues.Add(new int[] { bugI, bugJ, bugDigit });
             for (int k = 0; k < 9; k++)
             {
                 if (k == bugDigit) continue;
 
                 if (field[bugI, bugJ].candidates[k])
                 {
-                    removed.Add(new int[] { bugI, bugJ, k });
+                    field.Buffer.removed.Add(new int[] { bugI, bugJ, k });
                 }
             }
             //field[bugI, bugJ].SetValue(bugDigit + 1);
-            Buffer.AddSettingValueChange(bugI, bugJ, bugDigit + 1);
+            //устанавливаю значение
+            field.Buffer.AddSettingValueChange(bugI, bugJ, bugDigit + 1);
+            for(int k = 0; k < 9; k++)
+            {
+                //обнуляю всех оставшихся кандидатов
+                if(field[bugI, bugJ].candidates[k])
+                {
+                    field.Buffer.AddRemovingChange(bugI, bugJ, k+1);
+                }
+            }
 
             return answer;
         }
@@ -2589,23 +2489,23 @@ namespace SudokuSolver
                             //field[i, shape[1][3]].RemoveCandidat(k + 1);
                             if (field[i, shape[1][0]].candidates[k])
                             {
-                                Buffer.AddRemovingChange(i, shape[1][0], k + 1);
-                                removed.Add(new int[] { i, shape[1][0], k });
+                                field.Buffer.AddRemovingChange(i, shape[1][0], k + 1);
+                                field.Buffer.removed.Add(new int[] { i, shape[1][0], k });
                             }
                             if (field[i, shape[1][1]].candidates[k])
                             {
-                                Buffer.AddRemovingChange(i, shape[1][1], k + 1);
-                                removed.Add(new int[] { i, shape[1][1], k });
+                                field.Buffer.AddRemovingChange(i, shape[1][1], k + 1);
+                                field.Buffer.removed.Add(new int[] { i, shape[1][1], k });
                             }
                             if (field[i, shape[1][2]].candidates[k])
                             {
-                                Buffer.AddRemovingChange(i, shape[1][2], k + 1);
-                                removed.Add(new int[] { i, shape[1][2], k });
+                                field.Buffer.AddRemovingChange(i, shape[1][2], k + 1);
+                                field.Buffer.removed.Add(new int[] { i, shape[1][2], k });
                             }
                             if (field[i, shape[1][3]].candidates[k])
                             {
-                                Buffer.AddRemovingChange(i, shape[1][3], k + 1);
-                                removed.Add(new int[] { i, shape[1][3], k });
+                                field.Buffer.AddRemovingChange(i, shape[1][3], k + 1);
+                                field.Buffer.removed.Add(new int[] { i, shape[1][3], k });
                             }
                         }
                     }
@@ -2614,7 +2514,7 @@ namespace SudokuSolver
                     {
                         for (int y = 0; y < 4; y++)
                         {
-                            clues.Add(new int[] { shape[0][x], shape[1][y], k });
+                            field.Buffer.clues.Add(new int[] { shape[0][x], shape[1][y], k });
                         }
                     }
 
@@ -2672,23 +2572,23 @@ namespace SudokuSolver
                             //field[shape[1][3], i].RemoveCandidat(k + 1);
                             if (field[shape[1][0], i].candidates[k])
                             {
-                                Buffer.AddRemovingChange(shape[1][0], i, k + 1);
-                                removed.Add(new int[] { shape[1][0], i, k });
+                                field.Buffer.AddRemovingChange(shape[1][0], i, k + 1);
+                                field.Buffer.removed.Add(new int[] { shape[1][0], i, k });
                             }
                             if (field[shape[1][1], i].candidates[k])
                             {
-                                Buffer.AddRemovingChange(shape[1][1], i, k + 1);
-                                removed.Add(new int[] { shape[1][1], i, k });
+                                field.Buffer.AddRemovingChange(shape[1][1], i, k + 1);
+                                field.Buffer.removed.Add(new int[] { shape[1][1], i, k });
                             }
                             if (field[shape[1][2], i].candidates[k])
                             {
-                                Buffer.AddRemovingChange(shape[1][2], i, k + 1);
-                                removed.Add(new int[] { shape[1][2], i, k });
+                                field.Buffer.AddRemovingChange(shape[1][2], i, k + 1);
+                                field.Buffer.removed.Add(new int[] { shape[1][2], i, k });
                             }
                             if (field[shape[1][3], i].candidates[k])
                             {
-                                Buffer.AddRemovingChange(shape[1][3], i, k + 1);
-                                removed.Add(new int[] { shape[1][3], i, k });
+                                field.Buffer.AddRemovingChange(shape[1][3], i, k + 1);
+                                field.Buffer.removed.Add(new int[] { shape[1][3], i, k });
                             }
 
                         }
@@ -2698,7 +2598,7 @@ namespace SudokuSolver
                     {
                         for (int y = 0; y < 4; y++)
                         {
-                            clues.Add(new int[] { shape[1][x], shape[0][y], k });
+                            field.Buffer.clues.Add(new int[] { shape[1][x], shape[0][y], k });
                         }
                     }
 
@@ -2746,7 +2646,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[i][j];
                 }
-                answer = HiddenQuadsInGroup(group);
+                answer = HiddenQuadsInGroup(group, field);
                 if (!answer.Equals(""))
                 {
                     answer = $"Строка  {(i + 1)}: " + answer;
@@ -2761,7 +2661,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[j][i];
                 }
-                answer = HiddenQuadsInGroup(group);
+                answer = HiddenQuadsInGroup(group, field);
                 if (!answer.Equals(""))
                 {
                     answer = $"Столбец {(i + 1)}: " + answer;
@@ -2784,7 +2684,7 @@ namespace SudokuSolver
                             group[y * 3 + x] = field.cells[i * 3 + x][j * 3 + y];
                         }
                     }
-                    answer = HiddenQuadsInGroup(group);
+                    answer = HiddenQuadsInGroup(group, field);
                     if (!answer.Equals(""))
                     {
                         answer = $"Регион  {((i) * 3 + j + 1)}: " + answer;
@@ -2798,7 +2698,7 @@ namespace SudokuSolver
         }
 
         //скрытые четверки в группе
-        private static string HiddenQuadsInGroup(Field.Cell[] group)
+        private static string HiddenQuadsInGroup(Field.Cell[] group, Field field)
         {
             string answer = "";
 
@@ -2838,33 +2738,33 @@ namespace SudokuSolver
                         //group[shape[1][3]].RemoveCandidat(i + 1);
                         if (group[shape[1][0]].candidates[i])
                         {
-                            Buffer.AddRemovingChange(group[shape[1][0]].row, group[shape[1][0]].column, i + 1);
-                            removed.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, i });
+                            field.Buffer.AddRemovingChange(group[shape[1][0]].row, group[shape[1][0]].column, i + 1);
+                            field.Buffer.removed.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, i });
                         }
                         if (group[shape[1][1]].candidates[i])
                         {
-                            Buffer.AddRemovingChange(group[shape[1][1]].row, group[shape[1][0]].column, i + 1);
-                            removed.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, i });
+                            field.Buffer.AddRemovingChange(group[shape[1][1]].row, group[shape[1][0]].column, i + 1);
+                            field.Buffer.removed.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, i });
                         }
                         if (group[shape[1][2]].candidates[i])
                         {
-                            Buffer.AddRemovingChange(group[shape[1][2]].row, group[shape[1][0]].column, i + 1);
-                            removed.Add(new int[] { group[shape[1][2]].row, group[shape[1][2]].column, i });
+                            field.Buffer.AddRemovingChange(group[shape[1][2]].row, group[shape[1][0]].column, i + 1);
+                            field.Buffer.removed.Add(new int[] { group[shape[1][2]].row, group[shape[1][2]].column, i });
                         }
                         if (group[shape[1][3]].candidates[i])
                         {
-                            Buffer.AddRemovingChange(group[shape[1][3]].row, group[shape[1][0]].column, i + 1);
-                            removed.Add(new int[] { group[shape[1][3]].row, group[shape[1][3]].column, i });
+                            field.Buffer.AddRemovingChange(group[shape[1][3]].row, group[shape[1][0]].column, i + 1);
+                            field.Buffer.removed.Add(new int[] { group[shape[1][3]].row, group[shape[1][3]].column, i });
                         }
 
                     }
                 }
                 for (int x = 0; x < shape[1].Length; x++)
                 {
-                    clues.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, shape[0][x] });
-                    clues.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, shape[0][x] });
-                    clues.Add(new int[] { group[shape[1][2]].row, group[shape[1][2]].column, shape[0][x] });
-                    clues.Add(new int[] { group[shape[1][3]].row, group[shape[1][3]].column, shape[0][x] });
+                    field.Buffer.clues.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, shape[0][x] });
+                    field.Buffer.clues.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, shape[0][x] });
+                    field.Buffer.clues.Add(new int[] { group[shape[1][2]].row, group[shape[1][2]].column, shape[0][x] });
+                    field.Buffer.clues.Add(new int[] { group[shape[1][3]].row, group[shape[1][3]].column, shape[0][x] });
                 }
 
                 int digit1 = shape[0][0] + 1;
@@ -2909,7 +2809,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[i][j];
                 }
-                answer = NakedQuadsInGroup(group);
+                answer = NakedQuadsInGroup(group, field);
                 if (!answer.Equals(""))
                 {
                     answer = $"Строка  {(i + 1)}: " + answer;
@@ -2924,7 +2824,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[j][i];
                 }
-                answer = NakedQuadsInGroup(group);
+                answer = NakedQuadsInGroup(group, field);
                 if (!answer.Equals(""))
                 {
                     answer = $"Столбец {(i + 1)}: " + answer;
@@ -2947,7 +2847,7 @@ namespace SudokuSolver
                             group[y * 3 + x] = field.cells[i * 3 + x][j * 3 + y];
                         }
                     }
-                    answer = NakedQuadsInGroup(group);
+                    answer = NakedQuadsInGroup(group, field);
                     if (!answer.Equals(""))
                     {
                         answer = $"Регион  {((i) * 3 + j + 1)}: " + answer;
@@ -2961,7 +2861,7 @@ namespace SudokuSolver
         }
 
         //открытые тройки в группе
-        private static string NakedQuadsInGroup(Field.Cell[] group)
+        private static string NakedQuadsInGroup(Field.Cell[] group, Field field)
         {
             string answer = "";
 
@@ -3001,23 +2901,23 @@ namespace SudokuSolver
                         //group[i].RemoveCandidat(shape[1][3] + 1);
                         if (group[i].candidates[shape[1][0]])
                         {
-                            Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][0] + 1);
-                            removed.Add(new int[] { group[i].row, group[i].column, shape[1][0] });
+                            field.Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][0] + 1);
+                            field.Buffer.removed.Add(new int[] { group[i].row, group[i].column, shape[1][0] });
                         }
                         if (group[i].candidates[shape[1][1]])
                         {
-                            Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][1] + 1);
-                            removed.Add(new int[] { group[i].row, group[i].column, shape[1][1] });
+                            field.Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][1] + 1);
+                            field.Buffer.removed.Add(new int[] { group[i].row, group[i].column, shape[1][1] });
                         }
                         if (group[i].candidates[shape[1][2]])
                         {
-                            Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][2] + 1);
-                            removed.Add(new int[] { group[i].row, group[i].column, shape[1][2] });
+                            field.Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][2] + 1);
+                            field.Buffer.removed.Add(new int[] { group[i].row, group[i].column, shape[1][2] });
                         }
                         if (group[i].candidates[shape[1][3]])
                         {
-                            Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][3] + 1);
-                            removed.Add(new int[] { group[i].row, group[i].column, shape[1][3] });
+                            field.Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][3] + 1);
+                            field.Buffer.removed.Add(new int[] { group[i].row, group[i].column, shape[1][3] });
                         }
 
 
@@ -3026,10 +2926,10 @@ namespace SudokuSolver
 
                 for (int x = 0; x < shape[1].Length; x++)
                 {
-                    clues.Add(new int[] { group[shape[0][0]].row, group[shape[0][0]].column, shape[1][x] });
-                    clues.Add(new int[] { group[shape[0][1]].row, group[shape[0][1]].column, shape[1][x] });
-                    clues.Add(new int[] { group[shape[0][2]].row, group[shape[0][2]].column, shape[1][x] });
-                    clues.Add(new int[] { group[shape[0][3]].row, group[shape[0][3]].column, shape[1][x] });
+                    field.Buffer.clues.Add(new int[] { group[shape[0][0]].row, group[shape[0][0]].column, shape[1][x] });
+                    field.Buffer.clues.Add(new int[] { group[shape[0][1]].row, group[shape[0][1]].column, shape[1][x] });
+                    field.Buffer.clues.Add(new int[] { group[shape[0][2]].row, group[shape[0][2]].column, shape[1][x] });
+                    field.Buffer.clues.Add(new int[] { group[shape[0][3]].row, group[shape[0][3]].column, shape[1][x] });
                 }
 
                 int digit1 = shape[1][0] + 1;
@@ -3068,7 +2968,6 @@ namespace SudokuSolver
                 colums[i] = -1;
             }
 
-            int[][] answer = new int[][] { rows, colums };
             //считаю колличество строк в которые n вхождений
             int[] sums = new int[a.Length];
             int counter = 0;
@@ -3104,8 +3003,6 @@ namespace SudokuSolver
                 }
             }
 
-            counter = 0;
-            sums = new int[a.Length];
             if (digits.Length > 1)
             {
                 //перебираю все комбинации нужных строк
@@ -3241,18 +3138,18 @@ namespace SudokuSolver
 
                             if (field[i, shape[1][0]].candidates[k])
                             {
-                                Buffer.AddRemovingChange(i, shape[1][0], k + 1);
-                                removed.Add(new int[] { i, shape[1][0], k });
+                                field.Buffer.AddRemovingChange(i, shape[1][0], k + 1);
+                                field.Buffer.removed.Add(new int[] { i, shape[1][0], k });
                             }
                             if (field[i, shape[1][1]].candidates[k])
                             {
-                                Buffer.AddRemovingChange(i, shape[1][1], k + 1);
-                                removed.Add(new int[] { i, shape[1][1], k });
+                                field.Buffer.AddRemovingChange(i, shape[1][1], k + 1);
+                                field.Buffer.removed.Add(new int[] { i, shape[1][1], k });
                             }
                             if (field[i, shape[1][2]].candidates[k])
                             {
-                                Buffer.AddRemovingChange(i, shape[1][2], k + 1);
-                                removed.Add(new int[] { i, shape[1][2], k });
+                                field.Buffer.AddRemovingChange(i, shape[1][2], k + 1);
+                                field.Buffer.removed.Add(new int[] { i, shape[1][2], k });
                             }
 
 
@@ -3263,7 +3160,7 @@ namespace SudokuSolver
                     {
                         for (int y = 0; y < 3; y++)
                         {
-                            clues.Add(new int[] { shape[0][x], shape[1][y], k });
+                            field.Buffer.clues.Add(new int[] { shape[0][x], shape[1][y], k });
                         }
                     }
 
@@ -3319,18 +3216,18 @@ namespace SudokuSolver
 
                             if (field[shape[1][0], i].candidates[k])
                             {
-                                Buffer.AddRemovingChange(shape[1][0], i, k + 1);
-                                removed.Add(new int[] { shape[1][0], i, k });
+                                field.Buffer.AddRemovingChange(shape[1][0], i, k + 1);
+                                field.Buffer.removed.Add(new int[] { shape[1][0], i, k });
                             }
                             if (field[shape[1][1], i].candidates[k])
                             {
-                                Buffer.AddRemovingChange(shape[1][1], i, k + 1);
-                                removed.Add(new int[] { shape[1][1], i, k });
+                                field.Buffer.AddRemovingChange(shape[1][1], i, k + 1);
+                                field.Buffer.removed.Add(new int[] { shape[1][1], i, k });
                             }
                             if (field[shape[1][2], i].candidates[k])
                             {
-                                Buffer.AddRemovingChange(shape[1][2], i, k + 1);
-                                removed.Add(new int[] { shape[1][2], i, k });
+                                field.Buffer.AddRemovingChange(shape[1][2], i, k + 1);
+                                field.Buffer.removed.Add(new int[] { shape[1][2], i, k });
                             }
 
 
@@ -3341,7 +3238,7 @@ namespace SudokuSolver
                     {
                         for (int y = 0; y < 3; y++)
                         {
-                            clues.Add(new int[] { shape[1][x], shape[0][y], k });
+                            field.Buffer.clues.Add(new int[] { shape[1][x], shape[0][y], k });
                         }
                     }
 
@@ -3387,7 +3284,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[i][j];
                 }
-                answer = HiddenTriplesInGroup(group);
+                answer = HiddenTriplesInGroup(group, field);
                 if (!answer.Equals(""))
                 {
                     answer = $"Строка  {(i + 1)}: " + answer;
@@ -3402,7 +3299,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[j][i];
                 }
-                answer = HiddenTriplesInGroup(group);
+                answer = HiddenTriplesInGroup(group, field);
                 if (!answer.Equals(""))
                 {
                     answer = $"Столбец {(i + 1)}: " + answer;
@@ -3425,7 +3322,7 @@ namespace SudokuSolver
                             group[y * 3 + x] = field.cells[i * 3 + x][j * 3 + y];
                         }
                     }
-                    answer = HiddenTriplesInGroup(group);
+                    answer = HiddenTriplesInGroup(group, field);
                     if (!answer.Equals(""))
                     {
                         answer = $"Регион  {((i) * 3 + j + 1)}: " + answer;
@@ -3439,7 +3336,7 @@ namespace SudokuSolver
         }
 
         //скрытые пары в группе
-        private static string HiddenTriplesInGroup(Field.Cell[] group)
+        private static string HiddenTriplesInGroup(Field.Cell[] group, Field field)
         {
             string answer = "";
 
@@ -3479,18 +3376,18 @@ namespace SudokuSolver
 
                         if (group[shape[1][0]].candidates[i])
                         {
-                            Buffer.AddRemovingChange(group[shape[1][0]].row, group[shape[1][0]].column, i + 1);
-                            removed.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, i });
+                            field.Buffer.AddRemovingChange(group[shape[1][0]].row, group[shape[1][0]].column, i + 1);
+                            field.Buffer.removed.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, i });
                         }
                         if (group[shape[1][1]].candidates[i])
                         {
-                            Buffer.AddRemovingChange(group[shape[1][1]].row, group[shape[1][1]].column, i + 1);
-                            removed.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, i });
+                            field.Buffer.AddRemovingChange(group[shape[1][1]].row, group[shape[1][1]].column, i + 1);
+                            field.Buffer.removed.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, i });
                         }
                         if (group[shape[1][1]].candidates[i])
                         {
-                            Buffer.AddRemovingChange(group[shape[1][2]].row, group[shape[1][2]].column, i + 1);
-                            removed.Add(new int[] { group[shape[1][2]].row, group[shape[1][2]].column, i });
+                            field.Buffer.AddRemovingChange(group[shape[1][2]].row, group[shape[1][2]].column, i + 1);
+                            field.Buffer.removed.Add(new int[] { group[shape[1][2]].row, group[shape[1][2]].column, i });
                         }
 
                     }
@@ -3498,9 +3395,9 @@ namespace SudokuSolver
 
                 for (int x = 0; x < shape[1].Length; x++)
                 {
-                    clues.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, shape[0][x] });
-                    clues.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, shape[0][x] });
-                    clues.Add(new int[] { group[shape[1][2]].row, group[shape[1][2]].column, shape[0][x] });
+                    field.Buffer.clues.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, shape[0][x] });
+                    field.Buffer.clues.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, shape[0][x] });
+                    field.Buffer.clues.Add(new int[] { group[shape[1][2]].row, group[shape[1][2]].column, shape[0][x] });
                 }
 
                 int digit1 = shape[0][0] + 1;
@@ -3543,7 +3440,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[i][j];
                 }
-                answer = NakedTripesInGroup(group);
+                answer = NakedTripesInGroup(group, field);
                 if (!answer.Equals(""))
                 {
                     answer = $"Строка  {(i + 1)}: " + answer;
@@ -3558,7 +3455,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[j][i];
                 }
-                answer = NakedTripesInGroup(group);
+                answer = NakedTripesInGroup(group, field);
                 if (!answer.Equals(""))
                 {
                     answer = $"Столбец {(i + 1)}: " + answer;
@@ -3581,7 +3478,7 @@ namespace SudokuSolver
                             group[y * 3 + x] = field.cells[i * 3 + x][j * 3 + y];
                         }
                     }
-                    answer = NakedTripesInGroup(group);
+                    answer = NakedTripesInGroup(group, field);
                     if (!answer.Equals(""))
                     {
                         answer = $"Регион  {((i) * 3 + j + 1)}: " + answer;
@@ -3595,7 +3492,7 @@ namespace SudokuSolver
         }
 
         //открытые тройки в группе
-        private static string NakedTripesInGroup(Field.Cell[] group)
+        private static string NakedTripesInGroup(Field.Cell[] group, Field field)
         {
             string answer = "";
 
@@ -3634,18 +3531,18 @@ namespace SudokuSolver
                         //group[i].RemoveCandidat(shape[1][2] + 1);
                         if (group[i].candidates[shape[1][0]])
                         {
-                            Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][0] + 1);
-                            removed.Add(new int[] { group[i].row, group[i].column, shape[1][0] });
+                            field.Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][0] + 1);
+                            field.Buffer.removed.Add(new int[] { group[i].row, group[i].column, shape[1][0] });
                         }
                         if (group[i].candidates[shape[1][1]])
                         {
-                            Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][1] + 1);
-                            removed.Add(new int[] { group[i].row, group[i].column, shape[1][1] });
+                            field.Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][1] + 1);
+                            field.Buffer.removed.Add(new int[] { group[i].row, group[i].column, shape[1][1] });
                         }
                         if (group[i].candidates[shape[1][2]])
                         {
-                            Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][2] + 1);
-                            removed.Add(new int[] { group[i].row, group[i].column, shape[1][2] });
+                            field.Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][2] + 1);
+                            field.Buffer.removed.Add(new int[] { group[i].row, group[i].column, shape[1][2] });
                         }
 
                     }
@@ -3653,9 +3550,9 @@ namespace SudokuSolver
 
                 for (int x = 0; x < shape[1].Length; x++)
                 {
-                    clues.Add(new int[] { group[shape[0][0]].row, group[shape[0][0]].column, shape[1][x] });
-                    clues.Add(new int[] { group[shape[0][1]].row, group[shape[0][1]].column, shape[1][x] });
-                    clues.Add(new int[] { group[shape[0][2]].row, group[shape[0][2]].column, shape[1][x] });
+                    field.Buffer.clues.Add(new int[] { group[shape[0][0]].row, group[shape[0][0]].column, shape[1][x] });
+                    field.Buffer.clues.Add(new int[] { group[shape[0][1]].row, group[shape[0][1]].column, shape[1][x] });
+                    field.Buffer.clues.Add(new int[] { group[shape[0][2]].row, group[shape[0][2]].column, shape[1][x] });
                 }
 
                 int i1 = (group[shape[0][0]].row + 1);
@@ -3691,7 +3588,6 @@ namespace SudokuSolver
                 colums[i] = -1;
             }
 
-            int[][] answer = new int[][] { rows, colums };
             //считаю колличество строк в которые n вхождений
             int[] sums = new int[a.Length];
             int counter = 0;
@@ -3727,8 +3623,6 @@ namespace SudokuSolver
                 }
             }
 
-            counter = 0;
-            sums = new int[a.Length];
             if (digits.Length > 1)
             {
                 //перебираю все комбинации нужных строк
@@ -3854,13 +3748,13 @@ namespace SudokuSolver
 
                             if (field[i, shape[1][0]].candidates[k])
                             {
-                                Buffer.AddRemovingChange(i, shape[1][0], k + 1);
-                                removed.Add(new int[] { i, shape[1][0], k });
+                                field.Buffer.AddRemovingChange(i, shape[1][0], k + 1);
+                                field.Buffer.removed.Add(new int[] { i, shape[1][0], k });
                             }
                             if (field[i, shape[1][1]].candidates[k])
                             {
-                                Buffer.AddRemovingChange(i, shape[1][1], k + 1);
-                                removed.Add(new int[] { i, shape[1][1], k });
+                                field.Buffer.AddRemovingChange(i, shape[1][1], k + 1);
+                                field.Buffer.removed.Add(new int[] { i, shape[1][1], k });
                             }
 
                         }
@@ -3869,7 +3763,7 @@ namespace SudokuSolver
                     {
                         for (int y = 0; y < 2; y++)
                         {
-                            clues.Add(new int[] { shape[0][x], shape[1][y], k });
+                            field.Buffer.clues.Add(new int[] { shape[0][x], shape[1][y], k });
                         }
                     }
 
@@ -3922,13 +3816,13 @@ namespace SudokuSolver
 
                             if (field[shape[1][0], i].candidates[k])
                             {
-                                Buffer.AddRemovingChange(shape[1][0], i, k + 1);
-                                removed.Add(new int[] { shape[1][0], i, k });
+                                field.Buffer.AddRemovingChange(shape[1][0], i, k + 1);
+                                field.Buffer.removed.Add(new int[] { shape[1][0], i, k });
                             }
                             if (field[shape[1][1], i].candidates[k])
                             {
-                                Buffer.AddRemovingChange(shape[1][1], i, k + 1);
-                                removed.Add(new int[] { shape[1][1], i, k });
+                                field.Buffer.AddRemovingChange(shape[1][1], i, k + 1);
+                                field.Buffer.removed.Add(new int[] { shape[1][1], i, k });
                             }
 
                         }
@@ -3938,7 +3832,7 @@ namespace SudokuSolver
                     {
                         for (int y = 0; y < 2; y++)
                         {
-                            clues.Add(new int[] { shape[1][x], shape[0][y], k });
+                            field.Buffer.clues.Add(new int[] { shape[1][x], shape[0][y], k });
                         }
                     }
 
@@ -3982,7 +3876,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[i][j];
                 }
-                answer = HiddenPairsInGroup(group);
+                answer = HiddenPairsInGroup(group, field);
                 if (!answer.Equals(""))
                 {
                     answer = $"Строка  {(i + 1)}: " + answer;
@@ -3997,7 +3891,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[j][i];
                 }
-                answer = HiddenPairsInGroup(group);
+                answer = HiddenPairsInGroup(group, field);
                 if (!answer.Equals(""))
                 {
                     answer = $"Столбец {(i + 1)}: " + answer;
@@ -4020,7 +3914,7 @@ namespace SudokuSolver
                             group[y * 3 + x] = field.cells[i * 3 + x][j * 3 + y];
                         }
                     }
-                    answer = HiddenPairsInGroup(group);
+                    answer = HiddenPairsInGroup(group, field);
                     if (!answer.Equals(""))
                     {
                         answer = $"Регион  {((i) * 3 + j + 1)}: " + answer;
@@ -4035,7 +3929,7 @@ namespace SudokuSolver
 
         //скрытые пары в группе
 
-        private static string HiddenPairsInGroup(Field.Cell[] group)
+        private static string HiddenPairsInGroup(Field.Cell[] group, Field field)
         {
             string answer = "";
 
@@ -4070,22 +3964,22 @@ namespace SudokuSolver
                         //group[shape[1][1]].RemoveCandidat(i + 1);
                         if (group[shape[1][0]].candidates[i])
                         {
-                            Buffer.AddRemovingChange(group[shape[1][0]].row, group[shape[1][0]].column, i + 1);
-                            removed.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, i });
+                            field.Buffer.AddRemovingChange(group[shape[1][0]].row, group[shape[1][0]].column, i + 1);
+                            field.Buffer.removed.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, i });
                         }
                         if (group[shape[1][1]].candidates[i])
                         {
-                            Buffer.AddRemovingChange(group[shape[1][1]].row, group[shape[1][1]].column, i + 1);
-                            removed.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, i });
+                            field.Buffer.AddRemovingChange(group[shape[1][1]].row, group[shape[1][1]].column, i + 1);
+                            field.Buffer.removed.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, i });
                         }
 
                     }
                 }
 
-                clues.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, shape[0][0] });
-                clues.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, shape[0][1] });
-                clues.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, shape[0][0] });
-                clues.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, shape[0][1] });
+                field.Buffer.clues.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, shape[0][0] });
+                field.Buffer.clues.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, shape[0][1] });
+                field.Buffer.clues.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, shape[0][0] });
+                field.Buffer.clues.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, shape[0][1] });
 
                 int digit1 = shape[0][0] + 1;
                 int digit2 = shape[0][1] + 1;
@@ -4116,7 +4010,6 @@ namespace SudokuSolver
                 colums[i] = -1;
             }
 
-            int[][] answer = new int[][] { rows, colums };
             //считаю колличество строк в которые n вхождений
             int[] sums = new int[a.Length];
             int counter = 0;
@@ -4152,8 +4045,6 @@ namespace SudokuSolver
                 }
             }
 
-            counter = 0;
-            sums = new int[a.Length];
             if (digits.Length > 1)
             {
                 //перебираю все комбинации нужных строк
@@ -4299,15 +4190,16 @@ namespace SudokuSolver
 
 
                                             //field[startY + y, startX + x].RemoveCandidat(k + 1);
-                                            Buffer.AddRemovingChange(startY + y, startX + x, k + 1);
+                                            field.Buffer.AddRemovingChange(startY + y, startX + x, k + 1);
 
-                                            removed.Add(new int[] { startY + y, startX + x, k });
+
+                                            field.Buffer.removed.Add(new int[] { startY + y, startX + x, k });
                                         }
                                         if (impact)
                                         {
                                             for (int n = 0; n < cluesInd.Length; n++)
                                             {
-                                                clues.Add(new int[] { i, cluesInd[n], k });
+                                                field.Buffer.clues.Add(new int[] { i, cluesInd[n], k });
                                             }
                                         }
                                     }
@@ -4395,15 +4287,15 @@ namespace SudokuSolver
                                             impact = true;
 
                                             //field[startY + y, startX + x].RemoveCandidat(k + 1);
-                                            Buffer.AddRemovingChange(startY + y, startX + x, k + 1);
+                                            field.Buffer.AddRemovingChange(startY + y, startX + x, k + 1);
 
-                                            removed.Add(new int[] { startY + y, startX + x, k });
+                                            field.Buffer.removed.Add(new int[] { startY + y, startX + x, k });
                                         }
                                         if (impact)
                                         {
                                             for (int n = 0; n < cluesInd.Length; n++)
                                             {
-                                                clues.Add(new int[] { cluesInd[n], j, k });
+                                                field.Buffer.clues.Add(new int[] { cluesInd[n], j, k });
                                             }
                                         }
                                     }
@@ -4503,9 +4395,9 @@ namespace SudokuSolver
                                             impact = true;
 
                                             //field[indexes[0], n].RemoveCandidat(k + 1);
-                                            Buffer.AddRemovingChange(indexes[0], n, k + 1);
+                                            field.Buffer.AddRemovingChange(indexes[0], n, k + 1);
 
-                                            removed.Add(new int[] { indexes[0], n, k });
+                                            field.Buffer.removed.Add(new int[] { indexes[0], n, k });
                                         }
                                     }
                                 }
@@ -4515,7 +4407,7 @@ namespace SudokuSolver
                             {
                                 for (int n = 0; n < cluesInd.Length; n++)
                                 {
-                                    clues.Add(new int[] { indexes[0], cluesInd[n], k });
+                                    field.Buffer.clues.Add(new int[] { indexes[0], cluesInd[n], k });
                                 }
                                 answer = $"Регион  {(y * 3 + x + 1)}: виртуальная одиночка {(k + 1)} в строке {(indexes[0] + 1)}";
                                 return answer;
@@ -4576,9 +4468,9 @@ namespace SudokuSolver
                                             impact = true;
 
                                             //field[n, indexes[0]].RemoveCandidat(k + 1);
-                                            Buffer.AddRemovingChange(n, indexes[0], k + 1);
+                                            field.Buffer.AddRemovingChange(n, indexes[0], k + 1);
 
-                                            removed.Add(new int[] { n, indexes[0], k });
+                                            field.Buffer.removed.Add(new int[] { n, indexes[0], k });
                                         }
                                     }
                                 }
@@ -4588,7 +4480,7 @@ namespace SudokuSolver
                             {
                                 for (int n = 0; n < cluesInd.Length; n++)
                                 {
-                                    clues.Add(new int[] { cluesInd[n], indexes[0], k });
+                                    field.Buffer.clues.Add(new int[] { cluesInd[n], indexes[0], k });
                                 }
                                 answer = $"Регион {(y * 3 + x + 1)}: виртуальная одиночка {(k + 1)} в столбце {(indexes[0] + 1)}";
                                 return answer;
@@ -4623,7 +4515,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[i][j];
                 }
-                answer = NakedPairsInGroup(group);
+                answer = NakedPairsInGroup(group, field);
                 if (!answer.Equals(""))
                 {
                     answer = $"Строка  {(i + 1)}: " + answer;
@@ -4638,7 +4530,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[j][i];
                 }
-                answer = NakedPairsInGroup(group);
+                answer = NakedPairsInGroup(group, field);
                 if (!answer.Equals(""))
                 {
                     answer = $"Столбец {(i + 1)}: " + answer;
@@ -4661,7 +4553,7 @@ namespace SudokuSolver
                             group[y * 3 + x] = field.cells[i * 3 + x][j * 3 + y];
                         }
                     }
-                    answer = NakedPairsInGroup(group);
+                    answer = NakedPairsInGroup(group, field);
                     if (!answer.Equals(""))
                     {
                         answer = $"Регион  {((i) * 3 + j + 1)}: " + answer;
@@ -4673,7 +4565,7 @@ namespace SudokuSolver
         }
 
         //способ на матрицах для масштабирования
-        private static string NakedPairsInGroup(Field.Cell[] group)
+        private static string NakedPairsInGroup(Field.Cell[] group, Field field)
         {
             string answer = "";
 
@@ -4712,22 +4604,22 @@ namespace SudokuSolver
                         //group[i].RemoveCandidat(shape[1][1] + 1);
                         if (group[i].candidates[shape[1][0]])
                         {
-                            Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][0] + 1);
-                            removed.Add(new int[] { group[i].row, group[i].column, shape[1][0] });
+                            field.Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][0] + 1);
+                            field.Buffer.removed.Add(new int[] { group[i].row, group[i].column, shape[1][0] });
                         }
                         if (group[i].candidates[shape[1][1]])
                         {
-                            Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][1] + 1);
-                            removed.Add(new int[] { group[i].row, group[i].column, shape[1][1] });
+                            field.Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][1] + 1);
+                            field.Buffer.removed.Add(new int[] { group[i].row, group[i].column, shape[1][1] });
                         }
 
                     }
                 }
 
-                clues.Add(new int[] { group[shape[0][0]].row, group[shape[0][0]].column, shape[1][0] });
-                clues.Add(new int[] { group[shape[0][0]].row, group[shape[0][0]].column, shape[1][1] });
-                clues.Add(new int[] { group[shape[0][1]].row, group[shape[0][1]].column, shape[1][0] });
-                clues.Add(new int[] { group[shape[0][1]].row, group[shape[0][1]].column, shape[1][1] });
+                field.Buffer.clues.Add(new int[] { group[shape[0][0]].row, group[shape[0][0]].column, shape[1][0] });
+                field.Buffer.clues.Add(new int[] { group[shape[0][0]].row, group[shape[0][0]].column, shape[1][1] });
+                field.Buffer.clues.Add(new int[] { group[shape[0][1]].row, group[shape[0][1]].column, shape[1][0] });
+                field.Buffer.clues.Add(new int[] { group[shape[0][1]].row, group[shape[0][1]].column, shape[1][1] });
 
                 answer = $"Открытая пара {(shape[1][0] + 1)}/{(shape[1][1] + 1)}" +
                          $" в ({(group[shape[0][0]].row + 1)};{(group[shape[0][0]].column + 1)}" +
@@ -4757,7 +4649,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[i][j];
                 }
-                answer = HiddenSingleGroup(group);
+                answer = HiddenSingleGroup(group, field);
                 if (!answer.Equals(""))
                 {
                     answer = $"Строка  {(i + 1)}: " + answer;
@@ -4772,7 +4664,7 @@ namespace SudokuSolver
                 {
                     group[j] = field.cells[j][i];
                 }
-                answer = HiddenSingleGroup(group);
+                answer = HiddenSingleGroup(group, field);
                 if (!answer.Equals(""))
                 {
                     answer = $"Столбец {(i + 1)}: " + answer;
@@ -4795,7 +4687,7 @@ namespace SudokuSolver
                             group[y * 3 + x] = field.cells[i * 3 + x][j * 3 + y];
                         }
                     }
-                    answer = HiddenSingleGroup(group);
+                    answer = HiddenSingleGroup(group, field);
                     if (!answer.Equals(""))
                     {
                         answer = $"Регион  {((i) * 3 + j + 1)}: " + answer;
@@ -4809,16 +4701,18 @@ namespace SudokuSolver
         }
 
         //скрытые одиночки в группе
-        private static string HiddenSingleGroup(Field.Cell[] group)
+        private static string HiddenSingleGroup(Field.Cell[] group, Field field)
         {
             string answer = "";
 
-            int count = 0;
+            int count;
             int index = -1;
-            int v = 0;
+            int v;
+            //по всем числам
             for (int k = 0; k < 9; k++)
             {
                 count = 0;
+                //считаю кандидатов
                 for (int i = 0; i < 9; i++)
                 {
                     if (group[i].candidates[k])
@@ -4827,13 +4721,24 @@ namespace SudokuSolver
                         index = i;
                     }
                 }
+                //если ровно один кандидат в группе
                 if (count == 1)
                 {
+                    //беру число
                     v = k + 1;
                     //group[index].SetValue(v);
-                    Buffer.AddSettingValueChange(group[index].row, group[index].column, v);
+                    //устанавливаю значениие
+                    field.Buffer.AddSettingValueChange(group[index].row, group[index].column, v);
+                    //исключаю останых кандидатов
+                    for(int k1 = 0; k1 < 9; k1++)
+                    {
+                        if(group[index].candidates[k1])
+                        {
+                            field.Buffer.AddRemovingChange(group[index].row, group[index].column, k1+1);
+                        }
+                    }
 
-                    clues.Add(new int[] { group[index].row, group[index].column, v - 1 });
+                    field.Buffer.clues.Add(new int[] { group[index].row, group[index].column, v - 1 });
 
                     answer = $"Найдена скрытая одиночка: ({group[index].row + 1};{(group[index].column + 1)}) => {v}";
                     return answer;
@@ -4873,8 +4778,11 @@ namespace SudokuSolver
                         }
 
                         //field[i, j].SetValue(v);
-                        Buffer.AddSettingValueChange(i, j, v);
-                        clues.Add(new int[] { i, j, v - 1 });
+                        //исключаю кандидата
+                        field.Buffer.AddRemovingChange(i, j, v);
+                        //устанавливаю значение
+                        field.Buffer.AddSettingValueChange(i, j, v);
+                        field.Buffer.clues.Add(new int[] { i, j, v - 1 });
 
                         impact = true;
 
@@ -4909,7 +4817,7 @@ namespace SudokuSolver
         //способ на списке
         public static bool SimpleRestriction(Field field)
         {
-            int value = 0;
+            int value;
             bool impact = false;
             //обход всего поля
             for (int i = 0; i < 9; i++)
@@ -4930,7 +4838,7 @@ namespace SudokuSolver
 
                                 //field[i, j].seenCell[k].RemoveCandidat(value);
                                 impact = true;
-                                Buffer.AddRemovingChange(field[i, j].seenCell[k].row, field[i, j].seenCell[k].column, value);
+                                field.Buffer.AddRemovingChange(field[i, j].seenCell[k].row, field[i, j].seenCell[k].column, value);
                             }
                         }
                     }
@@ -4940,7 +4848,7 @@ namespace SudokuSolver
         }
 
         //проверка
-        private static string check(Field field)
+        private static string Check(Field field)
         {
             string answer = "";
 
@@ -4958,8 +4866,7 @@ namespace SudokuSolver
             }
             if (full)
             {
-                answer = "Судоку решено!";
-                done = true;
+                answer = done;
                 return answer;
             }
 
@@ -4976,7 +4883,6 @@ namespace SudokuSolver
                             if (x != i & field[x, j].value == field[i, j].value)
                             {
                                 answer = "Ошибка! Совпадение в столбце " + (j + 1).ToString() + ": (" + (x + 1).ToString() + ";" + (j + 1).ToString() + ") и (" + (i + 1).ToString() + ";" + (j + 1).ToString() + ")!";
-                                done = false;
                                 return answer;
                             }
                         }
@@ -4986,7 +4892,6 @@ namespace SudokuSolver
                             if (x != j & field[i, x].value == field[i, j].value)
                             {
                                 answer = "Ошибка! Совпадение в строке " + (i + 1).ToString() + ": (" + (i + 1).ToString() + ";" + (x + 1).ToString() + ") и (" + (i + 1).ToString() + ";" + (j + 1).ToString() + ")!";
-                                done = false;
                                 return answer;
                             }
                         }
@@ -5002,7 +4907,6 @@ namespace SudokuSolver
                                 if ((indX + x) != i & (indY + y) != j & field[(indX + x), (indY + y)].value == field[i, j].value)
                                 {
                                     answer = "Ошибка! Совпадение в регионе " + (indY * 3 + indX + 1).ToString() + ": (" + ((indX + x) + 1).ToString() + ";" + ((indY + y) + 1).ToString() + ") и (" + (i + 1).ToString() + ";" + (j + 1).ToString() + ")!";
-                                    done = false;
                                     return answer;
                                 }
                             }
@@ -5013,11 +4917,6 @@ namespace SudokuSolver
 
 
             return answer;
-        }
-
-        public static string makeAnswer(int i, int j, int v, Field field)
-        {
-            return "Исключена " + v.ToString() + " из ячейки (" + (i + 1).ToString() + ";" + (j + 1).ToString() + ")";
         }
     }
 }

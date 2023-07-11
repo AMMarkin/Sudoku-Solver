@@ -1,14 +1,7 @@
 ﻿using System;
-using System.IO;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using SudokuSolver.controller;
+using SolverLibrary.Interfaces;
 
 namespace SudokuSolver
 {
@@ -16,13 +9,11 @@ namespace SudokuSolver
     {
         private readonly IController controller;
 
-        ListView list;      
+        ListView list;
         Button load;       //кнопка загрузки в солвер
         Button delete;     //кнопка удаления файла
         Button exit;       //кнопка выхода
-        
 
-        string path;
 
         public Loader(IController controller)
         {
@@ -59,11 +50,11 @@ namespace SudokuSolver
             {
                 Text = "Удалить файл",
                 Size = load.Size,
-                Location = new Point(list.Location.X,load.Location.Y),
+                Location = new Point(list.Location.X, load.Location.Y),
                 Visible = true
             };
 
-            delete.Click+=DeleteButton_Click;
+            delete.Click += DeleteButton_Click;
             this.Controls.Add(delete);
 
             exit = new Button()
@@ -73,7 +64,7 @@ namespace SudokuSolver
                 Location = new Point(load.Location.X, load.Location.Y + load.Height + 20)
             };
 
-            exit.Click+=ExitButton_Click;
+            exit.Click += ExitButton_Click;
             this.Controls.Add(exit);
         }
 
@@ -84,7 +75,7 @@ namespace SudokuSolver
             {
                 MessageBox.Show("Выберите файл", "Ошибка!");
             }
-            else if(list.SelectedIndices.Count > 1)
+            else if (list.SelectedIndices.Count > 1)
             {
                 MessageBox.Show("Выберите один файл", "Ошибка!");
             }
@@ -102,13 +93,13 @@ namespace SudokuSolver
         private void DeleteButton_Click(object sender, EventArgs e)
         {
             //если ничего не выбрано
-            if (list.SelectedIndices.Count==0)
+            if (list.SelectedIndices.Count == 0)
             {
                 MessageBox.Show("Не выбраны файлы для удаления", "Ошибка!");
             }
             //иначе
             else
-            {   
+            {
                 //спрашиваю подтверждение
                 if (MessageBox.Show("Подтвердите удаление файла", "Подтверждение", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                 {
@@ -119,7 +110,7 @@ namespace SudokuSolver
                     for (int i = 0; i < items.Count; i++)
                     {
                         names[i] = items[i].Text;
-                        
+
                     }
                     //удаляю выбранные 
                     controller.Delete(names);
@@ -130,39 +121,43 @@ namespace SudokuSolver
                         list.Items.Remove(item);
                     }
 
-                    MessageBox.Show("Файлы успешно удалены","Успешно",MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Файлы успешно удалены", "Успешно", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
         }
 
         //закрытие
-        private void ExitButton_Click(object sender,EventArgs e)
+        private void ExitButton_Click(object sender, EventArgs e)
         {
             this.Close();
         }
-        
+
 
         //создание списка файлов
         private void CreateFileList()
         {
-            list = new ListView();
-            list.Size = new Size(350,310);
-            list.Location = new Point(20, 20);
-            list.View = View.List;
-            list.HeaderStyle = ColumnHeaderStyle.Nonclickable;
+            list = new ListView
+            {
+                Size = new Size(350, 310),
+                Location = new Point(20, 20),
+                View = View.List,
+                HeaderStyle = ColumnHeaderStyle.Nonclickable,
 
-            list.MultiSelect = true;
-            
-            list.GridLines = true;
-            list.FullRowSelect = true;
-            list.HideSelection = false;
-            list.Scrollable = true;
+                MultiSelect = true,
+
+                GridLines = true,
+                FullRowSelect = true,
+                HideSelection = false,
+                Scrollable = true
+            };
             list.View = View.Details;
 
             //добавление колонки
-            ColumnHeader header = new ColumnHeader();
-            header.Width = list.Size.Width-25;
-            header.Text = "Название";
+            ColumnHeader header = new ColumnHeader
+            {
+                Width = list.Size.Width - 25,
+                Text = "Название"
+            };
             list.Columns.Add(header);
 
             list.AllowDrop = false;
@@ -183,7 +178,7 @@ namespace SudokuSolver
         private void AddLine(string name)
         {
             ListViewItem line = new ListViewItem(name.Split('.')[0]);
-            
+
             list.Items.Add(line);
         }
 
@@ -191,8 +186,8 @@ namespace SudokuSolver
         private void InitializeComponent()
         {
             this.SuspendLayout();
-            
-            
+
+
             // настройка окна
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MaximizeBox = false;

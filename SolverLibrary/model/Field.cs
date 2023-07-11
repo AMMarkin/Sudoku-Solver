@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SudokuSolver
+﻿namespace SolverLibrary.model
 {
     public class Field
     {
@@ -14,18 +8,27 @@ namespace SudokuSolver
         {
             get => cells[i][j];
         }
+
+
+        private Buffer _buffer;
+        public Buffer Buffer { get => _buffer; set => _buffer = value; }
+
         //Создание поля
         public Field()
         {
+            //создаю буффер для поля
+            _buffer = new Buffer();
+            _buffer.Init();
+            _buffer.InitChangeStorage();
 
             //создание ячеек
             cells = new Cell[9][];
-            for(int i = 0; i < cells.Length; i++)
+            for (int i = 0; i < cells.Length; i++)
             {
                 cells[i] = new Cell[9];
-                for(int j = 0; j < cells[i].Length; j++)
+                for (int j = 0; j < cells[i].Length; j++)
                 {
-                    cells[i][j] = new Cell(i,j);
+                    cells[i][j] = new Cell(i, j);
 
                 }
             }
@@ -35,7 +38,7 @@ namespace SudokuSolver
             {
                 for (int j = 0; j < cells[i].Length; j++)
                 {
-                    for(int k = 0; k < cells[i][j].seenCell.Length; k++)
+                    for (int k = 0; k < cells[i][j].seenCell.Length; k++)
                     {
                         cells[i][j].seenCell[k] = cells[cells[i][j].seenInd[0][k]][cells[i][j].seenInd[1][k]];
                     }
@@ -46,22 +49,24 @@ namespace SudokuSolver
         }
 
         //заполнить поле заданными значениями
-        public void UpdateField(int[][] sudoku)
+        public void UpdateField()
         {
-            for(int i = 0; i < sudoku.Length; i++)
+            for (int i = 0; i < _buffer.sudoku.Length; i++)
             {
-                for(int j = 0; j < sudoku[i].Length; j++)
+                for (int j = 0; j < _buffer.sudoku[i].Length; j++)
                 {
-                    if (sudoku[i][j] != 0)
+                    if (_buffer.sudoku[i][j] != 0)
                     {
-                        cells[i][j].SetValue(sudoku[i][j]);
+                        cells[i][j].SetValue(_buffer.sudoku[i][j]);
                     }
                 }
             }
         }
         //применение записанных изменений
-        public void ApplyChanges(int[][] changes)
+        public void ApplyChanges()
         {
+            int[][] changes = _buffer.GetLastChanges();
+
             if (changes == null) return;
 
             int i;
@@ -89,13 +94,13 @@ namespace SudokuSolver
         //обнуление поля
         public void ResetField()
         {
-            for(int i = 0; i < 9; i++)
+            for (int i = 0; i < 9; i++)
             {
-                for(int j = 0; j < 9; j++)
+                for (int j = 0; j < 9; j++)
                 {
                     cells[i][j].value = -1;
                     cells[i][j].remainingCandidates = 9;
-                    for(int k = 0; k < 9; k++)
+                    for (int k = 0; k < 9; k++)
                     {
                         cells[i][j].candidates[k] = true;
                     }
@@ -149,14 +154,14 @@ namespace SudokuSolver
 
 
                 //8 ячеек региона
-                    //левая верхняя ячейка региона
+                //левая верхняя ячейка региона
                 int startCol = 3 * (column / 3);
-                int startRow = 3 * (row/ 3);
-                for(int i = 0; i < 3; i++)
+                int startRow = 3 * (row / 3);
+                for (int i = 0; i < 3; i++)
                 {
-                    for(int j = 0; j < 3; j++)
+                    for (int j = 0; j < 3; j++)
                     {
-                        if((startRow+i)!=row || (startCol+j)!= column)
+                        if ((startRow + i) != row || (startCol + j) != column)
                         {
                             seenInd[0][counter] = startRow + i;
                             seenInd[1][counter] = startCol + j;
@@ -166,7 +171,7 @@ namespace SudokuSolver
                 }
 
                 //6 ячеек строки
-                for(int j = 0; j < 9; j++)
+                for (int j = 0; j < 9; j++)
                 {
                     if (j / 3 != startCol / 3)
                     {
@@ -187,7 +192,7 @@ namespace SudokuSolver
                 }
             }
 
-            
+
 
             //установка значения
             public void SetValue(int v)
@@ -204,9 +209,7 @@ namespace SudokuSolver
                     if (candidates[i])
                     {
                         //исключаю
-                        RemoveCandidat(i+1);
-                        //записываю
-                        Buffer.AddRemovingChange(ind, i+1);
+                        RemoveCandidat(i + 1);
                     }
                 }
             }
@@ -224,7 +227,7 @@ namespace SudokuSolver
                 {
                     candidates[v - 1] = false;
                     remainingCandidates--;
-                    
+
                 }
             }
 
@@ -238,9 +241,9 @@ namespace SudokuSolver
                 }
             }
 
-            
+
         }
     }
 
-    
+
 }
