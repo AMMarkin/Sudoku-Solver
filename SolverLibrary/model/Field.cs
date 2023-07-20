@@ -1,14 +1,20 @@
-﻿namespace SolverLibrary.model
+﻿using System.Collections.Generic;
+
+namespace SolverLibrary.model
 {
     public class Field
     {
         public Cell[][] cells;
 
+        public static int Row_Count => 9;
+        public static int Column_Count => 9;
+        public static int Digits_Count => 9;
+        public static int Regions_Count => 9;
+
         public Cell this[int i, int j]
         {
             get => cells[i][j];
         }
-
 
         private Buffer _buffer;
         public Buffer Buffer { get => _buffer; set => _buffer = value; }
@@ -57,39 +63,67 @@
                 {
                     if (_buffer.sudoku[i][j] != 0)
                     {
-                        cells[i][j].SetValue(_buffer.sudoku[i][j]);
+                        cells[i][j].SetValue(_buffer.sudoku[i][j]-1);
+                        for (int k = 0; k < 9; k++)
+                        {
+                            cells[i][j].RemoveCandidat(k);
+                        }
                     }
                 }
             }
         }
+
         //применение записанных изменений
         public void ApplyChanges()
         {
-            int[][] changes = _buffer.GetLastChanges();
+            IEnumerable<Change> changes = _buffer.GetLastChanges();
 
             if (changes == null) return;
 
             int i;
             int j;
-            foreach (int[] change in changes)
+            foreach (Change change in changes)
             {
                 //нахожу нужную ячейку по индексу
-                i = change[0] / 9;
-                j = change[0] % 9;
+                i = change.I;
+                j = change.J;
+                
 
                 //исключение кандидата
-                if (change[2] == 1)
+                if (change.Type == ChangeType.RemovingDigit)
                 {
-                    cells[i][j].RemoveCandidat(change[1]);
+                    cells[i][j].RemoveCandidat(change.Digit);
                 }
                 //установка значения
-                if (change[2] == -1)
+                if (change.Type == ChangeType.SettingValue)
                 {
-                    cells[i][j].SetValue(change[1]);
+                    cells[i][j].SetValue(change.Digit);
                 }
             }
         }
 
+        public void CancelChanges()
+        {
+            int i;
+            int j;
+            IEnumerable<Change> changes = _buffer.GetLastChanges();
+            foreach (Change change in changes)
+            {
+                //нахожу нужную ячейку
+                i = change.I;
+                j = change.J;
+                if (change.Type == ChangeType.RemovingDigit)
+                {
+                    //возвращаю кандидата
+                    cells[i][j].AddCandidat(change.Digit);
+                }
+                if (change.Type == ChangeType.SettingValue)
+                {
+                    cells[i][j].RemoveValue();
+                }
+            }
+            _buffer.RemoveLastChanges();
+        }
 
         //обнуление поля
         public void ResetField()
@@ -108,6 +142,27 @@
             }
         }
 
+        public void ApplyAnswer(AnswerOfTech answer)
+        {
+            if (answer == null) return;
+
+            if (answer.Eliminations != null)
+                foreach (Change change in answer.Eliminations)
+                    _buffer.AddRemovingChange(change.Ind, change.Digit);
+
+            if (answer.Seted != null)
+                foreach (Change change in answer.Seted)
+                    _buffer.AddSettingValueChange(change.Ind, change.Digit);
+
+            if (answer.Clues != null)
+                foreach (Mark clue in answer.Clues)
+                    _buffer.AddClueMark(clue.Ind, clue.Digit);
+
+            if (answer.Removed != null)
+                foreach (Mark remove in answer.Removed)
+                    _buffer.AddRemovedMark(remove.Ind, remove.Digit);
+
+        }
 
         public class Cell
         {
@@ -117,6 +172,7 @@
             public readonly int row;         //i
             public readonly int column;      //j
             public readonly int ind;         //9*i + j
+            public readonly int region;      
 
             //массив кандидатов
             public bool[] candidates;
@@ -140,8 +196,9 @@
                 this.row = row;
                 this.column = column;
                 this.ind = 9 * row + column;
+                this.region = 3 * (row / 3) + (column / 3);
 
-
+                
                 //заполнение массива видимых ячеек
                 seenInd = new int[2][];
                 seenCell = new Cell[20];
@@ -197,21 +254,8 @@
             //установка значения
             public void SetValue(int v)
             {
-                //установил значение
                 value = v;
 
-                //Buffer.AddSettingValueChange(ind, v);
-
-                //убираю оставшихся кандидатов
-                for (int i = 0; i < candidates.Length; i++)
-                {
-                    //если есть
-                    if (candidates[i])
-                    {
-                        //исключаю
-                        RemoveCandidat(i + 1);
-                    }
-                }
             }
 
             //удаление значения(откат утановки)
@@ -223,25 +267,22 @@
             //исключение кандидата
             public void RemoveCandidat(int v)
             {
-                if (candidates[v - 1])
+                if (candidates[v])
                 {
-                    candidates[v - 1] = false;
+                    candidates[v] = false;
                     remainingCandidates--;
-
                 }
             }
 
             //добавление кандидата (откат исключения)
             public void AddCandidat(int v)
             {
-                if (!candidates[v - 1])
+                if (!candidates[v])
                 {
-                    candidates[v - 1] = true;
+                    candidates[v] = true;
                     remainingCandidates++;
                 }
             }
-
-
         }
     }
 

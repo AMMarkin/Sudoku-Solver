@@ -66,6 +66,8 @@ namespace SudokuSolver
         {
             //создание окна
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
+            this.StartPosition = FormStartPosition.Manual;
+            this.Location = new Point(10, 10);
             
             //создание интерфейса сетки
             grid = new Grid(this);

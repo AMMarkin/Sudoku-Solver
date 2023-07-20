@@ -1,9 +1,5 @@
-﻿using System;
+﻿using SolverLibrary.model;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SolverLibrary.model;
 
 namespace SolverLibrary.Interfaces
 {
@@ -17,7 +13,7 @@ namespace SolverLibrary.Interfaces
         void UpdateGrid(Field field);
 
         //подсветка исключений
-        void HighlighteRemoved(List<int[]> clues, List<int[]> removed, List<int[]> ON, List<int[]> OFF);
+        void HighlighteRemoved(IEnumerable<Mark> clues, IEnumerable<Mark> removed, IEnumerable<int[]> ON, IEnumerable<int[]> OFF);
 
 
 

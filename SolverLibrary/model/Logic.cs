@@ -1,6 +1,5 @@
-﻿using System;
+﻿using SolverLibrary.model.TechsLogic.Techs;
 using System.Collections.Generic;
-using System.Text;
 
 namespace SolverLibrary.model
 {
@@ -9,215 +8,141 @@ namespace SolverLibrary.model
     //получает на вход объект класса Field содержащий поле, а так же список используемых техник
     //находит возможные исключения кандидатов или возможные установки значений
     //записывает найденные ходы в буффер поля
-    public static class Logic
+
+    public class Logic
     {
 
         public const string noFound = "Исключений не найдено";
         public const string done = "Судоку решено!";
 
         //массив и библиотека названий техник
-        public static List<string> tecniques;
+        public readonly List<string> tecniques = TechsList.techNames;
 
-        public static Dictionary<string, int> tech = new Dictionary<string, int>();
+        private readonly List<TechChecker> techCheckers = new List<TechChecker>();
+        private readonly List<FieldStatusChecker> statusCheckers = new List<FieldStatusChecker>()
+        {
+            new RepeatedValuesChecker(),
+            new EmptyCellsChecker(),
+            new ComplitionChecker()
+        };
+
+        public Dictionary<string, int> tech = new Dictionary<string, int>();
+
+        private readonly List<Change> seted = new List<Change>();
+        private readonly List<Change> eliminations = new List<Change>();
+
+        private readonly List<Mark> clues = new List<Mark>();
+        private readonly List<Mark> removed = new List<Mark>();
+
 
         //заполениен библиотеки
-        public static void Init()
+        public void Init()
         {
-            tecniques = new List<string>() {
-                "Открытые одиночки", "Скрытые одиночки","Виртуальные одиночки",
-                "Открытые пары", "Cкрытые пары",
-                "Открытые тройки", "Скрытые тройки",
-                "Открытые четверки", "Скрытые четверки",
-                "BUG",
-                //"X-Cycles",
-                "X-Wings","Swordfish","Jellyfish",
-                "Y-Wings","XYZ-Wing",
-                "Simple Coloring","Extended Simple Coloring"
-            };
-
-            //заполняю библиотеку
             for (int i = 0; i < tecniques.Count; i++)
             {
                 tech.Add(tecniques[i], i);
             }
+
+            TechCheckerBuilder builder = new TechCheckerBuilder();
+
+            for (int i = 0; i < tecniques.Count; i++)
+            {
+                TechChecker techChecker = builder.GetTechChecker((TechType)i);
+                if (techChecker != null)
+                {
+                    techCheckers.Add(techChecker);
+                }
+            }
         }
-        //перебор всех техник внесенных по возрастанию сложности
-        public static string FindElimination(Field field, bool[] tecFlags)
+
+        public AnswerOfTech FindElimination(Field field, bool[] tecFlags)
         {
+            AnswerOfTech answer;
 
-            string answer = noFound;
 
-            //очистка переменных
-            string tmp;
-            field.Buffer.ClearChainBuffer();
-
-            //потом буду включать через настройки как функцию
-            if (SimpleRestriction(field) && false)
+            //простые исключения
+            TechChecker checker = techCheckers.Find((x) => x.Type == TechType.SimpleRestriction);
+            answer = checker.CheckField(field);
+            if (answer != null)
             {
-                //field.ApplyChanges(Buffer.GetLastChanges());
-
-                return "Найдены простые исключения";
+                return answer;
             }
 
-            //открытые одиночки
-            if (tecFlags[tech["Открытые одиночки"]])
+            //техники на классах
+            for (int i = 0; i < tecFlags.Length; i++)
             {
-                tmp = NakedSingle(field);
+                if (tecFlags[i] == false) continue;
 
-                if (!tmp.Equals(""))
+                checker = techCheckers.Find((x) => x.Type == TechsList.ConvertNameToType(tecniques[i]));
+
+                if (checker == null) continue;
+
+                answer = checker.CheckField(field);
+                if (answer != null)
                 {
-                    return tmp;
+                    return answer;
                 }
             }
 
-            //скрытые одиночки
-            if (tecFlags[tech["Скрытые одиночки"]])
-            {
-                tmp = HiddenSingle(field);
+            //не реализованное ищется в тупую
+            answer = FindEliminationByOldMethod(field, tecFlags);
 
-                if (!tmp.Equals(""))
-                {
-                    return tmp;
-                }
-            }
+            return answer;
+        }
+
+
+        public AnswerOfTech FindEliminationByOldMethod(Field field, bool[] tecFlags)
+        {
+            AnswerOfTech answer;
+            ClearLists();
 
             //виртуальные одиночки
             if (tecFlags[tech["Виртуальные одиночки"]])
             {
-                tmp = VirtualSingle(field);
-                if (!tmp.Equals(""))
+                answer = VirtualSingle(field);
+                if (answer != null)
                 {
-                    return tmp;
-                }
-            }
-
-            //открытые пары
-            if (tecFlags[tech["Открытые пары"]])
-            {
-                tmp = NakedPairs(field);
-                if (!tmp.Equals(""))
-                {
-                    return tmp;
-                }
-            }
-
-            //скрытые пары
-            if (tecFlags[tech["Cкрытые пары"]])
-            {
-                tmp = HiddenPairs(field);
-                if (!tmp.Equals(""))
-                {
-                    return tmp;
-                }
-            }
-
-            //открытые тройки
-            if (tecFlags[tech["Открытые тройки"]])
-            {
-                tmp = NakedTriples(field);
-                if (!tmp.Equals(""))
-                {
-                    return tmp;
-                }
-            }
-
-            //скрытые тройки
-            if (tecFlags[tech["Скрытые тройки"]])
-            {
-                tmp = HiddenTriples(field);
-                if (!tmp.Equals(""))
-                {
-                    return tmp;
-                }
-            }
-
-            //Открытые четверки
-            if (tecFlags[tech["Открытые четверки"]])
-            {
-                tmp = NakedQuads(field);
-                if (!tmp.Equals(""))
-                {
-                    return tmp;
-                }
-            }
-
-            //Скрытые четверки
-            if (tecFlags[tech["Скрытые четверки"]])
-            {
-                tmp = HiddenQuads(field);
-                if (!tmp.Equals(""))
-                {
-                    return tmp;
+                    return answer;
                 }
             }
 
             //BUG
             if (tecFlags[tech["BUG"]])
             {
-                tmp = BUG(field);
-                if (!tmp.Equals(""))
+                answer = BUG(field);
+                if (answer != null)
                 {
-                    return tmp;
-                }
-            }
-
-            //X-Wings
-            if (tecFlags[tech["X-Wings"]])
-            {
-                tmp = X_Wings(field);
-                if (!tmp.Equals(""))
-                {
-                    return tmp;
+                    return answer;
                 }
             }
 
             //XYZ-Wing
             if (tecFlags[tech["XYZ-Wing"]])
             {
-                tmp = XYZ_Wing(field);
-                if (!tmp.Equals(""))
+                answer = XYZ_Wing(field);
+                if (answer != null)
                 {
-                    return tmp;
-                }
-            }
-
-            //Swordfish
-            if (tecFlags[tech["Swordfish"]])
-            {
-                tmp = Swordfish(field);
-                if (!tmp.Equals(""))
-                {
-                    return tmp;
-                }
-            }
-
-            //Jellyfish
-            if (tecFlags[tech["Jellyfish"]])
-            {
-                tmp = Jellyfish(field);
-                if (!tmp.Equals(""))
-                {
-                    return tmp;
+                    return answer;
                 }
             }
 
             //Y-Wings
             if (tecFlags[tech["Y-Wings"]])
             {
-                tmp = Y_Wings(field);
-                if (!tmp.Equals(""))
+                answer = Y_Wings(field);
+                if (answer != null)
                 {
-                    return tmp;
+                    return answer;
                 }
             }
 
             //Simple Coloring
             if (tecFlags[tech["Simple Coloring"]])
             {
-                tmp = SimpleColoring(field);
-                if (!tmp.Equals(""))
+                answer = SimpleColoring(field);
+                if (answer != null)
                 {
-                    return tmp;
+                    return answer;
                 }
                 else
                 {
@@ -230,10 +155,10 @@ namespace SolverLibrary.model
             //Extended Simple Coloring
             if (tecFlags[tech["Extended Simple Coloring"]])
             {
-                tmp = ExtendedSimpleColoring(field);
-                if (!tmp.Equals(""))
+                answer = ExtendedSimpleColoring(field);
+                if (answer != null)
                 {
-                    return tmp;
+                    return answer;
                 }
                 else
                 {
@@ -244,73 +169,28 @@ namespace SolverLibrary.model
             }
 
             //проверка решения
-            tmp = Check(field);
-            if (!tmp.Equals(""))
+            foreach(FieldStatusChecker cheker in statusCheckers)
             {
-                return tmp;
+                answer = cheker.Check(field);
+                if (answer != null)
+                {
+                    return answer;
+                }
             }
+
+            answer = new AnswerOfTech(noFound);
 
             return answer;
         }
 
-        
-        //X-Cycles
-        //поиск циклов в цепи из сильных и слабых связей для одного числа
-        //не готово
-        private static string X_Cycles(Field field)
-        {
-            string answer = "";
 
-            int[] subChains;
-            int subChainCounter;
-
-            for (int k = 0; k < 9; k++)
-            {
-                //сильные связи для числа
-                CreateChain(field, k);
-                //нахожу слабые связи
-                FillWeakLinks(field);
-
-
-                //нахожу компоненты связности
-                subChains = new int[field.Buffer.chainUnits.Count];
-                subChainCounter = 0;
-
-                bool[] visited = new bool[field.Buffer.chainUnits.Count];
-
-                for (int v = 0; v < field.Buffer.chainUnits.Count; v++)
-                {
-                    if (!visited[v])
-                    {
-                        DfsWeakStrong(ref visited, ref subChains, ref subChainCounter, v, field);
-                        subChainCounter++;
-                    }
-                }
-                //для всех кусков
-                for (int i = 0; i < subChainCounter; i++)
-                {
-
-                    //раскрашиваю
-                    //SubChainColoring(i, subChains);
-
-                    ClearChainBySubChain(i, subChains, field);
-                }
-
-
-
-            }
-
-
-
-            return answer;
-        }
 
         //Extended Simple Coloring
         //--------------------------------------------------------------------------------------------------------
         //сильные связи для всех цветов + ячейки с двумя кандидатам(сильная связь внутри ячейки)
-        private static string ExtendedSimpleColoring(Field field)
+        private AnswerOfTech ExtendedSimpleColoring(Field field)
         {
-            string answer = "";
+            AnswerOfTech answer;
 
             int[] subChains;
             int subChainCounter;
@@ -333,7 +213,7 @@ namespace SolverLibrary.model
             {
                 if (!visited[v])
                 {
-                    DfsStrong(ref visited, ref subChains, ref subChainCounter, v,field);
+                    DfsStrong(ref visited, ref subChains, ref subChainCounter, v, field);
                     subChainCounter++;
                 }
             }
@@ -353,62 +233,66 @@ namespace SolverLibrary.model
 
                 //проверка повторения цвета 
                 answer = ChainLogicRepeatRule(field, new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 });
-                if (!answer.Equals(""))
+                if (answer != null)
                 {
                     ClearChainBySubChain(i, subChains, field);
-                    return ("Extended Simple Coloring: " + answer);
+                    answer.Message = "Extended Simple Coloring: " + answer.Message;
+                    return answer;
                 }
                 //повторение цвета в ячейке
                 answer = TwiceInCellRule(field);
-                if (!answer.Equals(""))
+                if (answer != null)
                 {
-                    ClearChainBySubChain(i, subChains,field);
-                    return ("Extended Simple Coloring: " + answer);
+                    ClearChainBySubChain(i, subChains, field);
+                    answer.Message = "Extended Simple Coloring: " + answer.Message;
+                    return answer;
                 }
                 answer = TwoColorsInCell(field);
-                if (!answer.Equals(""))
+                if (answer != null)
                 {
-                    ClearChainBySubChain(i, subChains,field);
-                    return ("Extended Simple Coloring: " + answer);
+                    ClearChainBySubChain(i, subChains, field);
+                    answer.Message = "Extended Simple Coloring: " + answer.Message;
+                    return answer;
                 }
                 //кандидаты видимые из двух цветов
                 for (int k = 0; k < 9; k++)
                 {
                     answer = TwoColorsElsewhere(field, k);
-                    if (!answer.Equals(""))
+                    if (answer != null)
                     {
                         ClearChainBySubChain(i, subChains, field);
-                        return ("Extended Simple Coloring: " + answer);
+                        answer.Message = "Extended Simple Coloring: " + answer.Message;
+                        return answer;
                     }
                 }
                 //кандидаты делящие ячейку с одним цветом и видимые други
                 answer = TwoColorsUnitCell(field);
-                if (!answer.Equals(""))
+                if (answer != null)
                 {
                     ClearChainBySubChain(i, subChains, field);
-                    return ("Extended Simple Coloring: " + answer);
+                    answer.Message = "Extended Simple Coloring: " + answer.Message;
+                    return answer;
                 }
                 //цвет полностью исключающий ячейку
                 answer = CellEmptiedByColor(field);
-                if (!answer.Equals(""))
+                if (answer != null)
                 {
                     ClearChainBySubChain(i, subChains, field);
-                    return ("Extended Simple Coloring: " + answer);
+                    answer.Message = "Extended Simple Coloring: " + answer.Message;
+                    return answer;
                 }
 
             }
-            return answer;
+            return null;
         }
 
         //цвет полностью исключающий одну ячейку
-        private static string CellEmptiedByColor(Field field)
+        private AnswerOfTech CellEmptiedByColor(Field field)
         {
-            string answer = "";
+            AnswerOfTech answer;
 
             bool emptyed;
             bool contains;
-
-            int i1, j1;
 
             //для первого цвета
             //иду по всем ячейкам
@@ -471,16 +355,17 @@ namespace SolverLibrary.model
                     {
                         foreach (int[] rem in field.Buffer.ON)
                         {
-                            i1 = rem[0] / 9;
-                            j1 = rem[0] % 9;
-                            field.Buffer.AddRemovingChange(rem[0], rem[1] + 1);
-                            field.Buffer.removed.Add(new int[] { i1, j1, rem[1] });
+                            eliminations.Add(new Change(rem[0], rem[1], ChangeType.RemovingDigit));
+                            removed.Add(new Mark(rem[0], rem[1]));
                         }
                         field.Buffer.ON.Clear();
                         field.Buffer.ON.AddRange(field.Buffer.OFF);
                         field.Buffer.OFF.Clear();
-                        field.Buffer.clues.Add(new int[] { i, j });
-                        answer = $"все числа в ячейке ({(i + 1)};{(j + 1)}) видны цветом";
+
+                        clues.Add(new Mark(9 * i + j));
+
+                        answer = new AnswerOfTech($"все числа в ячейке ({(i + 1)};{(j + 1)}) видны цветом");
+                        SetLists(answer);
                         return answer;
 
                     }
@@ -504,14 +389,16 @@ namespace SolverLibrary.model
                     {
                         foreach (int[] rem in field.Buffer.OFF)
                         {
-                            i1 = rem[0] / 9;
-                            j1 = rem[0] % 9;
-                            field.Buffer.AddRemovingChange(rem[0], rem[1] + 1);
-                            field.Buffer.removed.Add(new int[] { i1, j1, rem[1] });
+                            eliminations.Add(new Change(rem[0], rem[1], ChangeType.RemovingDigit));
+                            removed.Add(new Mark(rem[0], rem[1]));
                         }
+
                         field.Buffer.OFF.Clear();
-                        field.Buffer.clues.Add(new int[] { i, j});
-                        answer = $"все числа в ячейке ({(i + 1)};{(j + 1)}) видны цветом";
+
+                        clues.Add(new Mark(9 * i + j));
+
+                        answer = new AnswerOfTech($"все числа в ячейке ({(i + 1)};{(j + 1)}) видны цветом");
+                        SetLists(answer);
                         return answer;
 
                     }
@@ -520,11 +407,11 @@ namespace SolverLibrary.model
             }
 
 
-            return answer;
+            return null;
         }
 
         //виден ли кандидат в ячейке цветом
-        private static bool SeenByColor(int ind, int k, bool OnOff, Field field)
+        private bool SeenByColor(int ind, int k, bool OnOff, Field field)
         {
             //OnOff 
             //true  - Buffer.ON
@@ -583,9 +470,9 @@ namespace SolverLibrary.model
         }
 
         //исключение кандидатов видимых одним цветом и находящихся в одной ячейке с другим
-        private static string TwoColorsUnitCell(Field field)
+        private AnswerOfTech TwoColorsUnitCell(Field field)
         {
-            string answer = "";
+            AnswerOfTech answer;
             //исключаю кандидатов которые без цвета
             //но видят один цвет 
             //а второй в их ячейке
@@ -630,10 +517,11 @@ namespace SolverLibrary.model
                             i2 = unit2[0] / 9;
                             j2 = unit2[0] % 9;
 
-                            answer = $"{(k + 1)} в ячейке ({(i1 + 1)};{(j1 + 1)}) видит один цвет и свою пару в ячейке ({(i2 + 1)};{(j2 + 1)})";
-                            //field[i1, j1].RemoveCandidat(k + 1);
-                            field.Buffer.AddRemovingChange(i1, j1, k + 1);
-                            field.Buffer.removed.Add(new int[] { i1, j1, k });
+                            eliminations.Add(new Change(i1, j1, k, ChangeType.RemovingDigit));
+                            removed.Add(new Mark(9 * i1 + j1, k));
+
+                            answer = new AnswerOfTech($"{(k + 1)} в ячейке ({(i1 + 1)};{(j1 + 1)}) видит один цвет и свою пару в ячейке ({(i2 + 1)};{(j2 + 1)})");
+                            SetLists(answer);
                             return answer;
                         }
                     }
@@ -676,10 +564,12 @@ namespace SolverLibrary.model
                             i2 = unit2[0] / 9;
                             j2 = unit2[0] % 9;
 
-                            answer = $"{(k + 1)} в ячейке ({(i1 + 1)};{(j1 + 1)}) видит один цвет и свою пару в ячейке ({(i2 + 1)};{(j2 + 1)})";
-                            //field[i1, j1].RemoveCandidat(k + 1);
-                            field.Buffer.AddRemovingChange(i1, j1, k + 1);
-                            field.Buffer.removed.Add(new int[] { i1, j1, k });
+
+                            eliminations.Add(new Change(i1, j1, k, ChangeType.RemovingDigit));
+                            removed.Add(new Mark(9 * i1 + j1, k));
+
+                            answer = new AnswerOfTech($"{(k + 1)} в ячейке ({(i1 + 1)};{(j1 + 1)}) видит один цвет и свою пару в ячейке ({(i2 + 1)};{(j2 + 1)})");
+                            SetLists(answer);
                             return answer;
                         }
                     }
@@ -687,11 +577,11 @@ namespace SolverLibrary.model
             }
 
 
-            return answer;
+            return null;
         }
 
         //проверка видят ли ячейки друг друга
-        private static bool IsSeen(int ind1, int ind2)
+        private bool IsSeen(int ind1, int ind2)
         {
             bool res = false;
             int i1, i2;
@@ -723,12 +613,17 @@ namespace SolverLibrary.model
         }
 
         //проверка появления двух цветов в одной ячейке
-        private static string TwoColorsInCell(Field field)
+        private AnswerOfTech TwoColorsInCell(Field field)
         {
-            string answer = "";
+            AnswerOfTech answer;
 
             int i, j;
             bool impact = false;
+
+            List<Mark> clues = new List<Mark>();
+            List<Mark> removed = new List<Mark>();
+            List<Change> eliminations = new List<Change>();
+
             //иду по первому цвету
             foreach (int[] unit1 in field.Buffer.ON)
             {
@@ -745,30 +640,29 @@ namespace SolverLibrary.model
                         {
                             if (k != unit1[1] && k != unit2[1] && field[i, j].candidates[k])
                             {
-                                //field[i, j].RemoveCandidat(k + 1);
-                                field.Buffer.AddRemovingChange(i, j, k + 1);
-                                field.Buffer.removed.Add(new int[] { i, j, k });
+                                eliminations.Add(new Change(i, j, k, ChangeType.RemovingDigit));
+                                removed.Add(new Mark(9 * i + j, k));
                                 impact = true;
                             }
                         }
                         if (impact)
                         {
-                            answer = $"два цвета в ячейке ({(i + 1)};{(j + 1)})";
+                            clues.Add(new Mark(9 * i + j));
+
+                            answer = new AnswerOfTech($"два цвета в ячейке ({(i + 1)};{(j + 1)})");
+                            SetLists(answer);
                             return answer;
                         }
                     }
-
                 }
-
             }
-
-            return answer;
+            return null;
         }
 
         //проверка появления одного цвета дважды в одной ячейке
-        private static string TwiceInCellRule(Field field)
+        private AnswerOfTech TwiceInCellRule(Field field)
         {
-            string answer = "";
+            AnswerOfTech answer;
 
             //иду по первому цвету
             int i1, j1;
@@ -792,17 +686,20 @@ namespace SolverLibrary.model
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
-                            //field[i1, j1].RemoveCandidat(rem[1] + 1);
-                            field.Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
-                            field.Buffer.removed.Add(new int[] { i1, j1, rem[1] });
+
+                            eliminations.Add(new Change(i1, j1, rem[1], ChangeType.RemovingDigit));
+                            removed.Add(new Mark(9 * i1 + j1, rem[1]));
                         }
                         //для красоты перекидываем оставшееся в field.Buffer.ON
                         field.Buffer.ON.Clear();
                         field.Buffer.ON.AddRange(field.Buffer.OFF);
                         field.Buffer.OFF.Clear();
-                        field.Buffer.clues.Add(new int[] { unit2[0] / 9, unit2[0] % 9, unit2[1] });
-                        field.Buffer.clues.Add(new int[] { unit2[0] / 9, unit2[0] % 9, unit1[1] });
-                        answer = $"повторение цвета в ячейке ({(unit2[0] / 9 + 1)};{(unit2[0] % 9 + 1)})";
+
+                        clues.Add(new Mark(unit2[0], unit2[1]));
+                        clues.Add(new Mark(unit2[0], unit1[1]));
+
+                        answer = new AnswerOfTech($"повторение цвета в ячейке ({(unit2[0] / 9 + 1)};{(unit2[0] % 9 + 1)})");
+                        SetLists(answer);
                         return answer;
                     }
                 }
@@ -827,25 +724,27 @@ namespace SolverLibrary.model
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
-                            //field[i1, j1].RemoveCandidat(rem[1] + 1);
-                            field.Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
-                            field.Buffer.removed.Add(new int[] { i1, j1, rem[1] });
+
+                            eliminations.Add(new Change(i1, j1, rem[1], ChangeType.RemovingDigit));
+                            removed.Add(new Mark(9 * i1 + j1, rem[1]));
                         }
                         //для красоты перекидываем оставшееся в field.Buffer.ON
                         field.Buffer.OFF.Clear();
 
-                        field.Buffer.clues.Add(new int[] { unit2[0] / 9, unit2[0] % 9, unit2[1] });
-                        field.Buffer.clues.Add(new int[] { unit2[0] / 9, unit2[0] % 9, unit1[1] });
-                        answer = $"повторение цвета в ячейке ({(unit2[0] / 9 + 1)};{(unit2[0] % 9 + 1)})";
+                        clues.Add(new Mark(unit2[0], unit2[1]));
+                        clues.Add(new Mark(unit2[0], unit1[1]));
+
+                        answer = new AnswerOfTech($"повторение цвета в ячейке ({(unit2[0] / 9 + 1)};{(unit2[0] % 9 + 1)})");
+                        SetLists(answer);
                         return answer;
                     }
                 }
             }
-            return answer;
+            return null;
         }
 
         //добавление в цепь сильных связей ячеек с двумя кандидатами
-        private static void AddBiValueToChain(Field field)
+        private void AddBiValueToChain(Field field)
         {
             int counter = 0;
             int a;
@@ -893,7 +792,7 @@ namespace SolverLibrary.model
         }
 
         //очистка цепи для комфортного отображения
-        private static void ClearChainBySubChain(int subchainNumber, int[] subchains, Field field)
+        private void ClearChainBySubChain(int subchainNumber, int[] subchains, Field field)
         {
             int ind, k;
             List<int[]> rem = new List<int[]>();
@@ -926,9 +825,9 @@ namespace SolverLibrary.model
         //Simple Coloring
         //--------------------------------------------------------------------------------------------------------
         //только по сильным связям
-        private static string SimpleColoring(Field field)
+        private AnswerOfTech SimpleColoring(Field field)
         {
-            string answer = "";
+            AnswerOfTech answer;
 
 
             int[] subChains = null;
@@ -975,30 +874,32 @@ namespace SolverLibrary.model
                     //для одного числа
 
                     answer = ChainLogicRepeatRule(field, new int[] { k });
-                    if (!answer.Equals(""))
+                    if (answer != null)
                     {
                         ClearChainBySubChain(i, subChains, field);
-                        return ("Simple Coloring: " + answer);
+                        answer.Message = "Simple Coloring: " + answer.Message;
+                        return answer;
                     }
 
                     //ячейки видимые двумя цветами
                     answer = TwoColorsElsewhere(field, k);
-                    if (!answer.Equals(""))
+                    if (answer != null)
                     {
                         ClearChainBySubChain(i, subChains, field);
-                        return ("Simple Coloring: " + answer);
+                        answer.Message = "Simple Coloring: " + answer.Message;
+                        return answer;
                     }
 
                 }
             }
 
-            return answer;
+            return null;
         }
 
         //исключение кандидатов видимых двумя цветами
-        private static string TwoColorsElsewhere(Field field, int k)
+        private AnswerOfTech TwoColorsElsewhere(Field field, int k)
         {
-            string answer;
+            AnswerOfTech answer;
 
             List<int> seenbyON = new List<int>();
             List<int> intersec = new List<int>();
@@ -1051,37 +952,37 @@ namespace SolverLibrary.model
                 }
             }
             bool impact = false;
-            answer = $"{(k + 1)} в ячейках: ";
+            answer = new AnswerOfTech($"{(k + 1)} в ячейках: ");
             foreach (int ind in intersec)
             {
                 i = ind / 9;
                 j = ind % 9;
                 if (field[i, j].candidates[k])
                 {
-                    answer += $"({(i + 1)};{(j + 1)}) ";
-                    //field[i, j].RemoveCandidat(k + 1);
-                    field.Buffer.AddRemovingChange(i, j, k + 1);
                     impact = true;
+
+                    eliminations.Add(new Change(i, j, k, ChangeType.RemovingDigit));
+                    removed.Add(new Mark(9 * i + j, k));
+
+                    answer.Message += $"({(i + 1)};{(j + 1)}) ";
+
                 }
-                field.Buffer.removed.Add(new int[] { i, j, k });
             }
             if (impact)
             {
-                answer += "видимы из обоих цветов";
-            }
-            else
-            {
-                answer = "";
+                answer.Message += "видимы из обоих цветов";
+                SetLists(answer);
+                return answer;
             }
 
 
-            return answer;
+            return null;
         }
 
         //повторение цвета 
-        private static string ChainLogicRepeatRule(Field field, int[] kArray)
+        private AnswerOfTech ChainLogicRepeatRule(Field field, int[] kArray)
         {
-            string answer = "";
+            AnswerOfTech answer;
 
             bool repeat = false;
             bool[] flags = new bool[9];
@@ -1119,9 +1020,9 @@ namespace SolverLibrary.model
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
-                            //field[i1, j1].RemoveCandidat(rem[1] + 1);
-                            field.Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
-                            field.Buffer.removed.Add(new int[] { i1, j1, rem[1] });
+
+                            eliminations.Add(new Change(i1, j1, rem[1], ChangeType.RemovingDigit));
+                            removed.Add(new Mark(9 * i1 + j1, rem[1]));
                         }
                         //для красоты перекидываем оставшееся в field.Buffer.ON
                         field.Buffer.ON.Clear();
@@ -1132,7 +1033,8 @@ namespace SolverLibrary.model
                 }
                 if (repeat)
                 {
-                    answer = $"повторение цвета в строке {(row + 1)}";
+                    answer = new AnswerOfTech($"повторение цвета в строке {(row + 1)}");
+                    SetLists(answer);
                     return answer;
                 }
 
@@ -1162,9 +1064,9 @@ namespace SolverLibrary.model
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
-                            //field[i1, j1].RemoveCandidat(rem[1] + 1);
-                            field.Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
-                            field.Buffer.removed.Add(new int[] { i1, j1, rem[1] });
+
+                            eliminations.Add(new Change(i1, j1, rem[1], ChangeType.RemovingDigit));
+                            removed.Add(new Mark(9 * i1 + j1, rem[1] + 1));
                         }
                         field.Buffer.OFF.Clear();
                         break;
@@ -1172,7 +1074,8 @@ namespace SolverLibrary.model
                 }
                 if (repeat)
                 {
-                    answer = $"повторение цвета в строке {(row + 1)}";
+                    answer = new AnswerOfTech($"повторение цвета в строке {(row + 1)}");
+                    SetLists(answer);
                     return answer;
                 }
                 //------------------------------------------------------------------------------
@@ -1203,9 +1106,9 @@ namespace SolverLibrary.model
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
-                            //field[i1, j1].RemoveCandidat(rem[1] + 1);
-                            field.Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
-                            field.Buffer.removed.Add(new int[] { i1, j1, rem[1] });
+
+                            eliminations.Add(new Change(i1, j1, rem[1], ChangeType.RemovingDigit));
+                            removed.Add(new Mark(9 * i1 + j1, rem[1] + 1));
                         }
                         //для красоты перекидываем оставшееся в field.Buffer.ON
                         field.Buffer.ON.Clear();
@@ -1216,7 +1119,8 @@ namespace SolverLibrary.model
                 }
                 if (repeat)
                 {
-                    answer = $"повторение цвета в столбце {(col + 1)}";
+                    answer = new AnswerOfTech($"повторение цвета в столбце {(col + 1)}");
+                    SetLists(answer);
                     return answer;
                 }
 
@@ -1245,9 +1149,9 @@ namespace SolverLibrary.model
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
-                            //field[i1, j1].RemoveCandidat(rem[1] + 1);
-                            field.Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
-                            field.Buffer.removed.Add(new int[] { i1, j1, rem[1] });
+
+                            eliminations.Add(new Change(i1, j1, rem[1], ChangeType.RemovingDigit));
+                            removed.Add(new Mark(9 * i1 + j1, rem[1] + 1));
                         }
                         //для красоты перекидываем оставшееся в field.Buffer.ON
                         field.Buffer.OFF.Clear();
@@ -1257,7 +1161,8 @@ namespace SolverLibrary.model
                 //если повторение в столбцах то 
                 if (repeat)
                 {
-                    answer = $"повторение цвета в столбце {(col + 1)}";
+                    answer = new AnswerOfTech($"повторение цвета в столбце {(col + 1)}");
+                    SetLists(answer);
                     return answer;
                 }
                 //------------------------------------------------------------------------------
@@ -1290,9 +1195,9 @@ namespace SolverLibrary.model
                         {
                             i1 = rem[0] / 9;
                             j1 = rem[0] % 9;
-                            //field[i1, j1].RemoveCandidat(rem[1] + 1);
-                            field.Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
-                            field.Buffer.removed.Add(new int[] { i1, j1, rem[1] });
+
+                            eliminations.Add(new Change(i1, j1, rem[1], ChangeType.RemovingDigit));
+                            removed.Add(new Mark(9 * i1 + j1, rem[1] + 1));
                         }
                         //для красоты перекидываем оставшееся в field.Buffer.ON
                         field.Buffer.ON.Clear();
@@ -1303,7 +1208,8 @@ namespace SolverLibrary.model
                 }
                 if (repeat)
                 {
-                    answer = $"повторение цвета в регионе {(reg + 1)}";
+                    answer = new AnswerOfTech($"повторение цвета в регионе {(reg + 1)}");
+                    SetLists(answer);
                     return answer;
                 }
                 //для Buffer.OFF
@@ -1335,9 +1241,9 @@ namespace SolverLibrary.model
                             {
                                 i1 = rem[0] / 9;
                                 j1 = rem[0] % 9;
-                                //field[i1, j1].RemoveCandidat(rem[1] + 1);
-                                field.Buffer.AddRemovingChange(i1, j1, rem[1] + 1);
-                                field.Buffer.removed.Add(new int[] { i1, j1, rem[1] });
+
+                                eliminations.Add(new Change(i1, j1, rem[1], ChangeType.RemovingDigit));
+                                removed.Add(new Mark(9 * i1 + j1, rem[1] + 1));
                             }
                             //для красоты перекидываем оставшееся в field.Buffer.ON
                             field.Buffer.OFF.Clear();
@@ -1349,16 +1255,17 @@ namespace SolverLibrary.model
                 //если повторение в регионе
                 if (repeat)
                 {
-                    answer = $"повторение цвета в регионе {(reg + 1)}";
+                    answer = new AnswerOfTech($"повторение цвета в регионе {(reg + 1)}");
+                    SetLists(answer);
                     return answer;
                 }
             }
 
-            return answer;
+            return null;
         }
 
         //раскраска
-        private static void SubChainColoring(int subChainNumber, int[] subchains, Field field)
+        private void SubChainColoring(int subChainNumber, int[] subchains, Field field)
         {
             //переписываю кусок в массив для удобной работы
             int counter = 0;
@@ -1417,7 +1324,7 @@ namespace SolverLibrary.model
         }
 
         //рекурсивный метод для раскраски цепи
-        private static void Coloring(ref int[][] subChain, int[][] links, bool OnOff, Field field)
+        private void Coloring(ref int[][] subChain, int[][] links, bool OnOff, Field field)
         {
             //для каждого ребра 
             for (int i = 0; i < links.Length; i++)
@@ -1439,7 +1346,7 @@ namespace SolverLibrary.model
         }
 
         //создание сильной цепи 
-        public static void CreateChain(Field field, params int[] kArray)
+        public void CreateChain(Field field, params int[] kArray)
         {
             int[][] matrix = new int[9][];
 
@@ -1634,9 +1541,8 @@ namespace SolverLibrary.model
             }
         }
 
-        
         //найти все сильные связи в цепи
-        private static int[][] FindStrongLinksInChain(int ind, int k, Field field)
+        private int[][] FindStrongLinksInChain(int ind, int k, Field field)
         {
             //считаю колличество связей
             int counter = 0;
@@ -1672,10 +1578,8 @@ namespace SolverLibrary.model
             return links;
         }
 
-        
-
         //заполнение слабых связей
-        public static void FillWeakLinks(Field field)
+        public void FillWeakLinks(Field field)
         {
             //полный перебор
 
@@ -1715,7 +1619,7 @@ namespace SolverLibrary.model
         }
 
         //дфс по сильным и слабым связям
-        private static void DfsWeakStrong(ref bool[] visited, ref int[] component, ref int components, int v, Field field)
+        private void DfsWeakStrong(ref bool[] visited, ref int[] component, ref int components, int v, Field field)
         {
             visited[v] = true;
             component[v] = components;
@@ -1773,7 +1677,7 @@ namespace SolverLibrary.model
         }
 
         //дфс по сильным связям
-        private static void DfsStrong(ref bool[] visited, ref int[] component, ref int components, int v, Field field)
+        private void DfsStrong(ref bool[] visited, ref int[] component, ref int components, int v, Field field)
         {
             visited[v] = true;
             component[v] = components;
@@ -1805,7 +1709,7 @@ namespace SolverLibrary.model
         }
 
         //добавление в цепь новой связь
-        private static void AddLinkToChain(int ind1, int ind2, int k1, int k2, Field field)
+        private void AddLinkToChain(int ind1, int ind2, int k1, int k2, Field field)
         {
             bool contains = false;
             foreach (int[] item in field.Buffer.chain)
@@ -1836,7 +1740,7 @@ namespace SolverLibrary.model
         }
 
         //добавление в цепь нового звена
-        private static void AddUnitToChain(int ind, int k, Field field)
+        private void AddUnitToChain(int ind, int k, Field field)
         {
             bool contains = false;
             foreach (int[] unit in field.Buffer.chainUnits)
@@ -1855,9 +1759,9 @@ namespace SolverLibrary.model
         //--------------------------------------------------------------------------------------------------------
 
         //XYZ-Wing
-        private static string XYZ_Wing(Field field)
+        private AnswerOfTech XYZ_Wing(Field field)
         {
-            string answer = "";
+            AnswerOfTech answer;
 
             //ищем все ячейки с тремя кандидатами
 
@@ -1964,11 +1868,6 @@ namespace SolverLibrary.model
                                     }
                                 }
 
-                                if (rem == -1)
-                                {
-                                    answer = "XYZ-Wing ОШИБКА";
-                                }
-
                                 //исключения производим в регионе корня, строке второго крыла
 
                                 for (int r = 0; r < 3; r++)
@@ -1983,29 +1882,27 @@ namespace SolverLibrary.model
                                     //исключаем его
                                     if (field[i, 3 * (j / 3) + r].candidates[rem])
                                     {
-                                        //field[i, 3 * (j / 3) + r].RemoveCandidat(rem + 1);
-                                        field.Buffer.AddRemovingChange(i, 3 * (j / 3) + r, rem + 1);
-                                        field.Buffer.removed.Add(new int[] { i, 3 * (j / 3) + r, rem });
-
-
+                                        eliminations.Add(new Change(i, 3 * (j / 3) + r, rem, ChangeType.RemovingDigit));
+                                        removed.Add(new Mark(9 * i + 3 * (j / 3) + r, rem));
 
                                         for (int k = 0; k < 9; k++)
                                         {
                                             if (field[i, j].candidates[k])
                                             {
-                                                field.Buffer.clues.Add(new int[] { i, j, k });
+                                                clues.Add(new Mark(9 * i + j, k));
                                             }
                                             if (field[i1, j1].candidates[k])
                                             {
-                                                field.Buffer.clues.Add(new int[] { i1, j1, k });
+                                                clues.Add(new Mark(9 * i1 + j1, k));
                                             }
                                             if (field[i2, j2].candidates[k])
                                             {
-                                                field.Buffer.clues.Add(new int[] { i2, j2, k });
+                                                clues.Add(new Mark(9 * i2 + j2, k));
                                             }
                                         }
 
-                                        answer = $"XYZ-Wing: исключена {(rem + 1)} из ({(i + 1)};{(3 * (j / 3) + r + 1)})";
+                                        answer = new AnswerOfTech($"XYZ-Wing: исключена {(rem + 1)} из ({(i + 1)};{(3 * (j / 3) + r + 1)})");
+                                        SetLists(answer);
                                         return answer;
                                     }
                                 }
@@ -2086,29 +1983,27 @@ namespace SolverLibrary.model
                                     //исключаем его
                                     if (field[3 * (i / 3) + r, j].candidates[rem])
                                     {
-                                        //field[3 * (i / 3) + r, j].RemoveCandidat(rem + 1);
-                                        field.Buffer.AddRemovingChange(3 * (i / 3) + r, j, rem + 1);
-                                        field.Buffer.removed.Add(new int[] { 3 * (i / 3) + r, j, rem });
-
-
+                                        eliminations.Add(new Change(3 * (i / 3) + r, j, rem, ChangeType.RemovingDigit));
+                                        removed.Add(new Mark(9 * (3 * (i / 3) + r) + j, rem));
 
                                         for (int k = 0; k < 9; k++)
                                         {
                                             if (field[i, j].candidates[k])
                                             {
-                                                field.Buffer.clues.Add(new int[] { i, j, k });
+                                                clues.Add(new Mark(9 * i + j, k));
                                             }
                                             if (field[i1, j1].candidates[k])
                                             {
-                                                field.Buffer.clues.Add(new int[] { i1, j1, k });
+                                                clues.Add(new Mark(9 * i1 + j1, k));
                                             }
                                             if (field[i2, j2].candidates[k])
                                             {
-                                                field.Buffer.clues.Add(new int[] { i2, j2, k });
+                                                clues.Add(new Mark(9 * i2 + j2, k));
                                             }
                                         }
 
-                                        answer = $"XYZ-Wing: исключена {(rem + 1)} из ({(3 * (i / 3) + r + 1)};{(j + 1)})";
+                                        answer = new AnswerOfTech($"XYZ-Wing: исключена {(rem + 1)} из ({(3 * (i / 3) + r + 1)};{(j + 1)})");
+                                        SetLists(answer);
                                         return answer;
                                     }
                                 }
@@ -2117,13 +2012,13 @@ namespace SolverLibrary.model
                     }
                 }
             }
-            return answer;
+            return null;
         }
 
         //Y-Wings
-        private static string Y_Wings(Field field)
+        private AnswerOfTech Y_Wings(Field field)
         {
-            string answer = "";
+            AnswerOfTech answer;
 
             //ищем все ячейки с двумя кандидатами
 
@@ -2297,10 +2192,8 @@ namespace SolverLibrary.model
                                         {
                                             foundet = true;
 
-                                            field.Buffer.removed.Add(new int[] { X1.seenCell[n].row, X1.seenCell[n].column, c });
-                                            //X1.seenCell[n].RemoveCandidat(c + 1);
-                                            field.Buffer.AddRemovingChange(X1.seenCell[n].row, X1.seenCell[n].column, c + 1);
-
+                                            eliminations.Add(new Change(X1.seenCell[n].ind, c, ChangeType.RemovingDigit));
+                                            removed.Add(new Mark(X1.seenCell[n].ind, c));
                                         }
 
                                     }
@@ -2309,15 +2202,15 @@ namespace SolverLibrary.model
 
                             if (foundet)
                             {
-                                field.Buffer.clues.Add(new int[] { Y.row, Y.column, a });
-                                field.Buffer.clues.Add(new int[] { Y.row, Y.column, b });
-                                field.Buffer.clues.Add(new int[] { X1.row, X1.column, a });
-                                field.Buffer.clues.Add(new int[] { X1.row, X1.column, c });
-                                field.Buffer.clues.Add(new int[] { X2.row, X2.column, b });
-                                field.Buffer.clues.Add(new int[] { X2.row, X2.column, c });
+                                clues.Add(new Mark(Y.ind, a));
+                                clues.Add(new Mark(Y.ind, b));
+                                clues.Add(new Mark(X1.ind, a));
+                                clues.Add(new Mark(X1.ind, c));
+                                clues.Add(new Mark(X2.ind, b));
+                                clues.Add(new Mark(X2.ind, c));
 
-                                
-                                answer = $"Y-Wings по {(c + 1)} : ({(Y.row + 1)};{(Y.column + 1)}) => ({(X1.row + 1)};{(X1.column + 1)}) - ({(X2.row + 1)};{(X2.column + 1)})";
+                                answer = new AnswerOfTech($"Y-Wings по {(c + 1)} : ({(Y.row + 1)};{(Y.column + 1)}) => ({(X1.row + 1)};{(X1.column + 1)}) - ({(X2.row + 1)};{(X2.column + 1)})");
+                                SetLists(answer);
                                 return answer;
 
                             }
@@ -2329,15 +2222,13 @@ namespace SolverLibrary.model
                 }
             }
 
-
-
-            return answer;
+            return null;
         }
 
         //BUG
-        private static string BUG(Field field)
+        private AnswerOfTech BUG(Field field)
         {
-            string answer = "";
+            AnswerOfTech answer;
 
             int counter = 0;
 
@@ -2355,7 +2246,7 @@ namespace SolverLibrary.model
 
                     if (field[i, j].remainingCandidates != 2 && field[i, j].remainingCandidates != 3)
                     {
-                        return answer;
+                        return null;
                     }
                     else if (field[i, j].remainingCandidates == 3)
                     {
@@ -2369,7 +2260,7 @@ namespace SolverLibrary.model
             //если 3 кандидата более чем в одной ячейке то бага нет
             if (counter != 1)
             {
-                return answer;
+                return null;
             }
 
             int[] candidats_counter = new int[9];
@@ -2399,7 +2290,7 @@ namespace SolverLibrary.model
             {
                 if (candidats_counter[k] != 2 && candidats_counter[k] != 3 && candidats_counter[k] != 0)
                 {
-                    return "BUG: ОШИБКА ПОДСЧЕТА КАНДИДАТОВ";
+                    return new AnswerOfTech("BUG: ОШИБКА ПОДСЧЕТА КАНДИДАТОВ");
                 }
                 if (candidats_counter[k] == 3)
                 {
@@ -2410,1711 +2301,40 @@ namespace SolverLibrary.model
 
             if (counter != 1)
             {
-                return "BUG: ОШИБКА";
+                return new AnswerOfTech("BUG: ОШИБКА");
             }
 
-            answer = $"BUG: если в ячейке ({(bugI + 1)};{(bugJ + 1)}) установить не {(bugDigit + 1)}, то судоку будет иметь 2 решения";
-            field.Buffer.clues.Add(new int[] { bugI, bugJ, bugDigit });
+            clues.Add(new Mark(9 * bugI + bugJ, bugDigit));
+
             for (int k = 0; k < 9; k++)
             {
                 if (k == bugDigit) continue;
 
                 if (field[bugI, bugJ].candidates[k])
                 {
-                    field.Buffer.removed.Add(new int[] { bugI, bugJ, k });
+                    removed.Add(new Mark(9 * bugI + bugJ, k));
                 }
             }
-            //field[bugI, bugJ].SetValue(bugDigit + 1);
             //устанавливаю значение
-            field.Buffer.AddSettingValueChange(bugI, bugJ, bugDigit + 1);
-            for(int k = 0; k < 9; k++)
+            seted.Add(new Change(bugI, bugJ, bugDigit, ChangeType.SettingValue));
+            for (int k = 0; k < 9; k++)
             {
                 //обнуляю всех оставшихся кандидатов
-                if(field[bugI, bugJ].candidates[k])
+                if (field[bugI, bugJ].candidates[k])
                 {
-                    field.Buffer.AddRemovingChange(bugI, bugJ, k+1);
+                    eliminations.Add(new Change(bugI, bugJ, k, ChangeType.RemovingDigit));
                 }
             }
 
+            answer = new AnswerOfTech($"BUG: если в ячейке ({(bugI + 1)};{(bugJ + 1)}) установить не {(bugDigit + 1)}, то судоку будет иметь 2 решения");
+            SetLists(answer);
             return answer;
-        }
-
-        //Jellyfish
-        private static string Jellyfish(Field field)
-        {
-            string answer = "";
-
-            int[][] matrix = new int[9][];
-            int[][] shape;
-            for (int i = 0; i < 9; i++)
-            {
-                matrix[i] = new int[9];
-            }
-            //по всем числам
-            for (int k = 0; k < 9; k++)
-            {
-                //смотрю строки
-                //исключаю в колонках
-
-                //составляю матрицу кандидатов
-                for (int i = 0; i < 9; i++)
-                {
-                    for (int j = 0; j < 9; j++)
-                    {
-                        if (field[i, j].candidates[k])
-                        {
-                            matrix[i][j] = 1;
-                        }
-                        else
-                        {
-                            matrix[i][j] = 0;
-                        }
-                    }
-                }
-
-                shape = Shape4InMatrix(matrix);
-
-                //если нашлось то провожу исключения и составляю ответ
-                //[0] строки
-                //[1] колонки
-                if (shape != null)
-                {
-                    for (int i = 0; i < 9; i++)
-                    {
-                        if (i != shape[0][0] && i != shape[0][1] && i != shape[0][2] && i != shape[0][3])
-                        {
-                            //field[i, shape[1][0]].RemoveCandidat(k + 1);
-                            //field[i, shape[1][1]].RemoveCandidat(k + 1);
-                            //field[i, shape[1][2]].RemoveCandidat(k + 1);
-                            //field[i, shape[1][3]].RemoveCandidat(k + 1);
-                            if (field[i, shape[1][0]].candidates[k])
-                            {
-                                field.Buffer.AddRemovingChange(i, shape[1][0], k + 1);
-                                field.Buffer.removed.Add(new int[] { i, shape[1][0], k });
-                            }
-                            if (field[i, shape[1][1]].candidates[k])
-                            {
-                                field.Buffer.AddRemovingChange(i, shape[1][1], k + 1);
-                                field.Buffer.removed.Add(new int[] { i, shape[1][1], k });
-                            }
-                            if (field[i, shape[1][2]].candidates[k])
-                            {
-                                field.Buffer.AddRemovingChange(i, shape[1][2], k + 1);
-                                field.Buffer.removed.Add(new int[] { i, shape[1][2], k });
-                            }
-                            if (field[i, shape[1][3]].candidates[k])
-                            {
-                                field.Buffer.AddRemovingChange(i, shape[1][3], k + 1);
-                                field.Buffer.removed.Add(new int[] { i, shape[1][3], k });
-                            }
-                        }
-                    }
-
-                    for (int x = 0; x < 4; x++)
-                    {
-                        for (int y = 0; y < 4; y++)
-                        {
-                            field.Buffer.clues.Add(new int[] { shape[0][x], shape[1][y], k });
-                        }
-                    }
-
-                    int digit = k + 1;
-
-                    int i1 = shape[0][0] + 1;
-                    int i2 = shape[0][1] + 1;
-                    int i3 = shape[0][2] + 1;
-                    int i4 = shape[0][3] + 1;
-
-                    int j1 = shape[1][0] + 1;
-                    int j2 = shape[1][1] + 1;
-                    int j3 = shape[1][2] + 1;
-                    int j4 = shape[1][3] + 1;
-
-                    answer = $"Jellyfish по {digit} в ({i1}-{i2}-{i3}-{i4};{j1}-{j2}-{j3}-{j4})";
-                    return answer;
-
-                }
-
-
-                //смотрю столбцы
-                //исключаю строки
-
-                //составляю матрицу кандидатов
-                for (int i = 0; i < 9; i++)
-                {
-                    for (int j = 0; j < 9; j++)
-                    {
-                        if (field[i, j].candidates[k])
-                        {
-                            matrix[j][i] = 1;
-                        }
-                        else
-                        {
-                            matrix[j][i] = 0;
-                        }
-                    }
-                }
-
-                shape = Shape4InMatrix(matrix);
-
-                //если нашлось то провожу исключения и составляю ответ
-                //[0] колонки
-                //[1] строки
-                if (shape != null)
-                {
-                    for (int i = 0; i < 9; i++)
-                    {
-                        if (i != shape[0][0] && i != shape[0][1] && i != shape[0][2] && i != shape[0][3])
-                        {
-                            //field[shape[1][0], i].RemoveCandidat(k + 1);
-                            //field[shape[1][1], i].RemoveCandidat(k + 1);
-                            //field[shape[1][2], i].RemoveCandidat(k + 1);
-                            //field[shape[1][3], i].RemoveCandidat(k + 1);
-                            if (field[shape[1][0], i].candidates[k])
-                            {
-                                field.Buffer.AddRemovingChange(shape[1][0], i, k + 1);
-                                field.Buffer.removed.Add(new int[] { shape[1][0], i, k });
-                            }
-                            if (field[shape[1][1], i].candidates[k])
-                            {
-                                field.Buffer.AddRemovingChange(shape[1][1], i, k + 1);
-                                field.Buffer.removed.Add(new int[] { shape[1][1], i, k });
-                            }
-                            if (field[shape[1][2], i].candidates[k])
-                            {
-                                field.Buffer.AddRemovingChange(shape[1][2], i, k + 1);
-                                field.Buffer.removed.Add(new int[] { shape[1][2], i, k });
-                            }
-                            if (field[shape[1][3], i].candidates[k])
-                            {
-                                field.Buffer.AddRemovingChange(shape[1][3], i, k + 1);
-                                field.Buffer.removed.Add(new int[] { shape[1][3], i, k });
-                            }
-
-                        }
-                    }
-
-                    for (int x = 0; x < 4; x++)
-                    {
-                        for (int y = 0; y < 4; y++)
-                        {
-                            field.Buffer.clues.Add(new int[] { shape[1][x], shape[0][y], k });
-                        }
-                    }
-
-                    int digit = k + 1;
-
-                    int i1 = shape[1][0] + 1;
-                    int i2 = shape[1][1] + 1;
-                    int i3 = shape[1][2] + 1;
-                    int i4 = shape[1][3] + 1;
-
-                    int j1 = shape[0][0] + 1;
-                    int j2 = shape[0][1] + 1;
-                    int j3 = shape[0][2] + 1;
-                    int j4 = shape[0][3] + 1;
-
-                    answer = $"Jellyfish по {digit} в ({i1}-{i2}-{i3}-{i4};{j1}-{j2}-{j3}-{j4})";
-                    return answer;
-
-                }
-
-            }
-
-
-            return answer;
-        }
-
-        //скрытые четверки
-        private static string HiddenQuads(Field field)
-        {
-            string answer = "";
-
-
-            //места для группы
-            Field.Cell[] group = new Field.Cell[9];
-            for (int i = 0; i < 9; i++)
-            {
-                group[i] = new Field.Cell(0, 0);
-            }
-
-
-            //строки
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    group[j] = field.cells[i][j];
-                }
-                answer = HiddenQuadsInGroup(group, field);
-                if (!answer.Equals(""))
-                {
-                    answer = $"Строка  {(i + 1)}: " + answer;
-                    return answer;
-                }
-            }
-
-            //столбцы
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    group[j] = field.cells[j][i];
-                }
-                answer = HiddenQuadsInGroup(group, field);
-                if (!answer.Equals(""))
-                {
-                    answer = $"Столбец {(i + 1)}: " + answer;
-                    return answer;
-                }
-            }
-
-            //регионы
-            for (int i = 0; i < 3; i++)
-            {
-                for (int j = 0; j < 3; j++)
-                {
-                    //i,j индексы региона
-                    //x,y, индексы внутри региона
-
-                    for (int y = 0; y < 3; y++)
-                    {
-                        for (int x = 0; x < 3; x++)
-                        {
-                            group[y * 3 + x] = field.cells[i * 3 + x][j * 3 + y];
-                        }
-                    }
-                    answer = HiddenQuadsInGroup(group, field);
-                    if (!answer.Equals(""))
-                    {
-                        answer = $"Регион  {((i) * 3 + j + 1)}: " + answer;
-                        return answer;
-                    }
-                }
-            }
-
-
-            return answer;
-        }
-
-        //скрытые четверки в группе
-        private static string HiddenQuadsInGroup(Field.Cell[] group, Field field)
-        {
-            string answer = "";
-
-            //составляю и заполняю матрицу вхождений
-            int[][] matrix = new int[group.Length][];
-            for (int i = 0; i < group.Length; i++)
-            {
-                matrix[i] = new int[group.Length];
-            }
-            for (int i = 0; i < matrix.Length; i++)
-            {
-                for (int j = 0; j < group.Length; j++)
-                {
-                    if (group[i].candidates[j])
-                    {
-
-                        matrix[j][i] = 1;
-                    }
-                }
-            }
-
-            int[][] shape = Shape4InMatrix(matrix);
-
-            //числа в строках
-            //ячейки в колонках
-
-            //если была найдена фигура то проводим исключения и формируем ответ
-            if (shape != null)
-            {
-                for (int i = 0; i < 9; i++)
-                {
-                    if (i != shape[0][0] && i != shape[0][1] && i != shape[0][2] && i != shape[0][3])
-                    {
-                        //group[shape[1][0]].RemoveCandidat(i + 1);
-                        //group[shape[1][1]].RemoveCandidat(i + 1);
-                        //group[shape[1][2]].RemoveCandidat(i + 1);
-                        //group[shape[1][3]].RemoveCandidat(i + 1);
-                        if (group[shape[1][0]].candidates[i])
-                        {
-                            field.Buffer.AddRemovingChange(group[shape[1][0]].row, group[shape[1][0]].column, i + 1);
-                            field.Buffer.removed.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, i });
-                        }
-                        if (group[shape[1][1]].candidates[i])
-                        {
-                            field.Buffer.AddRemovingChange(group[shape[1][1]].row, group[shape[1][0]].column, i + 1);
-                            field.Buffer.removed.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, i });
-                        }
-                        if (group[shape[1][2]].candidates[i])
-                        {
-                            field.Buffer.AddRemovingChange(group[shape[1][2]].row, group[shape[1][0]].column, i + 1);
-                            field.Buffer.removed.Add(new int[] { group[shape[1][2]].row, group[shape[1][2]].column, i });
-                        }
-                        if (group[shape[1][3]].candidates[i])
-                        {
-                            field.Buffer.AddRemovingChange(group[shape[1][3]].row, group[shape[1][0]].column, i + 1);
-                            field.Buffer.removed.Add(new int[] { group[shape[1][3]].row, group[shape[1][3]].column, i });
-                        }
-
-                    }
-                }
-                for (int x = 0; x < shape[1].Length; x++)
-                {
-                    field.Buffer.clues.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, shape[0][x] });
-                    field.Buffer.clues.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, shape[0][x] });
-                    field.Buffer.clues.Add(new int[] { group[shape[1][2]].row, group[shape[1][2]].column, shape[0][x] });
-                    field.Buffer.clues.Add(new int[] { group[shape[1][3]].row, group[shape[1][3]].column, shape[0][x] });
-                }
-
-                int digit1 = shape[0][0] + 1;
-                int digit2 = shape[0][1] + 1;
-                int digit3 = shape[0][2] + 1;
-                int digit4 = shape[0][3] + 1;
-
-                int i1 = group[shape[1][0]].row + 1;
-                int i2 = group[shape[1][1]].row + 1;
-                int i3 = group[shape[1][2]].row + 1;
-                int i4 = group[shape[1][3]].row + 1;
-
-                int j1 = group[shape[1][0]].column + 1;
-                int j2 = group[shape[1][1]].column + 1;
-                int j3 = group[shape[1][2]].column + 1;
-                int j4 = group[shape[1][3]].column + 1;
-
-                answer = $"Скрытая четверка {digit1}/{digit2}/{digit3}/{digit4} в ({i1};{j1}) и ({i2};{j2}) и ({i3};{j3}) и ({i4};{j4})";
-            }
-
-
-            return answer;
-        }
-
-        //открытые четверки
-        private static string NakedQuads(Field field)
-        {
-            string answer = "";
-
-            //места для группы
-            Field.Cell[] group = new Field.Cell[9];
-            for (int i = 0; i < 9; i++)
-            {
-                group[i] = new Field.Cell(0, 0);
-            }
-
-
-            //строки
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    group[j] = field.cells[i][j];
-                }
-                answer = NakedQuadsInGroup(group, field);
-                if (!answer.Equals(""))
-                {
-                    answer = $"Строка  {(i + 1)}: " + answer;
-                    return answer;
-                }
-            }
-
-            //столбцы
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    group[j] = field.cells[j][i];
-                }
-                answer = NakedQuadsInGroup(group, field);
-                if (!answer.Equals(""))
-                {
-                    answer = $"Столбец {(i + 1)}: " + answer;
-                    return answer;
-                }
-            }
-
-            //регионы
-            for (int i = 0; i < 3; i++)
-            {
-                for (int j = 0; j < 3; j++)
-                {
-                    //i,j индексы региона
-                    //x,y, индексы внутри региона
-
-                    for (int y = 0; y < 3; y++)
-                    {
-                        for (int x = 0; x < 3; x++)
-                        {
-                            group[y * 3 + x] = field.cells[i * 3 + x][j * 3 + y];
-                        }
-                    }
-                    answer = NakedQuadsInGroup(group, field);
-                    if (!answer.Equals(""))
-                    {
-                        answer = $"Регион  {((i) * 3 + j + 1)}: " + answer;
-                        return answer;
-                    }
-                }
-            }
-
-
-            return answer;
-        }
-
-        //открытые тройки в группе
-        private static string NakedQuadsInGroup(Field.Cell[] group, Field field)
-        {
-            string answer = "";
-
-            //составляю и заполняю матрицу вхождений
-            int[][] matrix = new int[group.Length][];
-            for (int i = 0; i < group.Length; i++)
-            {
-                matrix[i] = new int[group.Length];
-            }
-            for (int i = 0; i < matrix.Length; i++)
-            {
-                for (int j = 0; j < group.Length; j++)
-                {
-                    if (group[i].candidates[j])
-                    {
-
-                        matrix[i][j] = 1;
-                    }
-                }
-            }
-
-            int[][] shape = Shape4InMatrix(matrix);
-
-            //[0] ячейки
-            //[1] кандидаты
-
-            //если была найдена фигура то проводим исключения и формируем ответ
-            if (shape != null)
-            {
-                for (int i = 0; i < 9; i++)
-                {
-                    if (i != shape[0][0] && i != shape[0][1] && i != shape[0][2] && i != shape[0][3])
-                    {
-                        //group[i].RemoveCandidat(shape[1][0] + 1);
-                        //group[i].RemoveCandidat(shape[1][1] + 1);
-                        //group[i].RemoveCandidat(shape[1][2] + 1);
-                        //group[i].RemoveCandidat(shape[1][3] + 1);
-                        if (group[i].candidates[shape[1][0]])
-                        {
-                            field.Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][0] + 1);
-                            field.Buffer.removed.Add(new int[] { group[i].row, group[i].column, shape[1][0] });
-                        }
-                        if (group[i].candidates[shape[1][1]])
-                        {
-                            field.Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][1] + 1);
-                            field.Buffer.removed.Add(new int[] { group[i].row, group[i].column, shape[1][1] });
-                        }
-                        if (group[i].candidates[shape[1][2]])
-                        {
-                            field.Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][2] + 1);
-                            field.Buffer.removed.Add(new int[] { group[i].row, group[i].column, shape[1][2] });
-                        }
-                        if (group[i].candidates[shape[1][3]])
-                        {
-                            field.Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][3] + 1);
-                            field.Buffer.removed.Add(new int[] { group[i].row, group[i].column, shape[1][3] });
-                        }
-
-
-                    }
-                }
-
-                for (int x = 0; x < shape[1].Length; x++)
-                {
-                    field.Buffer.clues.Add(new int[] { group[shape[0][0]].row, group[shape[0][0]].column, shape[1][x] });
-                    field.Buffer.clues.Add(new int[] { group[shape[0][1]].row, group[shape[0][1]].column, shape[1][x] });
-                    field.Buffer.clues.Add(new int[] { group[shape[0][2]].row, group[shape[0][2]].column, shape[1][x] });
-                    field.Buffer.clues.Add(new int[] { group[shape[0][3]].row, group[shape[0][3]].column, shape[1][x] });
-                }
-
-                int digit1 = shape[1][0] + 1;
-                int digit2 = shape[1][1] + 1;
-                int digit3 = shape[1][2] + 1;
-                int digit4 = shape[1][3] + 1;
-
-                int i1 = group[shape[0][0]].row + 1;
-                int i2 = group[shape[0][1]].row + 1;
-                int i3 = group[shape[0][2]].row + 1;
-                int i4 = group[shape[0][3]].row + 1;
-
-                int j1 = group[shape[0][0]].column + 1;
-                int j2 = group[shape[0][1]].column + 1;
-                int j3 = group[shape[0][2]].column + 1;
-                int j4 = group[shape[0][3]].column + 1;
-
-                answer = $"Открытая четверка {digit1}/{digit2}/{digit3}/{digit4} в ({i1};{j1}) и ({i2};{j2}) и ({i3};{j3}) и ({i4};{j4})";
-            }
-
-
-            return answer;
-        }
-
-        //нахождение фигуры 4х4 в строках
-        private static int[][] Shape4InMatrix(int[][] a)
-        {
-            //для четверок n=4
-            int n = 4;
-            int[] rows = new int[n];
-            int[] colums = new int[n];
-
-            for (int i = 0; i < n; i++)
-            {
-                rows[i] = -1;
-                colums[i] = -1;
-            }
-
-            //считаю колличество строк в которые n вхождений
-            int[] sums = new int[a.Length];
-            int counter = 0;
-            for (int i = 0; i < a.Length; i++)
-            {
-                for (int j = 0; j < a[i].Length; j++)
-                {
-                    if (a[i][j] != 0)
-                    {
-                        sums[i]++;
-                    }
-                }
-                if (sums[i] > 1 && sums[i] <= n)
-                {
-                    counter++;
-                }
-            }
-            //если таких строк меньше n то нужной комбинации нет
-            if (counter < n)
-            {
-                return null;
-            }
-
-            //запоминаю номера нужных строк
-            int[] digits = new int[counter];
-            counter = 0;
-            for (int i = 0; i < a.Length; i++)
-            {
-                if (sums[i] > 1 && sums[i] <= n)
-                {
-                    digits[counter] = i;
-                    counter++;
-                }
-            }
-
-            if (digits.Length > 1)
-            {
-                //перебираю все комбинации нужных строк
-                for (int k = 0; k < digits.Length; k++)
-                {
-                    for (int l = k + 1; l < digits.Length; l++)
-                    {
-                        for (int h = l + 1; h < digits.Length; h++)
-                        {
-                            for (int g = h + 1; g < digits.Length; g++)
-                            {
-                                sums = new int[a.Length];
-                                //подсчитываю колличество вхождений в выбранные строки
-                                for (int j = 0; j < a.Length; j++)
-                                {
-                                    if (a[digits[k]][j] > 0)
-                                    {
-                                        sums[j]++;
-                                    }
-                                    if (a[digits[l]][j] > 0)
-                                    {
-                                        sums[j]++;
-                                    }
-                                    if (a[digits[h]][j] > 0)
-                                    {
-                                        sums[j]++;
-                                    }
-                                    if (a[digits[g]][j] > 0)
-                                    {
-                                        sums[j]++;
-                                    }
-                                }
-                                counter = 0;
-                                for (int j = 0; j < a.Length; j++)
-                                {
-                                    if (sums[j] > 0)
-                                    {
-                                        counter++;
-                                    }
-                                }
-
-                                if (counter != n)
-                                {
-                                    continue;
-                                }
-
-                                //запоминаю найденную фигуру
-                                rows[0] = digits[k];
-                                rows[1] = digits[l];
-                                rows[2] = digits[h];
-                                rows[3] = digits[g];
-
-                                counter = 0;
-
-                                for (int j = 0; j < a.Length; j++)
-                                {
-                                    if (sums[j] > 1 && sums[j] <= n)
-                                    {
-                                        colums[counter] = j;
-                                        counter++;
-                                    }
-                                }
-
-                                //смотрю есть ли исключения
-                                for (int j = 0; j < n; j++)
-                                {
-                                    for (int i = 0; i < a.Length; i++)
-                                    {
-                                        if (i != rows[0] && i != rows[1] && i != rows[2] && i != rows[3] && a[i][colums[j]] > 0)
-                                        {
-                                            return new int[][] { rows, colums };
-                                        }
-                                    }
-                                }
-
-                            }
-                        }
-                    }
-
-                }
-            }
-
-            return null;
-        }
-
-        //Swordfish
-        private static string Swordfish(Field field)
-        {
-            string answer = "";
-
-            int[][] matrix = new int[9][];
-            int[][] shape;
-            for (int i = 0; i < 9; i++)
-            {
-                matrix[i] = new int[9];
-            }
-            //по всем числам
-            for (int k = 0; k < 9; k++)
-            {
-                //смотрю строки
-                //исключаю в колонках
-
-                //составляю матрицу кандидатов
-                for (int i = 0; i < 9; i++)
-                {
-                    for (int j = 0; j < 9; j++)
-                    {
-                        if (field[i, j].candidates[k])
-                        {
-                            matrix[i][j] = 1;
-                        }
-                        else
-                        {
-                            matrix[i][j] = 0;
-                        }
-                    }
-                }
-
-                shape = Shape3InMatrix(matrix);
-
-                //если нашлось то провожу исключения и составляю ответ
-                //[0] строки
-                //[1] колонки
-                if (shape != null)
-                {
-                    for (int i = 0; i < 9; i++)
-                    {
-                        if (i != shape[0][0] && i != shape[0][1] && i != shape[0][2])
-                        {
-                            //field[i, shape[1][0]].RemoveCandidat(k + 1);
-                            //field[i, shape[1][1]].RemoveCandidat(k + 1);
-                            //field[i, shape[1][2]].RemoveCandidat(k + 1);
-
-                            if (field[i, shape[1][0]].candidates[k])
-                            {
-                                field.Buffer.AddRemovingChange(i, shape[1][0], k + 1);
-                                field.Buffer.removed.Add(new int[] { i, shape[1][0], k });
-                            }
-                            if (field[i, shape[1][1]].candidates[k])
-                            {
-                                field.Buffer.AddRemovingChange(i, shape[1][1], k + 1);
-                                field.Buffer.removed.Add(new int[] { i, shape[1][1], k });
-                            }
-                            if (field[i, shape[1][2]].candidates[k])
-                            {
-                                field.Buffer.AddRemovingChange(i, shape[1][2], k + 1);
-                                field.Buffer.removed.Add(new int[] { i, shape[1][2], k });
-                            }
-
-
-                        }
-                    }
-
-                    for (int x = 0; x < 3; x++)
-                    {
-                        for (int y = 0; y < 3; y++)
-                        {
-                            field.Buffer.clues.Add(new int[] { shape[0][x], shape[1][y], k });
-                        }
-                    }
-
-                    int digit = k + 1;
-
-                    int i1 = shape[0][0] + 1;
-                    int i2 = shape[0][1] + 1;
-                    int i3 = shape[0][2] + 1;
-
-                    int j1 = shape[1][0] + 1;
-                    int j2 = shape[1][1] + 1;
-                    int j3 = shape[1][2] + 1;
-
-                    answer = $"Swordfish по {digit} в ({i1}-{i2}-{i3};{j1}-{j2}-{j3})";
-                    return answer;
-
-                }
-
-
-                //смотрю столбцы
-                //исключаю строки
-
-                //составляю матрицу кандидатов
-                for (int i = 0; i < 9; i++)
-                {
-                    for (int j = 0; j < 9; j++)
-                    {
-                        if (field[i, j].candidates[k])
-                        {
-                            matrix[j][i] = 1;
-                        }
-                        else
-                        {
-                            matrix[j][i] = 0;
-                        }
-                    }
-                }
-
-                shape = Shape3InMatrix(matrix);
-
-                //если нашлось то провожу исключения и составляю ответ
-                //[0] колонки
-                //[1] строки
-                if (shape != null)
-                {
-                    for (int i = 0; i < 9; i++)
-                    {
-                        if (i != shape[0][0] && i != shape[0][1] && i != shape[0][2])
-                        {
-                            //field[shape[1][0], i].RemoveCandidat(k + 1);
-                            //field[shape[1][1], i].RemoveCandidat(k + 1);
-                            //field[shape[1][2], i].RemoveCandidat(k + 1);
-
-                            if (field[shape[1][0], i].candidates[k])
-                            {
-                                field.Buffer.AddRemovingChange(shape[1][0], i, k + 1);
-                                field.Buffer.removed.Add(new int[] { shape[1][0], i, k });
-                            }
-                            if (field[shape[1][1], i].candidates[k])
-                            {
-                                field.Buffer.AddRemovingChange(shape[1][1], i, k + 1);
-                                field.Buffer.removed.Add(new int[] { shape[1][1], i, k });
-                            }
-                            if (field[shape[1][2], i].candidates[k])
-                            {
-                                field.Buffer.AddRemovingChange(shape[1][2], i, k + 1);
-                                field.Buffer.removed.Add(new int[] { shape[1][2], i, k });
-                            }
-
-
-                        }
-                    }
-
-                    for (int x = 0; x < 3; x++)
-                    {
-                        for (int y = 0; y < 3; y++)
-                        {
-                            field.Buffer.clues.Add(new int[] { shape[1][x], shape[0][y], k });
-                        }
-                    }
-
-                    int digit = k + 1;
-
-                    int i1 = shape[1][0] + 1;
-                    int i2 = shape[1][1] + 1;
-                    int i3 = shape[1][2] + 1;
-
-                    int j1 = shape[0][0] + 1;
-                    int j2 = shape[0][1] + 1;
-                    int j3 = shape[0][2] + 1;
-
-                    answer = $"Swordfish по {digit} в ({i1}-{i2}-{i3};{j1}-{j2}-{j3})";
-                    return answer;
-
-                }
-
-            }
-
-
-            return answer;
-        }
-
-        //скрытые тройки
-        private static string HiddenTriples(Field field)
-        {
-            string answer = "";
-
-
-            //места для группы
-            Field.Cell[] group = new Field.Cell[9];
-            for (int i = 0; i < 9; i++)
-            {
-                group[i] = new Field.Cell(0, 0);
-            }
-
-
-            //строки
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    group[j] = field.cells[i][j];
-                }
-                answer = HiddenTriplesInGroup(group, field);
-                if (!answer.Equals(""))
-                {
-                    answer = $"Строка  {(i + 1)}: " + answer;
-                    return answer;
-                }
-            }
-
-            //столбцы
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    group[j] = field.cells[j][i];
-                }
-                answer = HiddenTriplesInGroup(group, field);
-                if (!answer.Equals(""))
-                {
-                    answer = $"Столбец {(i + 1)}: " + answer;
-                    return answer;
-                }
-            }
-
-            //регионы
-            for (int i = 0; i < 3; i++)
-            {
-                for (int j = 0; j < 3; j++)
-                {
-                    //i,j индексы региона
-                    //x,y, индексы внутри региона
-
-                    for (int y = 0; y < 3; y++)
-                    {
-                        for (int x = 0; x < 3; x++)
-                        {
-                            group[y * 3 + x] = field.cells[i * 3 + x][j * 3 + y];
-                        }
-                    }
-                    answer = HiddenTriplesInGroup(group, field);
-                    if (!answer.Equals(""))
-                    {
-                        answer = $"Регион  {((i) * 3 + j + 1)}: " + answer;
-                        return answer;
-                    }
-                }
-            }
-
-
-            return answer;
-        }
-
-        //скрытые пары в группе
-        private static string HiddenTriplesInGroup(Field.Cell[] group, Field field)
-        {
-            string answer = "";
-
-            //составляю и заполняю матрицу вхождений
-            int[][] matrix = new int[group.Length][];
-            for (int i = 0; i < group.Length; i++)
-            {
-                matrix[i] = new int[group.Length];
-            }
-            for (int i = 0; i < matrix.Length; i++)
-            {
-                for (int j = 0; j < group.Length; j++)
-                {
-                    if (group[i].candidates[j])
-                    {
-
-                        matrix[j][i] = 1;
-                    }
-                }
-            }
-
-            int[][] shape = Shape3InMatrix(matrix);
-
-            //числа в строках
-            //ячейки в колонках
-
-            //если была найдена фигура то проводим исключения и формируем ответ
-            if (shape != null)
-            {
-                for (int i = 0; i < 9; i++)
-                {
-                    if (i != shape[0][0] && i != shape[0][1] && i != shape[0][2])
-                    {
-                        //group[shape[1][0]].RemoveCandidat(i + 1);
-                        //group[shape[1][1]].RemoveCandidat(i + 1);
-                        //group[shape[1][2]].RemoveCandidat(i + 1);
-
-                        if (group[shape[1][0]].candidates[i])
-                        {
-                            field.Buffer.AddRemovingChange(group[shape[1][0]].row, group[shape[1][0]].column, i + 1);
-                            field.Buffer.removed.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, i });
-                        }
-                        if (group[shape[1][1]].candidates[i])
-                        {
-                            field.Buffer.AddRemovingChange(group[shape[1][1]].row, group[shape[1][1]].column, i + 1);
-                            field.Buffer.removed.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, i });
-                        }
-                        if (group[shape[1][1]].candidates[i])
-                        {
-                            field.Buffer.AddRemovingChange(group[shape[1][2]].row, group[shape[1][2]].column, i + 1);
-                            field.Buffer.removed.Add(new int[] { group[shape[1][2]].row, group[shape[1][2]].column, i });
-                        }
-
-                    }
-                }
-
-                for (int x = 0; x < shape[1].Length; x++)
-                {
-                    field.Buffer.clues.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, shape[0][x] });
-                    field.Buffer.clues.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, shape[0][x] });
-                    field.Buffer.clues.Add(new int[] { group[shape[1][2]].row, group[shape[1][2]].column, shape[0][x] });
-                }
-
-                int digit1 = shape[0][0] + 1;
-                int digit2 = shape[0][1] + 1;
-                int digit3 = shape[0][2] + 1;
-
-                int i1 = group[shape[1][0]].row + 1;
-                int i2 = group[shape[1][1]].row + 1;
-                int i3 = group[shape[1][2]].row + 1;
-
-                int j1 = group[shape[1][0]].column + 1;
-                int j2 = group[shape[1][1]].column + 1;
-                int j3 = group[shape[1][2]].column + 1;
-
-                answer = $"Скрытая тройка {digit1}/{digit2}/{digit3} в ({i1};{j1}) и ({i2};{j2}) и ({i3};{j3})";
-            }
-
-
-            return answer;
-        }
-
-        //открытые тройки
-        private static string NakedTriples(Field field)
-        {
-            string answer = "";
-
-
-            //места для группы
-            Field.Cell[] group = new Field.Cell[9];
-            for (int i = 0; i < 9; i++)
-            {
-                group[i] = new Field.Cell(0, 0);
-            }
-
-
-            //строки
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    group[j] = field.cells[i][j];
-                }
-                answer = NakedTripesInGroup(group, field);
-                if (!answer.Equals(""))
-                {
-                    answer = $"Строка  {(i + 1)}: " + answer;
-                    return answer;
-                }
-            }
-
-            //столбцы
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    group[j] = field.cells[j][i];
-                }
-                answer = NakedTripesInGroup(group, field);
-                if (!answer.Equals(""))
-                {
-                    answer = $"Столбец {(i + 1)}: " + answer;
-                    return answer;
-                }
-            }
-
-            //регионы
-            for (int i = 0; i < 3; i++)
-            {
-                for (int j = 0; j < 3; j++)
-                {
-                    //i,j индексы региона
-                    //x,y, индексы внутри региона
-
-                    for (int y = 0; y < 3; y++)
-                    {
-                        for (int x = 0; x < 3; x++)
-                        {
-                            group[y * 3 + x] = field.cells[i * 3 + x][j * 3 + y];
-                        }
-                    }
-                    answer = NakedTripesInGroup(group, field);
-                    if (!answer.Equals(""))
-                    {
-                        answer = $"Регион  {((i) * 3 + j + 1)}: " + answer;
-                        return answer;
-                    }
-                }
-            }
-
-
-            return answer;
-        }
-
-        //открытые тройки в группе
-        private static string NakedTripesInGroup(Field.Cell[] group, Field field)
-        {
-            string answer = "";
-
-            //составляю и заполняю матрицу вхождений
-            int[][] matrix = new int[group.Length][];
-            for (int i = 0; i < group.Length; i++)
-            {
-                matrix[i] = new int[group.Length];
-            }
-            for (int i = 0; i < matrix.Length; i++)
-            {
-                for (int j = 0; j < group.Length; j++)
-                {
-                    if (group[i].candidates[j])
-                    {
-
-                        matrix[i][j] = 1;
-                    }
-                }
-            }
-
-            int[][] shape = Shape3InMatrix(matrix);
-
-            //ячейки в строках
-            //кандидаты в колонках
-
-            //если была найдена фигура то проводим исключения и формируем ответ
-            if (shape != null)
-            {
-                for (int i = 0; i < 9; i++)
-                {
-                    if (i != shape[0][0] && i != shape[0][1] && i != shape[0][2])
-                    {
-                        //group[i].RemoveCandidat(shape[1][0] + 1);
-                        //group[i].RemoveCandidat(shape[1][1] + 1);
-                        //group[i].RemoveCandidat(shape[1][2] + 1);
-                        if (group[i].candidates[shape[1][0]])
-                        {
-                            field.Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][0] + 1);
-                            field.Buffer.removed.Add(new int[] { group[i].row, group[i].column, shape[1][0] });
-                        }
-                        if (group[i].candidates[shape[1][1]])
-                        {
-                            field.Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][1] + 1);
-                            field.Buffer.removed.Add(new int[] { group[i].row, group[i].column, shape[1][1] });
-                        }
-                        if (group[i].candidates[shape[1][2]])
-                        {
-                            field.Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][2] + 1);
-                            field.Buffer.removed.Add(new int[] { group[i].row, group[i].column, shape[1][2] });
-                        }
-
-                    }
-                }
-
-                for (int x = 0; x < shape[1].Length; x++)
-                {
-                    field.Buffer.clues.Add(new int[] { group[shape[0][0]].row, group[shape[0][0]].column, shape[1][x] });
-                    field.Buffer.clues.Add(new int[] { group[shape[0][1]].row, group[shape[0][1]].column, shape[1][x] });
-                    field.Buffer.clues.Add(new int[] { group[shape[0][2]].row, group[shape[0][2]].column, shape[1][x] });
-                }
-
-                int i1 = (group[shape[0][0]].row + 1);
-                int i2 = (group[shape[0][1]].row + 1);
-                int i3 = (group[shape[0][2]].row + 1);
-
-                int j1 = (group[shape[0][0]].column + 1);
-                int j2 = (group[shape[0][1]].column + 1);
-                int j3 = (group[shape[0][2]].column + 1);
-
-                int digit1 = shape[1][0] + 1;
-                int digit2 = shape[1][1] + 1;
-                int digit3 = shape[1][2] + 1;
-
-                answer = $"Открытая тройка {digit1}/{digit2}/{digit3} в ({i1};{j1}) и ({i2};{j2}) и ({i3};{j3})";
-            }
-
-
-            return answer;
-        }
-
-        //нахождение фигуры 3х3 в строках
-        private static int[][] Shape3InMatrix(int[][] a)
-        {
-            //для троек n=2
-            int n = 3;
-            int[] rows = new int[n];
-            int[] colums = new int[n];
-
-            for (int i = 0; i < n; i++)
-            {
-                rows[i] = -1;
-                colums[i] = -1;
-            }
-
-            //считаю колличество строк в которые n вхождений
-            int[] sums = new int[a.Length];
-            int counter = 0;
-            for (int i = 0; i < a.Length; i++)
-            {
-                for (int j = 0; j < a[i].Length; j++)
-                {
-                    if (a[i][j] != 0)
-                    {
-                        sums[i]++;
-                    }
-                }
-                if (sums[i] > 1 && sums[i] <= n)
-                {
-                    counter++;
-                }
-            }
-            //если таких строк меньше n то нужной комбинации нет
-            if (counter < n)
-            {
-                return null;
-            }
-
-            //запоминаю номера нужных строк
-            int[] digits = new int[counter];
-            counter = 0;
-            for (int i = 0; i < a.Length; i++)
-            {
-                if (sums[i] > 1 && sums[i] <= n)
-                {
-                    digits[counter] = i;
-                    counter++;
-                }
-            }
-
-            if (digits.Length > 1)
-            {
-                //перебираю все комбинации нужных строк
-                for (int k = 0; k < digits.Length; k++)
-                {
-                    for (int l = k + 1; l < digits.Length; l++)
-                    {
-                        for (int h = l + 1; h < digits.Length; h++)
-                        {
-                            sums = new int[a.Length];
-                            //подсчитываю колличество вхождений в выбранные строки
-                            for (int j = 0; j < a.Length; j++)
-                            {
-                                if (a[digits[k]][j] > 0)
-                                {
-                                    sums[j]++;
-                                }
-                                if (a[digits[l]][j] > 0)
-                                {
-                                    sums[j]++;
-                                }
-                                if (a[digits[h]][j] > 0)
-                                {
-                                    sums[j]++;
-                                }
-                            }
-                            counter = 0;
-                            for (int j = 0; j < a.Length; j++)
-                            {
-                                if (sums[j] > 0)
-                                {
-                                    counter++;
-                                }
-                            }
-
-                            if (counter != n)
-                            {
-                                continue;
-                            }
-
-                            //запоминаю найденную фигуру
-                            rows[0] = digits[k];
-                            rows[1] = digits[l];
-                            rows[2] = digits[h];
-                            counter = 0;
-
-                            for (int j = 0; j < a.Length; j++)
-                            {
-                                if (sums[j] > 1 && sums[j] <= n)
-                                {
-                                    colums[counter] = j;
-                                    counter++;
-                                }
-                            }
-
-                            //смотрю есть ли исключения
-                            for (int j = 0; j < n; j++)
-                            {
-                                for (int i = 0; i < a.Length; i++)
-                                {
-                                    if (i != rows[0] && i != rows[1] && i != rows[2] && a[i][colums[j]] > 0)
-                                    {
-                                        return new int[][] { rows, colums };
-                                    }
-                                }
-                            }
-
-                        }
-                    }
-
-                }
-            }
-
-            return null;
-        }
-
-        //X-Wings
-        private static string X_Wings(Field field)
-        {
-            string answer = "";
-
-            int[][] matrix = new int[9][];
-            int[][] shape;
-            for (int i = 0; i < 9; i++)
-            {
-                matrix[i] = new int[9];
-            }
-            //по всем числам
-            for (int k = 0; k < 9; k++)
-            {
-                //смотрю строки
-                //исключаю в колонках
-
-                //составляю матрицу кандидатов
-                for (int i = 0; i < 9; i++)
-                {
-                    for (int j = 0; j < 9; j++)
-                    {
-                        if (field[i, j].candidates[k])
-                        {
-                            matrix[i][j] = 1;
-                        }
-                        else
-                        {
-                            matrix[i][j] = 0;
-                        }
-                    }
-                }
-
-                shape = Shape2InMatrix(matrix);
-
-                //если нашлось то провожу исключения и составляю ответ
-                //[0] строки
-                //[1] колонки
-                if (shape != null)
-                {
-                    for (int i = 0; i < 9; i++)
-                    {
-                        if (i != shape[0][0] && i != shape[0][1])
-                        {
-                            //field[i, shape[1][0]].RemoveCandidat(k + 1);
-                            //field[i, shape[1][1]].RemoveCandidat(k + 1);
-
-                            if (field[i, shape[1][0]].candidates[k])
-                            {
-                                field.Buffer.AddRemovingChange(i, shape[1][0], k + 1);
-                                field.Buffer.removed.Add(new int[] { i, shape[1][0], k });
-                            }
-                            if (field[i, shape[1][1]].candidates[k])
-                            {
-                                field.Buffer.AddRemovingChange(i, shape[1][1], k + 1);
-                                field.Buffer.removed.Add(new int[] { i, shape[1][1], k });
-                            }
-
-                        }
-                    }
-                    for (int x = 0; x < 2; x++)
-                    {
-                        for (int y = 0; y < 2; y++)
-                        {
-                            field.Buffer.clues.Add(new int[] { shape[0][x], shape[1][y], k });
-                        }
-                    }
-
-                    int digit = k + 1;
-
-                    int i1 = shape[0][0] + 1;
-                    int i2 = shape[0][1] + 1;
-
-                    int j1 = shape[1][0] + 1;
-                    int j2 = shape[1][1] + 1;
-
-                    answer = $"X-Wings по {digit} в ({i1}-{i2};{j1}-{j2})";
-                    return answer;
-
-                }
-
-
-                //смотрю столбцы
-                //исключаю строки
-
-                //составляю матрицу кандидатов
-                for (int i = 0; i < 9; i++)
-                {
-                    for (int j = 0; j < 9; j++)
-                    {
-                        if (field[i, j].candidates[k])
-                        {
-                            matrix[j][i] = 1;
-                        }
-                        else
-                        {
-                            matrix[j][i] = 0;
-                        }
-                    }
-                }
-
-                shape = Shape2InMatrix(matrix);
-
-                //если нашлось то провожу исключения и составляю ответ
-                //[0] колонки
-                //[1] строки
-                if (shape != null)
-                {
-                    for (int i = 0; i < 9; i++)
-                    {
-                        if (i != shape[0][0] && i != shape[0][1])
-                        {
-                            //field[shape[1][0], i].RemoveCandidat(k + 1);
-                            //field[shape[1][1], i].RemoveCandidat(k + 1);
-
-                            if (field[shape[1][0], i].candidates[k])
-                            {
-                                field.Buffer.AddRemovingChange(shape[1][0], i, k + 1);
-                                field.Buffer.removed.Add(new int[] { shape[1][0], i, k });
-                            }
-                            if (field[shape[1][1], i].candidates[k])
-                            {
-                                field.Buffer.AddRemovingChange(shape[1][1], i, k + 1);
-                                field.Buffer.removed.Add(new int[] { shape[1][1], i, k });
-                            }
-
-                        }
-                    }
-
-                    for (int x = 0; x < 2; x++)
-                    {
-                        for (int y = 0; y < 2; y++)
-                        {
-                            field.Buffer.clues.Add(new int[] { shape[1][x], shape[0][y], k });
-                        }
-                    }
-
-                    int digit = k + 1;
-
-                    int i1 = shape[1][0] + 1;
-                    int i2 = shape[1][1] + 1;
-
-                    int j1 = shape[0][0] + 1;
-                    int j2 = shape[0][1] + 1;
-
-                    answer = $"X-Wings по{digit} в ({i1}-{i2};{j1}-{j2})";
-                    return answer;
-
-                }
-
-            }
-
-
-            return answer;
-        }
-
-        //скрытые пары
-        private static string HiddenPairs(Field field)
-        {
-            string answer = "";
-
-
-            //места для группы
-            Field.Cell[] group = new Field.Cell[9];
-            for (int i = 0; i < 9; i++)
-            {
-                group[i] = new Field.Cell(0, 0);
-            }
-
-
-            //строки
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    group[j] = field.cells[i][j];
-                }
-                answer = HiddenPairsInGroup(group, field);
-                if (!answer.Equals(""))
-                {
-                    answer = $"Строка  {(i + 1)}: " + answer;
-                    return answer;
-                }
-            }
-
-            //столбцы
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    group[j] = field.cells[j][i];
-                }
-                answer = HiddenPairsInGroup(group, field);
-                if (!answer.Equals(""))
-                {
-                    answer = $"Столбец {(i + 1)}: " + answer;
-                    return answer;
-                }
-            }
-
-            //регионы
-            for (int i = 0; i < 3; i++)
-            {
-                for (int j = 0; j < 3; j++)
-                {
-                    //i,j индексы региона
-                    //x,y, индексы внутри региона
-
-                    for (int y = 0; y < 3; y++)
-                    {
-                        for (int x = 0; x < 3; x++)
-                        {
-                            group[y * 3 + x] = field.cells[i * 3 + x][j * 3 + y];
-                        }
-                    }
-                    answer = HiddenPairsInGroup(group, field);
-                    if (!answer.Equals(""))
-                    {
-                        answer = $"Регион  {((i) * 3 + j + 1)}: " + answer;
-                        return answer;
-                    }
-                }
-            }
-
-
-            return answer;
-        }
-
-        //скрытые пары в группе
-
-        private static string HiddenPairsInGroup(Field.Cell[] group, Field field)
-        {
-            string answer = "";
-
-            //составляю и заполняю матрицу вхождений
-            int[][] matrix = new int[group.Length][];
-            for (int i = 0; i < group.Length; i++)
-            {
-                matrix[i] = new int[group.Length];
-            }
-            for (int i = 0; i < matrix.Length; i++)
-            {
-                for (int j = 0; j < group.Length; j++)
-                {
-                    if (group[i].candidates[j])
-                    {
-
-                        matrix[j][i] = 1;
-                    }
-                }
-            }
-
-
-            int[][] shape = Shape2InMatrix(matrix);
-            //если была найдена фигура то проводим исключения и формируем ответ
-            if (shape != null)
-            {
-                for (int i = 0; i < 9; i++)
-                {
-                    if (i != shape[0][0] && i != shape[0][1])
-                    {
-                        //group[shape[1][0]].RemoveCandidat(i + 1);
-                        //group[shape[1][1]].RemoveCandidat(i + 1);
-                        if (group[shape[1][0]].candidates[i])
-                        {
-                            field.Buffer.AddRemovingChange(group[shape[1][0]].row, group[shape[1][0]].column, i + 1);
-                            field.Buffer.removed.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, i });
-                        }
-                        if (group[shape[1][1]].candidates[i])
-                        {
-                            field.Buffer.AddRemovingChange(group[shape[1][1]].row, group[shape[1][1]].column, i + 1);
-                            field.Buffer.removed.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, i });
-                        }
-
-                    }
-                }
-
-                field.Buffer.clues.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, shape[0][0] });
-                field.Buffer.clues.Add(new int[] { group[shape[1][0]].row, group[shape[1][0]].column, shape[0][1] });
-                field.Buffer.clues.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, shape[0][0] });
-                field.Buffer.clues.Add(new int[] { group[shape[1][1]].row, group[shape[1][1]].column, shape[0][1] });
-
-                int digit1 = shape[0][0] + 1;
-                int digit2 = shape[0][1] + 1;
-
-                int i1 = (group[shape[1][0]].row + 1);
-                int i2 = (group[shape[1][1]].row + 1);
-
-                int j1 = (group[shape[1][0]].column + 1);
-                int j2 = (group[shape[1][1]].column + 1);
-
-                answer = $"Скрытая пара {digit1}/{digit2} в ({i1};{j1}) и ({i2};{j2})";
-            }
-
-            return answer;
-        }
-
-        //нахождение фигуры 2х2 в строках
-        private static int[][] Shape2InMatrix(int[][] a)
-        {
-            //для пар n=2
-            int n = 2;
-            int[] rows = new int[n];
-            int[] colums = new int[n];
-
-            for (int i = 0; i < n; i++)
-            {
-                rows[i] = -1;
-                colums[i] = -1;
-            }
-
-            //считаю колличество строк в которые n вхождений
-            int[] sums = new int[a.Length];
-            int counter = 0;
-            for (int i = 0; i < a.Length; i++)
-            {
-                for (int j = 0; j < a[i].Length; j++)
-                {
-                    if (a[i][j] != 0)
-                    {
-                        sums[i]++;
-                    }
-                }
-                if (sums[i] > 1 && sums[i] <= n)
-                {
-                    counter++;
-                }
-            }
-            //если таких строк меньше n то нужной комбинации нет
-            if (counter < n)
-            {
-                return null;
-            }
-
-            //запоминаю номера нужных строк
-            int[] digits = new int[counter];
-            counter = 0;
-            for (int i = 0; i < a.Length; i++)
-            {
-                if (sums[i] > 1 && sums[i] <= n)
-                {
-                    digits[counter] = i;
-                    counter++;
-                }
-            }
-
-            if (digits.Length > 1)
-            {
-                //перебираю все комбинации нужных строк
-                for (int k = 0; k < digits.Length; k++)
-                {
-                    for (int l = k + 1; l < digits.Length; l++)
-                    {
-                        sums = new int[a.Length];
-                        //подсчитываю колличество вхождений в выбранные строки
-                        for (int j = 0; j < a.Length; j++)
-                        {
-                            if (a[digits[k]][j] > 0)
-                            {
-                                sums[j]++;
-                            }
-                            if (a[digits[l]][j] > 0)
-                            {
-                                sums[j]++;
-                            }
-                        }
-                        counter = 0;
-                        for (int j = 0; j < a.Length; j++)
-                        {
-                            if (sums[j] > 1 && sums[j] <= n)
-                            {
-                                counter++;
-                            }
-                        }
-
-                        if (counter < n)
-                        {
-                            continue;
-                        }
-
-                        //запоминаю найденную фигуру
-                        rows[0] = digits[k];
-                        rows[1] = digits[l];
-                        counter = 0;
-
-                        for (int j = 0; j < a.Length; j++)
-                        {
-                            if (sums[j] > 1 && sums[j] <= n)
-                            {
-                                colums[counter] = j;
-                                counter++;
-                            }
-                        }
-
-                        //смотрю есть ли исключения
-                        for (int j = 0; j < n; j++)
-                        {
-                            for (int i = 0; i < a.Length; i++)
-                            {
-                                if (i != rows[0] && i != rows[1] && a[i][colums[j]] > 0)
-                                {
-                                    return new int[][] { rows, colums };
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            return null;
         }
 
         //виртуальные одиночки
-        private static string VirtualSingle(Field field)
+        private AnswerOfTech VirtualSingle(Field field)
         {
-            string answer = "";
+            AnswerOfTech answer = null;
             /*строки
              * по виртуальной одиночке в строке можно исключить только кандидатов в регионе
              * обходим все строки
@@ -4190,16 +2410,15 @@ namespace SolverLibrary.model
 
 
                                             //field[startY + y, startX + x].RemoveCandidat(k + 1);
-                                            field.Buffer.AddRemovingChange(startY + y, startX + x, k + 1);
+                                            eliminations.Add(new Change(9 * (startY + y) + startX + x, k, ChangeType.RemovingDigit));
 
-
-                                            field.Buffer.removed.Add(new int[] { startY + y, startX + x, k });
+                                            removed.Add(new Mark(9 * (startY + y) + startX + x, k));
                                         }
                                         if (impact)
                                         {
                                             for (int n = 0; n < cluesInd.Length; n++)
                                             {
-                                                field.Buffer.clues.Add(new int[] { i, cluesInd[n], k });
+                                                clues.Add(new Mark(9 * i + cluesInd[n], k));
                                             }
                                         }
                                     }
@@ -4209,7 +2428,8 @@ namespace SolverLibrary.model
                         //если найдено исключение то формируем ответ
                         if (impact)
                         {
-                            answer = $"Cтрока  {(i + 1)}: виртуальная одиночка {(k + 1)} в регионе {(3 * startY / 3 + startX / 3 + 1)}";
+                            answer = new AnswerOfTech($"Cтрока  {(i + 1)}: виртуальная одиночка {(k + 1)} в регионе {(3 * startY / 3 + startX / 3 + 1)}");
+                            SetLists(answer);
                             return answer;
                         }
                     }
@@ -4286,16 +2506,14 @@ namespace SolverLibrary.model
                                         {
                                             impact = true;
 
-                                            //field[startY + y, startX + x].RemoveCandidat(k + 1);
-                                            field.Buffer.AddRemovingChange(startY + y, startX + x, k + 1);
-
-                                            field.Buffer.removed.Add(new int[] { startY + y, startX + x, k });
+                                            eliminations.Add(new Change(startY + y, startX + x, k, ChangeType.RemovingDigit));
+                                            removed.Add(new Mark(9 * (startY + y) + startX + x, k));
                                         }
                                         if (impact)
                                         {
                                             for (int n = 0; n < cluesInd.Length; n++)
                                             {
-                                                field.Buffer.clues.Add(new int[] { cluesInd[n], j, k });
+                                                clues.Add(new Mark(9 * cluesInd[n] + j, k));
                                             }
                                         }
                                     }
@@ -4305,7 +2523,8 @@ namespace SolverLibrary.model
                         //если найдено исключение то формируем ответ
                         if (impact)
                         {
-                            answer = $"Cтолбец {(j + 1)}: виртуальная одиночка {(k + 1)} в регионе {(3 * startY / 3 + startX / 3 + 1)}";
+                            answer = new AnswerOfTech($"Cтолбец {(j + 1)}: виртуальная одиночка {(k + 1)} в регионе {(3 * startY / 3 + startX / 3 + 1)}");
+                            SetLists(answer);
                             return answer;
                         }
                     }
@@ -4394,10 +2613,8 @@ namespace SolverLibrary.model
                                         {
                                             impact = true;
 
-                                            //field[indexes[0], n].RemoveCandidat(k + 1);
-                                            field.Buffer.AddRemovingChange(indexes[0], n, k + 1);
-
-                                            field.Buffer.removed.Add(new int[] { indexes[0], n, k });
+                                            eliminations.Add(new Change(indexes[0], n, k, ChangeType.RemovingDigit));
+                                            removed.Add(new Mark(9 * indexes[0] + n, k));
                                         }
                                     }
                                 }
@@ -4407,9 +2624,10 @@ namespace SolverLibrary.model
                             {
                                 for (int n = 0; n < cluesInd.Length; n++)
                                 {
-                                    field.Buffer.clues.Add(new int[] { indexes[0], cluesInd[n], k });
+                                    clues.Add(new Mark(9 * indexes[0] + cluesInd[n], k));
                                 }
-                                answer = $"Регион  {(y * 3 + x + 1)}: виртуальная одиночка {(k + 1)} в строке {(indexes[0] + 1)}";
+                                answer = new AnswerOfTech($"Регион  {(y * 3 + x + 1)}: виртуальная одиночка {(k + 1)} в строке {(indexes[0] + 1)}");
+                                SetLists(answer);
                                 return answer;
                             }
 
@@ -4467,10 +2685,8 @@ namespace SolverLibrary.model
                                         {
                                             impact = true;
 
-                                            //field[n, indexes[0]].RemoveCandidat(k + 1);
-                                            field.Buffer.AddRemovingChange(n, indexes[0], k + 1);
-
-                                            field.Buffer.removed.Add(new int[] { n, indexes[0], k });
+                                            eliminations.Add(new Change(n, indexes[0], k, ChangeType.RemovingDigit));
+                                            removed.Add(new Mark(9 * n + indexes[0], k));
                                         }
                                     }
                                 }
@@ -4480,9 +2696,10 @@ namespace SolverLibrary.model
                             {
                                 for (int n = 0; n < cluesInd.Length; n++)
                                 {
-                                    field.Buffer.clues.Add(new int[] { cluesInd[n], indexes[0], k });
+                                    clues.Add(new Mark(9 * cluesInd[n] + indexes[0], k));
                                 }
-                                answer = $"Регион {(y * 3 + x + 1)}: виртуальная одиночка {(k + 1)} в столбце {(indexes[0] + 1)}";
+                                answer = new AnswerOfTech($"Регион {(y * 3 + x + 1)}: виртуальная одиночка {(k + 1)} в столбце {(indexes[0] + 1)}");
+                                SetLists(answer);
                                 return answer;
                             }
 
@@ -4493,430 +2710,28 @@ namespace SolverLibrary.model
             }
             return answer;
         }
-
-        //открытые пары
-        private static string NakedPairs(Field field)
-        {
-
-            string answer = "";
-
-            //места для группы
-            Field.Cell[] group = new Field.Cell[9];
-            for (int i = 0; i < 9; i++)
-            {
-                group[i] = new Field.Cell(0, 0);
-            }
-
-
-            //строки
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    group[j] = field.cells[i][j];
-                }
-                answer = NakedPairsInGroup(group, field);
-                if (!answer.Equals(""))
-                {
-                    answer = $"Строка  {(i + 1)}: " + answer;
-                    return answer;
-                }
-            }
-
-            //столбцы
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    group[j] = field.cells[j][i];
-                }
-                answer = NakedPairsInGroup(group, field);
-                if (!answer.Equals(""))
-                {
-                    answer = $"Столбец {(i + 1)}: " + answer;
-                    return answer;
-                }
-            }
-
-            //регионы
-            for (int i = 0; i < 3; i++)
-            {
-                for (int j = 0; j < 3; j++)
-                {
-                    //i,j индексы региона
-                    //x,y, индексы внутри региона
-
-                    for (int y = 0; y < 3; y++)
-                    {
-                        for (int x = 0; x < 3; x++)
-                        {
-                            group[y * 3 + x] = field.cells[i * 3 + x][j * 3 + y];
-                        }
-                    }
-                    answer = NakedPairsInGroup(group, field);
-                    if (!answer.Equals(""))
-                    {
-                        answer = $"Регион  {((i) * 3 + j + 1)}: " + answer;
-                        return answer;
-                    }
-                }
-            }
-            return answer;
-        }
-
-        //способ на матрицах для масштабирования
-        private static string NakedPairsInGroup(Field.Cell[] group, Field field)
-        {
-            string answer = "";
-
-            //составляю и заполняю матрицу вхождений
-            int[][] matrix = new int[group.Length][];
-            for (int i = 0; i < group.Length; i++)
-            {
-                matrix[i] = new int[group.Length];
-            }
-            for (int i = 0; i < matrix.Length; i++)
-            {
-                for (int j = 0; j < group.Length; j++)
-                {
-                    if (group[i].candidates[j])
-                    {
-
-                        matrix[i][j] = 1;
-                    }
-                }
-            }
-
-
-            int[][] shape = Shape2InMatrix(matrix);
-
-            //ячейки в строках
-            //кандидаты в колонках
-
-            //если была найдена фигура то проводим исключения и формируем ответ
-            if (shape != null)
-            {
-                for (int i = 0; i < 9; i++)
-                {
-                    if (i != shape[0][0] && i != shape[0][1])
-                    {
-                        //group[i].RemoveCandidat(shape[1][0] + 1);
-                        //group[i].RemoveCandidat(shape[1][1] + 1);
-                        if (group[i].candidates[shape[1][0]])
-                        {
-                            field.Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][0] + 1);
-                            field.Buffer.removed.Add(new int[] { group[i].row, group[i].column, shape[1][0] });
-                        }
-                        if (group[i].candidates[shape[1][1]])
-                        {
-                            field.Buffer.AddRemovingChange(group[i].row, group[i].column, shape[1][1] + 1);
-                            field.Buffer.removed.Add(new int[] { group[i].row, group[i].column, shape[1][1] });
-                        }
-
-                    }
-                }
-
-                field.Buffer.clues.Add(new int[] { group[shape[0][0]].row, group[shape[0][0]].column, shape[1][0] });
-                field.Buffer.clues.Add(new int[] { group[shape[0][0]].row, group[shape[0][0]].column, shape[1][1] });
-                field.Buffer.clues.Add(new int[] { group[shape[0][1]].row, group[shape[0][1]].column, shape[1][0] });
-                field.Buffer.clues.Add(new int[] { group[shape[0][1]].row, group[shape[0][1]].column, shape[1][1] });
-
-                answer = $"Открытая пара {(shape[1][0] + 1)}/{(shape[1][1] + 1)}" +
-                         $" в ({(group[shape[0][0]].row + 1)};{(group[shape[0][0]].column + 1)}" +
-                         $") и ({(group[shape[0][1]].row + 1)};{(group[shape[0][1]].column + 1)})";
-            }
-
-            return answer;
-        }
-
-        //скрытые одиночки
-        private static string HiddenSingle(Field field)
-        {
-            string answer = "";
-
-            //места для группы
-            Field.Cell[] group = new Field.Cell[9];
-            for (int i = 0; i < 9; i++)
-            {
-                group[i] = new Field.Cell(0, 0);
-            }
-
-
-            //строки
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    group[j] = field.cells[i][j];
-                }
-                answer = HiddenSingleGroup(group, field);
-                if (!answer.Equals(""))
-                {
-                    answer = $"Строка  {(i + 1)}: " + answer;
-                    return answer;
-                }
-            }
-
-            //столбцы
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    group[j] = field.cells[j][i];
-                }
-                answer = HiddenSingleGroup(group, field);
-                if (!answer.Equals(""))
-                {
-                    answer = $"Столбец {(i + 1)}: " + answer;
-                    return answer;
-                }
-            }
-
-            //регионы
-            for (int i = 0; i < 3; i++)
-            {
-                for (int j = 0; j < 3; j++)
-                {
-                    //i,j индексы региона
-                    //x,y, индексы внутри региона
-
-                    for (int y = 0; y < 3; y++)
-                    {
-                        for (int x = 0; x < 3; x++)
-                        {
-                            group[y * 3 + x] = field.cells[i * 3 + x][j * 3 + y];
-                        }
-                    }
-                    answer = HiddenSingleGroup(group, field);
-                    if (!answer.Equals(""))
-                    {
-                        answer = $"Регион  {((i) * 3 + j + 1)}: " + answer;
-                        return answer;
-                    }
-                }
-            }
-
-
-            return answer;
-        }
-
-        //скрытые одиночки в группе
-        private static string HiddenSingleGroup(Field.Cell[] group, Field field)
-        {
-            string answer = "";
-
-            int count;
-            int index = -1;
-            int v;
-            //по всем числам
-            for (int k = 0; k < 9; k++)
-            {
-                count = 0;
-                //считаю кандидатов
-                for (int i = 0; i < 9; i++)
-                {
-                    if (group[i].candidates[k])
-                    {
-                        count++;
-                        index = i;
-                    }
-                }
-                //если ровно один кандидат в группе
-                if (count == 1)
-                {
-                    //беру число
-                    v = k + 1;
-                    //group[index].SetValue(v);
-                    //устанавливаю значениие
-                    field.Buffer.AddSettingValueChange(group[index].row, group[index].column, v);
-                    //исключаю останых кандидатов
-                    for(int k1 = 0; k1 < 9; k1++)
-                    {
-                        if(group[index].candidates[k1])
-                        {
-                            field.Buffer.AddRemovingChange(group[index].row, group[index].column, k1+1);
-                        }
-                    }
-
-                    field.Buffer.clues.Add(new int[] { group[index].row, group[index].column, v - 1 });
-
-                    answer = $"Найдена скрытая одиночка: ({group[index].row + 1};{(group[index].column + 1)}) => {v}";
-                    return answer;
-                }
-            }
-
-
-            return answer;
-        }
-
-        //открытые одиночки
-        private static string NakedSingle(Field field)
-        {
-            //флаг что было исключение
-            bool impact = false;
-
-            StringBuilder sb = new StringBuilder();
-
-            //счетчик строк
-            int counter = 0;
-            //обход всех ячеек
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-
-                    //если остался один кандидат, выставляем значение
-                    if (field[i, j].remainingCandidates == 1)
-                    {
-                        int v = 0;
-                        for (int k = 0; k < 9; k++)
-                        {
-                            if (field[i, j].candidates[k])
-                            {
-                                v = k + 1;
-                            }
-                        }
-
-                        //field[i, j].SetValue(v);
-                        //исключаю кандидата
-                        field.Buffer.AddRemovingChange(i, j, v);
-                        //устанавливаю значение
-                        field.Buffer.AddSettingValueChange(i, j, v);
-                        field.Buffer.clues.Add(new int[] { i, j, v - 1 });
-
-                        impact = true;
-
-                        sb.Append($"\r\n    ({(i + 1)};{(j + 1)}) => {v}");
-                        counter++;
-                    }
-                }
-            }
-
-            if (impact)
-            {
-                if (counter >1)
-                {
-                    string s = "Найдены открытые одиночки: ";
-                    sb.Insert(0,s);
-                }
-                else
-                {
-                    string s = "Найдена открытая одиночка: ";
-                    sb.Insert(0, s);
-                }
-
-                return sb.ToString();
-            }
-            else
-            {
-                return "";
-            }
-        }
-
         //простые ислючения
-        //способ на списке
-        public static bool SimpleRestriction(Field field)
+        public AnswerOfTech SimpleRestriction(Field field)
         {
-            int value;
-            bool impact = false;
-            //обход всего поля
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    value = field[i, j].value;
-                    //если известно число
-                    if (value > 0)
-                    {
-                        //обходим все видимые ячейки
-                        for (int k = 0; k < field[i, j].seenCell.Length; k++)
-                        {
-
-                            //если есть исключение то исключаем
-                            if (field[i, j].seenCell[k].candidates[value - 1])
-                            {
-
-                                //field[i, j].seenCell[k].RemoveCandidat(value);
-                                impact = true;
-                                field.Buffer.AddRemovingChange(field[i, j].seenCell[k].row, field[i, j].seenCell[k].column, value);
-                            }
-                        }
-                    }
-                }
-            }
-            return impact;
+            return techCheckers.Find((x) => x.Type == TechType.SimpleRestriction).CheckField(field);
         }
 
-        //проверка
-        private static string Check(Field field)
+        
+        private void SetLists(AnswerOfTech answer)
         {
-            string answer = "";
+            answer.Seted = seted;
+            answer.Eliminations = eliminations;
 
-            //проверка на решение
-            bool full = true;
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    if (field[i, j].value < 1)
-                    {
-                        full = false;
-                    }
-                }
-            }
-            if (full)
-            {
-                answer = done;
-                return answer;
-            }
+            answer.Clues = clues;
+            answer.Removed = removed;
+        }
 
-            //проверка на ошибки
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    if (field[i, j].value != -1)
-                    {
-                        //обход по столбцу
-                        for (int x = 0; x < 9; x++)
-                        {
-                            if (x != i & field[x, j].value == field[i, j].value)
-                            {
-                                answer = "Ошибка! Совпадение в столбце " + (j + 1).ToString() + ": (" + (x + 1).ToString() + ";" + (j + 1).ToString() + ") и (" + (i + 1).ToString() + ";" + (j + 1).ToString() + ")!";
-                                return answer;
-                            }
-                        }
-                        //обход по строке
-                        for (int x = 0; x < 9; x++)
-                        {
-                            if (x != j & field[i, x].value == field[i, j].value)
-                            {
-                                answer = "Ошибка! Совпадение в строке " + (i + 1).ToString() + ": (" + (i + 1).ToString() + ";" + (x + 1).ToString() + ") и (" + (i + 1).ToString() + ";" + (j + 1).ToString() + ")!";
-                                return answer;
-                            }
-                        }
-                        //обход в региону
-                        //левый верхний угол региона
-                        int indX = 3 * (i / 3);
-                        int indY = 3 * (j / 3);
-
-                        for (int x = 0; x < 3; x++)
-                        {
-                            for (int y = 0; y < 3; y++)
-                            {
-                                if ((indX + x) != i & (indY + y) != j & field[(indX + x), (indY + y)].value == field[i, j].value)
-                                {
-                                    answer = "Ошибка! Совпадение в регионе " + (indY * 3 + indX + 1).ToString() + ": (" + ((indX + x) + 1).ToString() + ";" + ((indY + y) + 1).ToString() + ") и (" + (i + 1).ToString() + ";" + (j + 1).ToString() + ")!";
-                                    return answer;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-
-            return answer;
+        private void ClearLists()
+        {
+            seted.Clear();
+            removed.Clear();
+            clues.Clear();
+            eliminations.Clear();
         }
     }
 }

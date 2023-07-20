@@ -1,0 +1,17 @@
+E:\SudokuSolver\WPFSolver\obj\Debug\WPFSolver.csproj.AssemblyReference.cache
+E:\SudokuSolver\WPFSolver\obj\Debug\WPFSolver.csproj.SuggestedBindingRedirects.cache
+E:\SudokuSolver\WPFSolver\obj\Debug\MainWindow.g.cs
+E:\SudokuSolver\WPFSolver\obj\Debug\App.g.cs
+E:\SudokuSolver\WPFSolver\obj\Debug\WPFSolver_MarkupCompile.cache
+E:\SudokuSolver\WPFSolver\obj\Debug\WPFSolver_MarkupCompile.lref
+E:\SudokuSolver\WPFSolver\obj\Debug\MainWindow.baml
+E:\SudokuSolver\WPFSolver\obj\Debug\WPFSolver.exe
+E:\SudokuSolver\WPFSolver\obj\Debug\WPFSolver.pdb
+E:\SudokuSolver\WPFSolver\bin\Debug\WPFSolver.exe.config
+E:\SudokuSolver\WPFSolver\bin\Debug\WPFSolver.exe
+E:\SudokuSolver\WPFSolver\bin\Debug\WPFSolver.pdb
+E:\SudokuSolver\WPFSolver\obj\Debug\Themes\Generic.baml
+E:\SudokuSolver\WPFSolver\obj\Debug\WPFSolver.g.resources
+E:\SudokuSolver\WPFSolver\obj\Debug\WPFSolver.Properties.Resources.resources
+E:\SudokuSolver\WPFSolver\obj\Debug\WPFSolver.csproj.GenerateResource.cache
+E:\SudokuSolver\WPFSolver\obj\Debug\WPFSolver.csproj.CoreCompileInputs.cache

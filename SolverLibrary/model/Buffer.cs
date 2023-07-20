@@ -6,14 +6,14 @@ namespace SolverLibrary.model
     {
         public int[][] sudoku;
 
-        public List<int[][]> fieldStorage;     //пачки изменений поля(по пачке на шаг)
+        public List<Change[]> fieldStorage;     //пачки изменений поля(по пачке на шаг)
 
-        public List<int[]> fieldChanges;         //пачка изменений
+        public List<Change> fieldChanges;         //пачка изменений
 
 
         //список ключей и исключенных кандидатов
-        public List<int[]> clues;        //i,j -- где ключ,         k -- что ключ
-        public List<int[]> removed;      //i,j -- откуда исключаем, k -- что исключаем
+        private List<Mark> _clues;        //i,j -- где ключ,         k -- что ключ
+        private List<Mark> _removed;      //i,j -- откуда исключаем, k -- что исключаем
 
 
         //для цепных техник
@@ -27,14 +27,19 @@ namespace SolverLibrary.model
         public List<int[]> ON;           //ind, k
         public List<int[]> OFF;          //ind, k
 
+
+        public IEnumerable<Mark> Clues => _clues;
+        public IEnumerable<Mark> Removed => _removed;
+
+
         //очистка заполненных частей 
         public void ClearChainBuffer()
         {
-            clues?.Clear();
-            clues = clues ?? new List<int[]>();
+            _clues?.Clear();
+            _clues = _clues ?? new List<Mark>();
 
-            removed?.Clear();
-            removed = removed ?? new List<int[]>();
+            _removed?.Clear();
+            _removed = _removed ?? new List<Mark>();
 
             chain?.Clear();
             chain = chain ?? new List<int[]>();
@@ -64,59 +69,66 @@ namespace SolverLibrary.model
 
         public void InitChangeStorage()
         {
-            fieldChanges = fieldChanges ?? new List<int[]>();
+            fieldChanges = fieldChanges ?? new List<Change>();
             fieldChanges?.Clear();
 
-            fieldStorage = fieldStorage ?? new List<int[][]>();
+            fieldStorage = fieldStorage ?? new List<Change[]>();
             fieldStorage?.Clear();
         }
 
-        //ind = 9*i+j
-        //k
-        // flag = 1 -  удаление кандидата
-        // flag = -1 - установка значения
 
         //было установлено значение по i j
-        public void AddSettingValueChange(int i, int j, int k)
+        public void AddSettingValueChange(int i, int j, int digit)
         {
-            fieldChanges.Add(new int[] { 9 * i + j, k, -1 });
+            fieldChanges.Add(new Change(i, j, digit, ChangeType.SettingValue));
         }
         //было установлено значение по ind
-        public void AddSettingValueChange(int ind, int k)
+        public void AddSettingValueChange(int ind, int digit)
         {
-            fieldChanges.Add(new int[] { ind, k, -1 });
+            fieldChanges.Add(new Change(ind, digit, ChangeType.SettingValue));
         }
         //был исключен кандидат по i j
-        public void AddRemovingChange(int i, int j, int k)
+        public void AddRemovingChange(int i, int j, int digit)
         {
-            fieldChanges.Add(new int[] { 9 * i + j, k, 1 });
+            fieldChanges.Add(new Change(i, j, digit, ChangeType.RemovingDigit));
         }
         //был исключен кандидат по ind
-        public void AddRemovingChange(int ind, int k)
+        public void AddRemovingChange(int ind, int digit)
         {
-            fieldChanges.Add(new int[] { ind, k, 1 });
+            fieldChanges.Add(new Change(ind, digit, ChangeType.RemovingDigit));
+        }
+
+        public void AddClueMark(int index, int digit = -1)
+        {
+            Mark.MarkType type;
+
+            if (digit != -1)
+            {
+                type = Mark.MarkType.Digit;
+            }
+            else
+            {
+                type = Mark.MarkType.Cell;
+            }
+
+            _clues.Add(new Mark(index, digit, type));
+        }
+
+        public void AddRemovedMark(int index, int digit)
+        {
+            _removed.Add(new Mark(index, digit, Mark.MarkType.Digit));
         }
 
 
-        //сохранение пачки изменений(за шаг)
         public void SaveChanges()
         {
             fieldStorage.Add(fieldChanges.ToArray());
             fieldChanges.Clear();
         }
 
-        //полечение списка последней пачки изменений(за шаг)
-        public int[][] GetLastChanges()
+        public IEnumerable<Change> GetLastChanges()
         {
-            //если в текущей пачке есть изменения то отправляю их
-            if (fieldChanges.Count != 0)
-            {
-                return fieldChanges.ToArray();
-            }
-            else
-            {
-                return fieldStorage[fieldStorage.Count - 1];
-            }
+            return fieldStorage[fieldStorage.Count - 1];
         }
 
         public void RemoveLastChanges()

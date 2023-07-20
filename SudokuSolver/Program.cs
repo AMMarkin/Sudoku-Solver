@@ -20,12 +20,14 @@ namespace SudokuSolver
             Application.SetCompatibleTextRenderingDefault(false);
 
 
-            //создаю контроллер WINFORMS
-            WFController controller = new WFController();
-            //заполняю нужные массивы
-            Logic.Init();
-            //запускаю форму
-            Application.Run(new Solver(controller,Logic.tecniques.ToArray()));
+            
+            Logic logic = new Logic();
+            logic.Init();
+
+
+            WFController controller = new WFController(logic);
+            
+            Application.Run(new Solver(controller,logic.tecniques.ToArray()));
         }
     }
 }

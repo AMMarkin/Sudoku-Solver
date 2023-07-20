@@ -124,7 +124,7 @@ namespace SudokuSolver
                     //клик по заполненному лейблу
                     if (!label.Text.Equals(""))
                     {
-                        int digit = Convert.ToInt32(label.Text) - 1;
+                        int digit = Convert.ToInt32(label.Text)-1;
 
                         //если уже выбранное число кликом поменялось
                         if (selectedDigitByClick != digit)
@@ -342,43 +342,35 @@ namespace SudokuSolver
         }
 
         //подсветка исключений
-        public void HighlighteRemoved(List<int[]> clues, List<int[]> removed, List<int[]> ON, List<int[]> OFF)
+        public void HighlighteRemoved(IEnumerable<Mark> clues, IEnumerable<Mark> removed, IEnumerable<int[]> ON, IEnumerable<int[]> OFF)
         {
-            for (int i = 0; i < clues.Count; i++)
+            foreach (Mark clue in clues)
             {
-                cells[clues[i][0]][clues[i][1]].HighlighteAsClue();
-            }
-            for (int i = 0; i < clues.Count; i++)
-            {
-                if (clues[i].Length > 2)
+                cells[clue.I][clue.J].HighlighteAsClue();
+                if (clue.Type == Mark.MarkType.Digit)
                 {
-                    cells[clues[i][0]][clues[i][1]].HighlighteDigitsAsClue(clues[i][2]);
+                    cells[clue.I][clue.J].HighlighteDigitsAsClue(clue.Digit);
                 }
             }
 
-            for (int i = 0; i < removed.Count; i++)
+
+            foreach (Mark mark in removed)
             {
-                cells[removed[i][0]][removed[i][1]].HighlighteRemoving(removed[i][2]);
+                cells[mark.I][mark.J].HighlighteRemoving(mark.Digit);
             }
 
             //если цепь не null и не пустая то отмечаем звенья
-            if (ON != null && ON.Count != 0)
+            foreach (int[] unit in ON)
             {
-                foreach (int[] unit in ON)
-                {
-                    int i1 = unit[0] / 9;
-                    int j1 = unit[0] % 9;
-                    cells[i1][j1].HighlighteAsUnit(unit[1], true);
-                }
+                int i1 = unit[0] / 9;
+                int j1 = unit[0] % 9;
+                cells[i1][j1].HighlighteAsUnit(unit[1], true);
             }
-            if (OFF != null && OFF.Count != 0)
+            foreach (int[] unit in OFF)
             {
-                foreach (int[] unit in OFF)
-                {
-                    int i1 = unit[0] / 9;
-                    int j1 = unit[0] % 9;
-                    cells[i1][j1].HighlighteAsUnit(unit[1], false);
-                }
+                int i1 = unit[0] / 9;
+                int j1 = unit[0] % 9;
+                cells[i1][j1].HighlighteAsUnit(unit[1], false);
             }
         }
 
@@ -386,7 +378,6 @@ namespace SudokuSolver
         //обновить сетку
         public void UpdateGrid(Field field)
         {
-
             for (int i = 0; i < cells.Length; i++)
             {
                 for (int j = 0; j < cells[i].Length; j++)
@@ -725,7 +716,7 @@ namespace SudokuSolver
                     if (flags[i])
                     {
                         //если ячейка заполнена и нужно выделить
-                        if (digit - 1 == i)
+                        if (digit-1 == i)
                         {
                             //выделяю основное число
                             value.BackColor = highlightedColor;
@@ -746,7 +737,7 @@ namespace SudokuSolver
                     else
                     {
                         //если ячейка заполнена
-                        if (digit - 1 == i)
+                        if (digit -1 == i)
                         {
                             //снимаю выделение
                             if (!seen)
@@ -904,7 +895,8 @@ namespace SudokuSolver
                 p.BackColor = clueColor;
                 for (int i = 0; i < candidates.Length; i++)
                 {
-                    candidates[i].BackColor = clueColor;
+                    if (candidates[i].BackColor == defaultColor)
+                        candidates[i].BackColor = clueColor;
                 }
             }
 
@@ -927,13 +919,13 @@ namespace SudokuSolver
                 {
                     candidates[i].Visible = false;
                 }
-                value.Text = v.ToString();
-                if (candidates[v - 1].BackColor == highlightedColor)
+                value.Text = (v+1).ToString();
+                if (candidates[v].BackColor == highlightedColor)
                 {
                     value.BackColor = highlightedColor;
                 }
                 value.Visible = true;
-                digit = v;
+                digit = v+1;
             }
 
             //скрыть кандидата
@@ -946,7 +938,7 @@ namespace SudokuSolver
             //обновить ячейку в соответствии с ячейкой поля
             internal void UpdateCell(Field.Cell cell)
             {
-                if (cell.value != -1)
+                if (cell.value >= 0)
                 {
                     SetValue(cell.value);
                 }
@@ -955,7 +947,6 @@ namespace SudokuSolver
                     value.Visible = false;
                     digit = 0;
                 }
-
                 for (int i = 0; i < cell.candidates.Length; i++)
                 {
                     candidates[i].Visible = cell.candidates[i];
@@ -978,10 +969,6 @@ namespace SudokuSolver
                 }
 
                 grid.DrawChain(Xshift, Yshift, e);
-                //if (_buffer.chain != null && _buffer.chain.Count != 0)
-                //{
-                //    grid.DrawChain(Xshift, Yshift, e);
-                //}
             }
 
         }

@@ -1,11 +1,11 @@
-﻿using System;
+﻿using SolverLibrary.Interfaces;
+using SolverLibrary.model;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
-using SolverLibrary.Interfaces;
-using SolverLibrary.model;
 
 namespace SudokuSolver.controller
 {
@@ -18,6 +18,7 @@ namespace SudokuSolver.controller
         private Solver _solver;                         //форма солвера
         private Form _constructor;               //форма конструктора
         private Form _loader;                         //форма загрузчика
+        private readonly Logic _logic;
 
         Field IController.Field { get => _field; set => _field = value; }
         public IGridView Grid { get => _grid; set => _grid = value as Grid; }
@@ -29,30 +30,24 @@ namespace SudokuSolver.controller
         //массив используемых в решении техник
         private bool[] usedtechs;
         bool[] IController.UsedTechs { get => usedtechs; set => usedtechs = value; }
-        
+
         private readonly bool[] shownLinks;
 
         private bool needRefresh = false;
         private bool done;
         private readonly string dirpath = @"E:\SudokuSolver\Sudoku\";
 
-        public WFController()
+        public WFController(Logic logic)
         {
             shownLinks = new bool[9];
+            _logic = logic;
         }
 
         //cледующий шаг решения
         public void Do(bool[] usedTechs)
         {
             //запоминаю используемые техники для UNDO
-            if (usedTechs == null)
-            {
-                usedTechs = usedtechs;
-            }
-            else
-            {
-                usedtechs = usedTechs;
-            }
+            usedtechs = usedTechs;
 
             //если решено то ничего не делаю
             if (done) return;
@@ -60,37 +55,36 @@ namespace SudokuSolver.controller
             //применяю записанные на прошлом шаге изменения
             _field.ApplyChanges();
 
-            //нахожу новые исключения
-            //пишу найденное в консоль
-
-            if (Logic.SimpleRestriction(_field))
-            {
-                _field.ApplyChanges();
-            }
-
-            string answer = Logic.FindElimination(_field, usedTechs);
-            _solver.PrintToConsole(answer);
             
-            if(answer.Equals(Logic.done)) done = true;
+            AnswerOfTech answer;
+
+            _field.Buffer.ClearChainBuffer();
+
+            answer = _logic.FindElimination(_field, usedTechs);
+            _field.ApplyAnswer(answer);
+
+
+            _solver.PrintToConsole(answer.Message);
+
+            if (answer.Message.Equals(Logic.done)) done = true;
 
             //убираю исключенных кандидатов
             _grid.UpdateGrid(_field);
             //выделяю найденные исключения
-            _grid.HighlighteRemoved(_field.Buffer.clues, _field.Buffer.removed, _field.Buffer.ON, _field.Buffer.OFF);
+            _grid.HighlighteRemoved(_field.Buffer.Clues, _field.Buffer.Removed, _field.Buffer.ON, _field.Buffer.OFF);
 
             //сохраняю сделанные изменения
             _field.Buffer.SaveChanges();
 
 
             //если есть включенные связи то пересчитываю и вывожу
-            if (_field.Buffer.chain.Count == 0 && shownLinks.FirstOrDefault(x=>x==true))
+            if (_field.Buffer.chain.Count == 0 && shownLinks.FirstOrDefault(x => x == true))
             {
                 int[] links = shownLinks.Select((x, idx) => new { value = x, id = idx }).Where(x => x.value).Select(x => x.id).ToArray();
 
-                Logic.CreateChain(_field, links);
-                Logic.FillWeakLinks(_field);
+                _logic.CreateChain(_field, links);
+                _logic.FillWeakLinks(_field);
             }
-
 
             //расчет требуется ли перерисовывать цепи
             if (needRefresh || _field.Buffer.chain.Count != 0)
@@ -112,51 +106,14 @@ namespace SudokuSolver.controller
         //предыдущий шаг решения
         public void Undo()
         {
-            done = false;
             //если есть куда откатывать
             if (_field.Buffer.fieldStorage.Count > 3)
             {
-                //беру последние изменения
-                int i;
-                int j;
-                int[][] changes = _field.Buffer.GetLastChanges();
-                _field.Buffer.RemoveLastChanges();
-                foreach (int[] change in changes)
-                {
-                    //нахожу нужную ячейку
-                    i = change[0] / 9;
-                    j = change[0] % 9;
-                    if (change[2] == 1)
-                    {
-                        //возвращаю кандидата
-                        _field[i, j].AddCandidat(change[1]);
-                    }
-                    if (change[2] == -1)
-                    {
-                        
-                        _field[i, j].RemoveValue();
-                    }
-                }
-                changes = _field.Buffer.GetLastChanges();
-                _field.Buffer.RemoveLastChanges();
-                foreach (int[] change in changes)
-                {
-                    //нахожу нужную ячейку
-                    i = change[0] / 9;
-                    j = change[0] % 9;
-                    if (change[2] == 1)
-                    {
-                        //возвращаю кандидата
-                        _field[i, j].AddCandidat(change[1]);
-                    }
-                    if (change[2] == -1)
-                    {
-
-                        _field[i, j].RemoveValue();
-                    }
-                }
-                Do(null);
-
+                done = false;
+                _field.CancelChanges();
+                _field.CancelChanges();
+                _grid.UpdateGrid(_field);
+                Do(usedtechs);
             }
         }
 
@@ -174,10 +131,10 @@ namespace SudokuSolver.controller
             shownLinks[digit - 1] = !shownLinks[digit - 1];
 
             //массив связей по колличеству включенных
-            int[] links = shownLinks.Select((x, idx) => new { value = x, id = idx}).Where(x=>x.value).Select(x=>x.id).ToArray();
+            int[] links = shownLinks.Select((x, idx) => new { value = x, id = idx }).Where(x => x.value).Select(x => x.id).ToArray();
 
-            Logic.CreateChain(_field, links);
-            Logic.FillWeakLinks(_field);
+            _logic.CreateChain(_field, links);
+            _logic.FillWeakLinks(_field);
             _solver.Refresh();
 
         }
@@ -202,46 +159,31 @@ namespace SudokuSolver.controller
 
                     MessageBox.Show("Загружено тестовое судоку", "Файл не существует", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-                //создаю если не создано
                 _field = _field ?? new Field();
                 _field.Buffer.Init();
-                //записал в буфер
 
-                for(int i=0;i<lines.Length; i++)
+                for (int i = 0; i < lines.Length; i++)
                 {
-                    _field.Buffer.sudoku[i] = lines[i].Where(c => Char.IsDigit(c)).Select(c => c-48).ToArray();
+                    _field.Buffer.sudoku[i] = lines[i].Where(c => Char.IsDigit(c)).Select(c => c - 48).ToArray();
 
                 }
             }
 
-            //очищаю консоль
             _solver.ClearConsole();
-
-            //очищаю поле
             _field?.ResetField();
-            //создаю если не создано
             _field = _field ?? new Field();
-            //заполняю значениями
             _field.UpdateField();
 
             _grid.Controller = this;
-            
 
-            //очищаю буфферы цепей
+
             _field.Buffer.ClearChainBuffer();
-            //очищаю буфферы изменений
             _field.Buffer.InitChangeStorage();
-            //провожу простые ислкючения
-            Logic.SimpleRestriction(_field);
-            //сохраняю проведенные исключения
+            _field.ApplyAnswer(_logic.SimpleRestriction(_field));
             _field.Buffer.SaveChanges();
-            //применяю
             _field.ApplyChanges();
-            //обновляю поле
             _grid.UpdateGrid(_field);
-            //перерисовываю форму
             _solver.Refresh();
-            //ставлю флаг что не решено
             done = false;
         }
 
@@ -262,9 +204,9 @@ namespace SudokuSolver.controller
         //удалить сохраненные головоломки
         public void Delete(string[] filenames)
         {
-            for(int i = 0; i < filenames.Length; i++)
+            for (int i = 0; i < filenames.Length; i++)
             {
-                File.Delete(dirpath + filenames[i]+".txt");
+                File.Delete(dirpath + filenames[i] + ".txt");
             }
         }
 
@@ -286,6 +228,6 @@ namespace SudokuSolver.controller
             LoadFrom("BUFFER");
         }
 
-        
+
     }
 }

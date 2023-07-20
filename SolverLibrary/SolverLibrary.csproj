@@ -47,10 +47,40 @@
     <Compile Include="Interfaces\IGridView.cs" />
     <Compile Include="Interfaces\ILoader.cs" />
     <Compile Include="Interfaces\ISolverView.cs" />
+    <Compile Include="model\AnswerOfTech.cs" />
     <Compile Include="model\Buffer.cs" />
+    <Compile Include="model\Change.cs" />
+    <Compile Include="model\ComplitionChecker.cs" />
+    <Compile Include="model\EmptyCellsChecker.cs" />
     <Compile Include="model\Field.cs" />
+    <Compile Include="model\FieldStatusChecker.cs" />
     <Compile Include="model\Logic.cs" />
+    <Compile Include="model\Mark.cs" />
+    <Compile Include="model\RepeatedValuesChecker.cs" />
+    <Compile Include="model\TechsLogic\FieldScanner.cs" />
+    <Compile Include="model\TechsLogic\Techs\Abstract\LockedRectangleChecker.cs" />
+    <Compile Include="model\TechsLogic\Techs\JellyfishChecker.cs" />
+    <Compile Include="model\TechsLogic\Techs\SwordfishChecker.cs" />
+    <Compile Include="model\TechsLogic\Techs\X_WingsChecker.cs" />
+    <Compile Include="model\Utilits\MatrixBuilder.cs" />
+    <Compile Include="model\TechsLogic\Techs\Abstract\GroupedTechChecker.cs" />
+    <Compile Include="model\TechsLogic\Techs\HiddenPairsChecker.cs" />
+    <Compile Include="model\TechsLogic\Techs\HiddenQuadsChecker.cs" />
+    <Compile Include="model\TechsLogic\Techs\HiddenSinglesChecker.cs" />
+    <Compile Include="model\TechsLogic\Techs\HiddenTriplesChecker.cs" />
+    <Compile Include="model\TechsLogic\Techs\Abstract\MatrixTechChecker.cs" />
+    <Compile Include="model\TechsLogic\Techs\NakedPairsChecker.cs" />
+    <Compile Include="model\TechsLogic\Techs\NakedQuadsChecker.cs" />
+    <Compile Include="model\TechsLogic\Techs\NakedSingleCheker.cs" />
+    <Compile Include="model\TechsLogic\Techs\NakedTriplesChecker.cs" />
+    <Compile Include="model\TechsLogic\Techs\SimpleRestrictionCheker.cs" />
+    <Compile Include="model\TechsLogic\Techs\Abstract\TechChecker.cs" />
+    <Compile Include="model\TechsLogic\TechCheckerBuilder.cs" />
+    <Compile Include="model\TechsLogic\TechsList.cs" />
+    <Compile Include="model\Utilits\Extentions.cs" />
+    <Compile Include="model\Utilits\PatternFinder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
