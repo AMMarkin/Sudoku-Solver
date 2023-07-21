@@ -61,6 +61,7 @@
     <Compile Include="model\TechsLogic\Techs\Abstract\LockedRectangleChecker.cs" />
     <Compile Include="model\TechsLogic\Techs\JellyfishChecker.cs" />
     <Compile Include="model\TechsLogic\Techs\SwordfishChecker.cs" />
+    <Compile Include="model\TechsLogic\Techs\VirtualSingleChecker.cs" />
     <Compile Include="model\TechsLogic\Techs\X_WingsChecker.cs" />
     <Compile Include="model\Utilits\MatrixBuilder.cs" />
     <Compile Include="model\TechsLogic\Techs\Abstract\GroupedTechChecker.cs" />

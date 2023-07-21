@@ -31,6 +31,8 @@
                     return new SwordfishChecker();
                 case TechType.Jellyfish:
                     return new JellyfishChecker();
+                case TechType.VirtualSingle:
+                    return new VirtualSingleChecker();
 
                 default: return null;
             }

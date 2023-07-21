@@ -8,9 +8,16 @@ namespace SolverLibrary.model.TechsLogic.Techs
 
         protected override string Discription => "Скрытая одиночка : ";
 
-        protected override Splitter[] Splitters => new Splitter[3] { SplitFieldByRows, SplitFieldByColums, SplitFieldByRegions };
+        protected override Splitter[] Splitters => new Splitter[3] 
+        { 
+            FieldScanner.SplitFieldByRows, 
+            FieldScanner.SplitFieldByColums,
+            FieldScanner.SplitFieldByRegions
+        };
 
         protected override string[] GroupDescriptions => new string[3] { "Строка", "Столбец", "Регион" };
+
+        private FieldScanner FieldScanner => new FieldScanner();
 
         protected override AnswerOfTech FindEliminationInGroup(Field.Cell[] group)
         {
