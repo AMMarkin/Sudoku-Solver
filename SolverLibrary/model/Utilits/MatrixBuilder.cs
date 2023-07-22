@@ -2,7 +2,7 @@
 {
     internal class MatrixBuilder
     {
-        public int[][] GetMatrixOfCandidatesFromGroup(Field.Cell[] group, bool IsHidden)
+        public int[][] GetMatrixOfCandidatesFromGroup(Field.Cell[] group, bool isTransparent)
         {
             int[][] matrix = new int[group.Length][];
             for (int i = 0; i < group.Length; i++)
@@ -15,7 +15,7 @@
                 {
                     if (group[i].candidates[j])
                     {
-                        if (IsHidden)
+                        if (isTransparent)
                         {
                             matrix[j][i] = 1;
                         }

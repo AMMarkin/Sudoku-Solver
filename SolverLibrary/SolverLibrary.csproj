@@ -58,12 +58,16 @@
     <Compile Include="model\TechsLogic\Mark.cs" />
     <Compile Include="model\StatusCheckers\RepeatedValuesChecker.cs" />
     <Compile Include="model\TechsLogic\FieldScanner.cs" />
+    <Compile Include="model\TechsLogic\Techs\Abstract\ChainTechChecker.cs" />
+    <Compile Include="model\TechsLogic\Techs\BUGChecker.cs" />
     <Compile Include="model\TechsLogic\Techs\ExtendetSimpleColoringChecker.cs" />
     <Compile Include="model\TechsLogic\Techs\SimpleColoringTechChecker.cs" />
     <Compile Include="model\TechsLogic\Techs\Abstract\LockedRectangleChecker.cs" />
     <Compile Include="model\TechsLogic\Techs\JellyfishChecker.cs" />
     <Compile Include="model\TechsLogic\Techs\SwordfishChecker.cs" />
     <Compile Include="model\TechsLogic\Techs\VirtualSingleChecker.cs" />
+    <Compile Include="model\TechsLogic\Techs\XYZ_WingChecker.cs" />
+    <Compile Include="model\TechsLogic\Techs\XY_WingChecker.cs" />
     <Compile Include="model\TechsLogic\Techs\X_WingsChecker.cs" />
     <Compile Include="model\Utilits\ChainBuilder.cs" />
     <Compile Include="model\Utilits\MatrixBuilder.cs" />

@@ -113,7 +113,7 @@ namespace SolverLibrary.model.TechsLogic.Techs
                             Aggregate((x, y) => $"{x} - {y}");
 
 
-                        return MakeAnswer($"{Discription}: {groupName}: {digit + 1} в {cells}");
+                        return MakeAnswer($"{groupName}: {Discription}: {digit + 1} в {cells}");
                     }
                 }
             }

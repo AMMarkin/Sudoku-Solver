@@ -13,6 +13,8 @@
                     return new NakedSingleCheker();
                 case TechType.HiddenSingle:
                     return new HiddenSinglesChecker();
+                case TechType.VirtualSingle:
+                    return new VirtualSingleChecker();
                 case TechType.NakedPairs:
                     return new NakedPairsChecker();
                 case TechType.HiddenPairs:
@@ -25,14 +27,18 @@
                     return new NakedQuadsChecker();
                 case TechType.HiddenQuads:
                     return new HiddenQuadsChecker();
+                case TechType.BUG:
+                    return new BUGChecker();
                 case TechType.X_Wings:
                     return new X_WingsChecker();
                 case TechType.Swordfish:
                     return new SwordfishChecker();
                 case TechType.Jellyfish:
                     return new JellyfishChecker();
-                case TechType.VirtualSingle:
-                    return new VirtualSingleChecker();
+                case TechType.XY_Wing:
+                    return new XY_WingChecker();
+                case TechType.XYZ_Wing:
+                    return new XYZ_WingChecker();
                 case TechType.SimpleColoring:
                     return new SimpleColoringTechChecker();
                 case TechType.ExtendedSimpleColoring:
@@ -40,8 +46,6 @@
 
                 default: return null;
             }
-
         }
-
-}
+    }
 }

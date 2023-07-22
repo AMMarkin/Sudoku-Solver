@@ -46,8 +46,6 @@ namespace SolverLibrary.model.TechsLogic
         }
 
 
-        //TODO переделать на IEnumerable
-
         internal List<Field.Cell[]> SplitFieldByRows(Field field)
         {
             List<Field.Cell[]> groups = new List<Field.Cell[]>();

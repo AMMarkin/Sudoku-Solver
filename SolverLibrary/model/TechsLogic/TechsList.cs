@@ -12,7 +12,7 @@ namespace SolverLibrary.model
             "Открытые четверки", "Скрытые четверки",
             "BUG",
             "X-Wings", "Swordfish", "Jellyfish",
-            "Y-Wings","XYZ-Wing",
+            "XY-Wings","XYZ-Wing",
             "Simple Coloring", "Extended Simple Coloring"
         };
 

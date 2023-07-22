@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SolverLibrary.model.Utilits
 {
@@ -11,7 +9,7 @@ namespace SolverLibrary.model.Utilits
         public int[][] GetNShapeInMatrix(int[][] matrix, int n)
         {
             //основное условие
-            Predicate<int> predicate = (x) => ((x > 1) && (x <= n));
+            bool predicate(int x) => ((x > 1) && (x <= n));
 
             //суммы в строках
             int[] sums = matrix.Select((x) => x.Sum()).ToArray();
