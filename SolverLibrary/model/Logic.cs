@@ -1,5 +1,4 @@
 ﻿using SolverLibrary.model.TechsLogic.Techs;
-using SolverLibrary.model.Utilits;
 using System.Collections.Generic;
 
 namespace SolverLibrary.model

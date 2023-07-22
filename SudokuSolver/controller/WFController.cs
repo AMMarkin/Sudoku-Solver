@@ -138,8 +138,8 @@ namespace SudokuSolver.controller
             //массив связей по колличеству включенных
             int[] links = shownLinks.Select((x, idx) => new { value = x, id = idx }).Where(x => x.value).Select(x => x.id).ToArray();
 
-            _logic.CreateChain(_field, links);
-            _logic.FillWeakLinks(_field);
+            (new ChainBuilder()).CreateChain(_field, links);
+            (new ChainBuilder()).FillWeakLinks(_field);
             _solver.Refresh();
 
         }
