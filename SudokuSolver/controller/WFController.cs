@@ -1,5 +1,6 @@
 ﻿using SolverLibrary.Interfaces;
 using SolverLibrary.model;
+using SolverLibrary.model.Utilits;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -35,7 +36,11 @@ namespace SudokuSolver.controller
 
         private bool needRefresh = false;
         private bool done;
-        private readonly string dirpath = @"E:\SudokuSolver\Sudoku\";
+
+        private string CurrDirectory => Environment.CurrentDirectory;
+        private string Dirpath => Directory.GetParent(CurrDirectory).Parent.Parent.FullName + @"\Sudoku\";
+
+        //private readonly string dirpath = @"E:\SudokuSolver\Sudoku\";
 
         public WFController(Logic logic)
         {
@@ -82,8 +87,8 @@ namespace SudokuSolver.controller
             {
                 int[] links = shownLinks.Select((x, idx) => new { value = x, id = idx }).Where(x => x.value).Select(x => x.id).ToArray();
 
-                _logic.CreateChain(_field, links);
-                _logic.FillWeakLinks(_field);
+
+                new ChainBuilder().CreateChain(_field, links).FillWeakLinks(_field);
             }
 
             //расчет требуется ли перерисовывать цепи
@@ -145,7 +150,7 @@ namespace SudokuSolver.controller
             if (!filename.Equals("BUFFER"))
             {
 
-                string fullpath = dirpath + filename + ".txt";
+                string fullpath = Dirpath + filename + ".txt";
                 string[] lines;
 
                 if (File.Exists(fullpath))
@@ -191,7 +196,7 @@ namespace SudokuSolver.controller
         public List<string> GetListSaved()
         {
             //загружаем все имена
-            var filenames = Directory.GetFiles(dirpath, "*", SearchOption.TopDirectoryOnly).ToList();
+            var filenames = Directory.GetFiles(Dirpath, "*", SearchOption.TopDirectoryOnly).ToList();
             //обрезаем пути
             for (int i = 0; i < filenames.Count; i++)
             {
@@ -206,14 +211,14 @@ namespace SudokuSolver.controller
         {
             for (int i = 0; i < filenames.Length; i++)
             {
-                File.Delete(dirpath + filenames[i] + ".txt");
+                File.Delete(Dirpath + filenames[i] + ".txt");
             }
         }
 
         //сохранить головоломку
         public void SaveToFile(string filename, string data)
         {
-            string fullpath = dirpath + filename + ".txt";
+            string fullpath = Dirpath + filename + ".txt";
 
             using (FileStream f = File.Create(fullpath))
             {

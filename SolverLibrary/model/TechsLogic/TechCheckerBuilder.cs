@@ -33,6 +33,10 @@
                     return new JellyfishChecker();
                 case TechType.VirtualSingle:
                     return new VirtualSingleChecker();
+                case TechType.SimpleColoring:
+                    return new SimpleColoringTechChecker();
+                case TechType.ExtendedSimpleColoring:
+                    return new ExtendetSimpleColoringChecker();
 
                 default: return null;
             }

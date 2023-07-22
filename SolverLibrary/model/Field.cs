@@ -162,6 +162,25 @@ namespace SolverLibrary.model
                 foreach (Mark remove in answer.Removed)
                     _buffer.AddRemovedMark(remove.Ind, remove.Digit);
 
+            if(answer.Chain != null)
+                foreach (int[] unit in answer.Chain)
+                    _buffer.chain.Add(unit);
+
+            if (answer.Weak != null)
+                foreach (int[] unit in answer.Weak)
+                    _buffer.weak.Add(unit);
+
+            if (answer.ChainUnits != null)
+                foreach (int[] unit in answer.ChainUnits)
+                    _buffer.chainUnits.Add(unit);
+
+            if (answer.ON != null)
+                foreach (int[] unit in answer.ON)
+                    _buffer.ON.Add(unit);
+
+            if (answer.OFF != null)
+                foreach (int[] unit in answer.OFF)
+                    _buffer.OFF.Add(unit);
         }
 
         public class Cell

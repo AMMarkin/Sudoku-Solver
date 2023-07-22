@@ -15,7 +15,7 @@ namespace SolverLibrary.model
         protected abstract string Discription { get; }
 
 
-        public AnswerOfTech CheckField(Field field)
+        public virtual AnswerOfTech CheckField(Field field)
         {
             ClearLists();
             return FindElimination(field);
