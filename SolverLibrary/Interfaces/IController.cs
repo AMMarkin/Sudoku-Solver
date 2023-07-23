@@ -1,10 +1,6 @@
-﻿using System;
+﻿using SolverLibrary.model.field;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using SolverLibrary.model;
+
 
 namespace SolverLibrary.Interfaces
 {
@@ -16,7 +12,7 @@ namespace SolverLibrary.Interfaces
         ILoader Loader { get; set; }
         IConstructor Constructor { get; set; }
 
-        
+
         bool[] UsedTechs { get; set; }
 
         void Do(bool[] usedTechs);
@@ -29,7 +25,7 @@ namespace SolverLibrary.Interfaces
 
         void LoadFrom(string filename);
 
-        void SaveToFile(string filename, string data);
+        void SaveToFile(string name, int[][] puzzle);
 
         List<string> GetListSaved();
 

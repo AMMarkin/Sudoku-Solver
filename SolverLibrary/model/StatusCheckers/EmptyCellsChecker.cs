@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using SolverLibrary.model.field;
+
 
 namespace SolverLibrary.model
 {
@@ -12,13 +9,13 @@ namespace SolverLibrary.model
         {
             AnswerOfTech answer = null;
 
-            for(int row = 0; row < Field.Row_Count; row++)
+            for (int row = 0; row < Field.Row_Count; row++)
             {
-                for(int col = 0; col < Field.Column_Count; col++)
+                for (int col = 0; col < Field.Column_Count; col++)
                 {
-                    if (field[row,col].remainingCandidates==0 && field[row, col].value < 0)
+                    if (field[row, col].remainingCandidates == 0 && field[row, col].value < 0)
                     {
-                        answer = new AnswerOfTech($"Ошибка! В ячейке ({row+1};{col+1}) не осталось кандидатов!");
+                        answer = new AnswerOfTech($"Ошибка! В ячейке ({row + 1};{col + 1}) не осталось кандидатов!");
                         return answer;
                     }
                 }

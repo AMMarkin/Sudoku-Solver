@@ -1,7 +1,7 @@
-﻿using SolverLibrary.model.Utilits;
-using System;
-using System.Collections.Generic;
+﻿using SolverLibrary.model.field;
+using SolverLibrary.model.Utilits;
 using System.Linq;
+
 
 namespace SolverLibrary.model.TechsLogic.Techs
 {
@@ -11,7 +11,7 @@ namespace SolverLibrary.model.TechsLogic.Techs
 
         protected abstract bool IsHidden { get; }
 
-        protected override AnswerOfTech FindEliminationInGroup(Field.Cell[] group)
+        protected override AnswerOfTech FindEliminationInGroup(Cell[] group)
         {
             AnswerOfTech answer;
 
@@ -68,7 +68,7 @@ namespace SolverLibrary.model.TechsLogic.Techs
             return answer;
         }
 
-        private AnswerOfTech MakeAnswerToMatrixTech(Field.Cell[] group, int[][] shape)
+        private AnswerOfTech MakeAnswerToMatrixTech(Cell[] group, int[][] shape)
         {
             AnswerOfTech answer;
             if (IsHidden)

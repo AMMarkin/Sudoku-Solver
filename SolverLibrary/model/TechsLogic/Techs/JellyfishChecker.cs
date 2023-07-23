@@ -8,6 +8,5 @@ namespace SolverLibrary.model.TechsLogic.Techs
 
         protected override int Order => 4;
 
-        protected override string Discription => "Jellyfish";
     }
 }

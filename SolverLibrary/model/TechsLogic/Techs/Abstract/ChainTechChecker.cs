@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using SolverLibrary.model.field;
+
 
 namespace SolverLibrary.model.TechsLogic.Techs.Abstract
 {
@@ -12,13 +14,7 @@ namespace SolverLibrary.model.TechsLogic.Techs.Abstract
         protected readonly List<int[]> ON = new List<int[]>();  //ind, k
         protected readonly List<int[]> OFF = new List<int[]>(); //ind, k
 
-        protected enum Color
-        {
-            ON = 0,
-            OFF
-        }
-
-
+        
         //раскраска
         protected void SubChainColoring(int subChainNumber, int[] subchains)
         {

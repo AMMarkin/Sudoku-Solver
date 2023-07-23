@@ -27,6 +27,11 @@ namespace SolverLibrary.model
             }
             return TechType.None;
         }
+
+        public static string ConvertTypeToName(TechType type)
+        {
+            return techNames[(int)type];
+        }
     }
 
     public enum TechType

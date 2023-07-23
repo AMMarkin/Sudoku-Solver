@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using SolverLibrary.model.field;
+
 
 namespace SolverLibrary.model.TechsLogic.Techs
 {
@@ -6,7 +8,6 @@ namespace SolverLibrary.model.TechsLogic.Techs
     {
         public override TechType Type => TechType.ExtendedSimpleColoring;
 
-        protected override string Discription => "Extended Simple Coloring";
 
         protected override AnswerOfTech FindElimination(Field field)
         {
@@ -172,7 +173,7 @@ namespace SolverLibrary.model.TechsLogic.Techs
             return null;
         }
 
-        private bool IsCellEmpyedByColor(Field.Cell cell, Color color)
+        private bool IsCellEmpyedByColor(Cell cell, Color color)
         {
 
             bool emptyed = true;

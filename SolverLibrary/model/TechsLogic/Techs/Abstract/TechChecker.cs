@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using SolverLibrary.model.field;
+using System.Collections.Generic;
 
 namespace SolverLibrary.model
 {
@@ -12,7 +13,7 @@ namespace SolverLibrary.model
         protected readonly List<Mark> _clues = new List<Mark>();
         protected readonly List<Mark> _removed = new List<Mark>();
 
-        protected abstract string Discription { get; }
+        protected virtual string Discription => TechsList.ConvertTypeToName(Type);
 
 
         public virtual AnswerOfTech CheckField(Field field)

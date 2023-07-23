@@ -1,4 +1,6 @@
-﻿namespace SolverLibrary.model
+﻿using SolverLibrary.model.field;
+
+namespace SolverLibrary.model
 {
     internal class ComplitionChecker : FieldStatusChecker
     {

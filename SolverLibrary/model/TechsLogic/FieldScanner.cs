@@ -1,14 +1,16 @@
-﻿using System.Collections.Generic;
+﻿using SolverLibrary.model.field;
+using System.Collections.Generic;
 using System.Linq;
+
 
 namespace SolverLibrary.model.TechsLogic
 {
     internal class FieldScanner
     {
 
-        public List<Field.Cell> FindXValueCells(Field field, int count)
+        public List<Cell> FindXValueCells(Field field, int count)
         {
-            List<Field.Cell> result = new List<Field.Cell>();
+            List<Cell> result = new List<Cell>();
 
 
             for (int i = 0; i < Field.Row_Count; i++)
@@ -26,9 +28,9 @@ namespace SolverLibrary.model.TechsLogic
         }
 
 
-        public List<Field.Cell> FindFilledCells(Field field)
+        public List<Cell> FindFilledCells(Field field)
         {
-            List<Field.Cell> result = new List<Field.Cell>();
+            List<Cell> result = new List<Cell>();
 
 
             for (int row = 0; row < Field.Row_Count; row++)
@@ -46,13 +48,13 @@ namespace SolverLibrary.model.TechsLogic
         }
 
 
-        internal List<Field.Cell[]> SplitFieldByRows(Field field)
+        internal List<Cell[]> SplitFieldByRows(Field field)
         {
-            List<Field.Cell[]> groups = new List<Field.Cell[]>();
+            List<Cell[]> groups = new List<Cell[]>();
 
             for (int row = 0; row < Field.Row_Count; row++)
             {
-                Field.Cell[] group = new Field.Cell[Field.Column_Count];
+                Cell[] group = new Cell[Field.Column_Count];
                 for (int col = 0; col < Field.Column_Count; col++)
                 {
                     group[col] = field[row, col];
@@ -63,13 +65,13 @@ namespace SolverLibrary.model.TechsLogic
             return groups;
         }
 
-        internal List<Field.Cell[]> SplitFieldByColums(Field field)
+        internal List<Cell[]> SplitFieldByColums(Field field)
         {
-            List<Field.Cell[]> groups = new List<Field.Cell[]>();
+            List<Cell[]> groups = new List<Cell[]>();
 
             for (int col = 0; col < Field.Column_Count; col++)
             {
-                Field.Cell[] group = new Field.Cell[Field.Column_Count];
+                Cell[] group = new Cell[Field.Column_Count];
                 for (int row = 0; row < Field.Row_Count; row++)
                 {
                     group[row] = field[row, col];
@@ -79,13 +81,13 @@ namespace SolverLibrary.model.TechsLogic
             return groups;
         }
 
-        internal List<Field.Cell[]> SplitFieldByRegions(Field field)
+        internal List<Cell[]> SplitFieldByRegions(Field field)
         {
-            List<List<Field.Cell>> groups = new List<List<Field.Cell>>();
+            List<List<Cell>> groups = new List<List<Cell>>();
 
             for (int reg = 0; reg < Field.Regions_Count; reg++)
             {
-                List<Field.Cell> group = new List<Field.Cell>();
+                List<Cell> group = new List<Cell>();
                 groups.Add(group);
             }
 

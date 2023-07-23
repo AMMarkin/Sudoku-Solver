@@ -1,10 +1,11 @@
-﻿namespace SolverLibrary.model.TechsLogic.Techs
+﻿using SolverLibrary.model.field;
+
+namespace SolverLibrary.model.TechsLogic.Techs
 {
     internal class BUGChecker : TechChecker
     {
         public override TechType Type => TechType.BUG;
 
-        protected override string Discription => "BUG";
 
         protected override AnswerOfTech FindElimination(Field field)
         {

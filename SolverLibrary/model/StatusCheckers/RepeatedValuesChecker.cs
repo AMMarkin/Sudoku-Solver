@@ -1,4 +1,6 @@
-﻿namespace SolverLibrary.model
+﻿using SolverLibrary.model.field;
+
+namespace SolverLibrary.model
 {
     internal class RepeatedValuesChecker : FieldStatusChecker
     {
@@ -6,8 +8,8 @@
         {
             AnswerOfTech answer = null;
 
-            Field.Cell first;
-            Field.Cell second;
+            Cell first;
+            Cell second;
 
             //внутри каждой строки
             for (int row = 0; row < Field.Row_Count; row++)

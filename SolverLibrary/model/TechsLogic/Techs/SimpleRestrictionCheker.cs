@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using SolverLibrary.model.field;
+
 
 namespace SolverLibrary.model.TechsLogic
 {
@@ -14,10 +16,10 @@ namespace SolverLibrary.model.TechsLogic
 
             bool impact = false;
             
-            List<Field.Cell> clues = (new FieldScanner()).FindFilledCells(field);
-            foreach (Field.Cell clue in clues)
+            List<Cell> clues = (new FieldScanner()).FindFilledCells(field);
+            foreach (Cell clue in clues)
             {
-                foreach (Field.Cell seenByClue in clue.seenCell)
+                foreach (Cell seenByClue in clue.seenCell)
                 {
                     if (seenByClue.candidates[clue.value])
                     {

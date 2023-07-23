@@ -1,11 +1,10 @@
 ﻿using SolverLibrary.Interfaces;
 using SolverLibrary.model;
+using SolverLibrary.model.field;
 using SolverLibrary.model.Utilits;
-using System;
+using SolverLibrary.storage;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 
 namespace SudokuSolver.controller
@@ -20,6 +19,8 @@ namespace SudokuSolver.controller
         private Form _constructor;               //форма конструктора
         private Form _loader;                         //форма загрузчика
         private readonly Logic _logic;
+        private readonly Storage storage;
+
 
         Field IController.Field { get => _field; set => _field = value; }
         public IGridView Grid { get => _grid; set => _grid = value as Grid; }
@@ -37,15 +38,13 @@ namespace SudokuSolver.controller
         private bool needRefresh = false;
         private bool done;
 
-        private string CurrDirectory => Environment.CurrentDirectory;
-        private string Dirpath => Directory.GetParent(CurrDirectory).Parent.Parent.FullName + @"\Sudoku\";
-
-        //private readonly string dirpath = @"E:\SudokuSolver\Sudoku\";
 
         public WFController(Logic logic)
         {
             shownLinks = new bool[9];
             _logic = logic;
+
+            storage = new FileSystemStorage();
         }
 
         //cледующий шаг решения
@@ -60,7 +59,7 @@ namespace SudokuSolver.controller
             //применяю записанные на прошлом шаге изменения
             _field.ApplyChanges();
 
-            
+
             AnswerOfTech answer;
 
             _field.Buffer.ClearChainBuffer();
@@ -145,32 +144,19 @@ namespace SudokuSolver.controller
         }
 
         //загрузка головоломки
-        public void LoadFrom(string filename)
+        public void LoadFrom(string puzzlename)
         {
-            if (!filename.Equals("BUFFER"))
+            if (!puzzlename.Equals("BUFFER"))
             {
-
-                string fullpath = Dirpath + filename + ".txt";
-                string[] lines;
-
-                if (File.Exists(fullpath))
-                {
-                    lines = File.ReadAllLines(fullpath);
-                }
-                else
-                {
-                    string defaultSudoku = "6 0 0 8 0 0 7 0 9\n0 0 4 0 0 2 0 6 0\n0 0 0 0 3 7 0 0 0\n5 0 0 1 0 0 0 8 0\n0 0 1 0 0 0 6 0 0\n0 8 0 0 0 3 0 0 2\n0 0 0 0 1 0 0 0 0\n0 3 0 7 0 0 1 0 0\n4 0 2 0 0 6 0 0 8";
-                    lines = defaultSudoku.Split('\n');
-
-                    MessageBox.Show("Загружено тестовое судоку", "Файл не существует", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
                 _field = _field ?? new Field();
                 _field.Buffer.Init();
 
-                for (int i = 0; i < lines.Length; i++)
-                {
-                    _field.Buffer.sudoku[i] = lines[i].Where(c => Char.IsDigit(c)).Select(c => c - 48).ToArray();
+                StorageOperationResult result;
+                (_field.Buffer.sudoku, result) = storage.Load(puzzlename);
 
+                if (result != StorageOperationResult.Success)
+                {
+                    MessageBox.Show("Загружено тестовое судоку", "Файл не существует", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
 
@@ -184,47 +170,38 @@ namespace SudokuSolver.controller
 
             _field.Buffer.ClearChainBuffer();
             _field.Buffer.InitChangeStorage();
+
             _field.ApplyAnswer(_logic.SimpleRestriction(_field));
             _field.Buffer.SaveChanges();
             _field.ApplyChanges();
+
             _grid.UpdateGrid(_field);
+
             _solver.Refresh();
+
             done = false;
+
         }
 
         //получить список всех сохраненных головоломок
         public List<string> GetListSaved()
         {
-            //загружаем все имена
-            var filenames = Directory.GetFiles(Dirpath, "*", SearchOption.TopDirectoryOnly).ToList();
-            //обрезаем пути
-            for (int i = 0; i < filenames.Count; i++)
-            {
-                filenames[i] = Path.GetFileName(filenames[i]);
-            }
-
-            return filenames;
+            return storage.GetListOfPuzzles();
         }
 
         //удалить сохраненные головоломки
-        public void Delete(string[] filenames)
+        public void Delete(string[] puzzlenames)
         {
-            for (int i = 0; i < filenames.Length; i++)
+            if (storage.Delete(puzzlenames) == StorageOperationResult.Failed)
             {
-                File.Delete(Dirpath + filenames[i] + ".txt");
+                MessageBox.Show("Удаление прошло с ошибкой", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         //сохранить головоломку
-        public void SaveToFile(string filename, string data)
+        public void SaveToFile(string name, int[][] puzzle)
         {
-            string fullpath = Dirpath + filename + ".txt";
-
-            using (FileStream f = File.Create(fullpath))
-            {
-                byte[] byteS = Encoding.UTF8.GetBytes(data);
-                f.Write(byteS, 0, byteS.Length);
-            }
+            storage.Save(puzzle, name);
         }
 
         //рестарт
@@ -232,7 +209,6 @@ namespace SudokuSolver.controller
         {
             LoadFrom("BUFFER");
         }
-
 
     }
 }

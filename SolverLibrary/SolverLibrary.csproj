@@ -47,14 +47,16 @@
     <Compile Include="Interfaces\IGridView.cs" />
     <Compile Include="Interfaces\ILoader.cs" />
     <Compile Include="Interfaces\ISolverView.cs" />
+    <Compile Include="model\field\Cell.cs" />
     <Compile Include="model\TechsLogic\AnswerOfTech.cs" />
-    <Compile Include="model\Buffer.cs" />
+    <Compile Include="model\field\Buffer.cs" />
     <Compile Include="model\TechsLogic\Change.cs" />
     <Compile Include="model\StatusCheckers\ComplitionChecker.cs" />
     <Compile Include="model\StatusCheckers\EmptyCellsChecker.cs" />
-    <Compile Include="model\Field.cs" />
+    <Compile Include="model\field\Field.cs" />
     <Compile Include="model\StatusCheckers\FieldStatusChecker.cs" />
     <Compile Include="model\Logic.cs" />
+    <Compile Include="model\TechsLogic\Color.cs" />
     <Compile Include="model\TechsLogic\Mark.cs" />
     <Compile Include="model\StatusCheckers\RepeatedValuesChecker.cs" />
     <Compile Include="model\TechsLogic\FieldScanner.cs" />
@@ -88,6 +90,8 @@
     <Compile Include="model\Utilits\Extentions.cs" />
     <Compile Include="model\Utilits\PatternFinder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="storage\FileSystemStorage.cs" />
+    <Compile Include="storage\Storage.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

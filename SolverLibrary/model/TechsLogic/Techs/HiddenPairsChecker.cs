@@ -17,7 +17,6 @@
 
         protected override string[] GroupDescriptions => new string[3] { "Строка", "Столбец", "Регион" };
 
-        protected override string Discription => "Скрытая пара";
 
         private FieldScanner FieldScanner => new FieldScanner();
     }

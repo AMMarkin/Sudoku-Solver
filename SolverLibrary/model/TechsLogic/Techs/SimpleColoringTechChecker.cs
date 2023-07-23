@@ -1,5 +1,8 @@
 ﻿using SolverLibrary.model.TechsLogic.Techs.Abstract;
 using System.Collections.Generic;
+using SolverLibrary.model.field;
+
+
 
 namespace SolverLibrary.model.TechsLogic.Techs
 {
@@ -7,7 +10,6 @@ namespace SolverLibrary.model.TechsLogic.Techs
     {
         public override TechType Type => TechType.SimpleColoring;
 
-        protected override string Discription => "Simple Coloring";
 
         protected delegate int GetTargetParameter(int x);
 

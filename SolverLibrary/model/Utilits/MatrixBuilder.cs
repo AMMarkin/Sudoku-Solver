@@ -1,8 +1,10 @@
-﻿namespace SolverLibrary.model.TechsLogic
+﻿using SolverLibrary.model.field;
+
+namespace SolverLibrary.model.TechsLogic
 {
     internal class MatrixBuilder
     {
-        public int[][] GetMatrixOfCandidatesFromGroup(Field.Cell[] group, bool isTransparent)
+        public int[][] GetMatrixOfCandidatesFromGroup(Cell[] group, bool isTransparent)
         {
             int[][] matrix = new int[group.Length][];
             for (int i = 0; i < group.Length; i++)

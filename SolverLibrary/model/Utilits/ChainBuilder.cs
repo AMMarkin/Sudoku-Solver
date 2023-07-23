@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using SolverLibrary.model.field;
+
 
 namespace SolverLibrary.model.Utilits
 {

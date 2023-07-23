@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using SolverLibrary.model.field;
+
 
 namespace SolverLibrary.model.TechsLogic.Techs
 {
@@ -7,11 +9,10 @@ namespace SolverLibrary.model.TechsLogic.Techs
     {
         public override TechType Type => TechType.VirtualSingle;
 
-        protected override string Discription => "Виртуальная одиночка";
 
         private FieldScanner FieldScanner => new FieldScanner();
 
-        private delegate int ParamGetter(Field.Cell cell);
+        private delegate int ParamGetter(Cell cell);
 
         private enum Direction
         {
@@ -48,8 +49,8 @@ namespace SolverLibrary.model.TechsLogic.Techs
         {
             var settings = TechTuning(targetDirection, techDirection, field);
 
-            List<Field.Cell[]> groups = settings.groups;
-            List<Field.Cell[]> targetGroups = settings.targetGroups;
+            List<Cell[]> groups = settings.groups;
+            List<Cell[]> targetGroups = settings.targetGroups;
             ParamGetter GetGroupParameter = settings.GetGroupParameter;
             ParamGetter GetTargetParameter = settings.GetTargetParameter;
             string groupName = settings.groupName;
@@ -84,7 +85,7 @@ namespace SolverLibrary.model.TechsLogic.Techs
                     //проверка есть ли в найденном блоке исключения
 
                     bool impact = false;
-                    foreach (Field.Cell target in targetGroups[GetTargetParameter(groupOfCells[targetIndexes[0]])])
+                    foreach (Cell target in targetGroups[GetTargetParameter(groupOfCells[targetIndexes[0]])])
                     {
 
                         if (GetGroupParameter(target) == GetGroupParameter(groupOfCells[0])) continue;
@@ -120,11 +121,11 @@ namespace SolverLibrary.model.TechsLogic.Techs
             return null;
         }
 
-        private (ParamGetter GetGroupParameter, ParamGetter GetTargetParameter, List<Field.Cell[]> groups, List<Field.Cell[]> targetGroups, string groupName)
+        private (ParamGetter GetGroupParameter, ParamGetter GetTargetParameter, List<Cell[]> groups, List<Cell[]> targetGroups, string groupName)
             TechTuning(Direction targetDirection, Direction techDirection, Field field)
         {
-            List<Field.Cell[]> groups = new List<Field.Cell[]>();
-            List<Field.Cell[]> targetGroups = new List<Field.Cell[]>();
+            List<Cell[]> groups = new List<Cell[]>();
+            List<Cell[]> targetGroups = new List<Cell[]>();
             ParamGetter GetGroupParameter = (x) => throw new System.NotImplementedException();
             ParamGetter GetTargetParameter = (x) => throw new System.NotImplementedException();
             string groupName = string.Empty;

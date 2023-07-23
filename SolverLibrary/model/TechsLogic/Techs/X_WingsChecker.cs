@@ -6,6 +6,5 @@
 
         protected override int Order => 2;
 
-        protected override string Discription => "X-Wings";
     }
 }

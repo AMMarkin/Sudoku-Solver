@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using SolverLibrary.model.field;
+
 
 namespace SolverLibrary.model.TechsLogic.Techs
 {
@@ -10,7 +7,6 @@ namespace SolverLibrary.model.TechsLogic.Techs
     {
         public override TechType Type => TechType.XYZ_Wing;
 
-        protected override string Discription => "XYZ-Wing";
 
 
         //XYZ-Wing

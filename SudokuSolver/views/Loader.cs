@@ -32,43 +32,9 @@ namespace SudokuSolver
 
             this.ShowDialog();
         }
-        //создание кнопок
-        private void CreateButtons()
-        {
-            load = new Button()
-            {
-                Text = "Загрузить в решатель",
-                Size = new Size((int)(list.Size.Width * 0.4), 40),
-                Visible = true
-            };
-            load.Location = new Point(list.Location.X + list.Width - load.Width, list.Location.Y + list.Height + 20);
-            load.Click += LoadButton_Click;
 
-            this.Controls.Add(load);
 
-            delete = new Button()
-            {
-                Text = "Удалить файл",
-                Size = load.Size,
-                Location = new Point(list.Location.X, load.Location.Y),
-                Visible = true
-            };
 
-            delete.Click += DeleteButton_Click;
-            this.Controls.Add(delete);
-
-            exit = new Button()
-            {
-                Text = "Закрыть",
-                Size = delete.Size,
-                Location = new Point(load.Location.X, load.Location.Y + load.Height + 20)
-            };
-
-            exit.Click += ExitButton_Click;
-            this.Controls.Add(exit);
-        }
-
-        //загрузка
         private void LoadButton_Click(object sender, EventArgs e)
         {
             if (list.SelectedIndices.Count == 0)
@@ -89,7 +55,6 @@ namespace SudokuSolver
             }
         }
 
-        //удаление
         private void DeleteButton_Click(object sender, EventArgs e)
         {
             //если ничего не выбрано
@@ -126,14 +91,50 @@ namespace SudokuSolver
             }
         }
 
-        //закрытие
         private void ExitButton_Click(object sender, EventArgs e)
         {
             this.Close();
         }
 
 
-        //создание списка файлов
+
+        private void CreateButtons()
+        {
+            load = new Button()
+            {
+                Text = "Загрузить в решатель",
+                Size = new Size((int)(list.Size.Width * 0.4), 40),
+                Visible = true
+            };
+            load.Location = new Point(list.Location.X + list.Width - load.Width, list.Location.Y + list.Height + 20);
+            load.Click += LoadButton_Click;
+
+            this.Controls.Add(load);
+
+            delete = new Button()
+            {
+                Text = "Удалить файл",
+                Size = load.Size,
+                Location = new Point(list.Location.X, load.Location.Y),
+                Visible = true
+            };
+
+            delete.Click += DeleteButton_Click;
+            this.Controls.Add(delete);
+
+            exit = new Button()
+            {
+                Text = "Закрыть",
+                Size = delete.Size,
+                Location = new Point(load.Location.X, load.Location.Y + load.Height + 20)
+            };
+
+            exit.Click += ExitButton_Click;
+            this.Controls.Add(exit);
+        }
+
+
+
         private void CreateFileList()
         {
             list = new ListView
@@ -167,7 +168,6 @@ namespace SudokuSolver
             this.Controls.Add(list);
         }
 
-        //заполнение списка файлов
         private void FillList()
         {
             var filenames = controller.GetListSaved();
@@ -182,7 +182,8 @@ namespace SudokuSolver
             list.Items.Add(line);
         }
 
-        //настройка формы
+
+
         private void InitializeComponent()
         {
             this.SuspendLayout();

@@ -6,6 +6,5 @@
 
         protected override int Order => 3;
 
-        protected override string Discription => "Swordfish";
     }
 }

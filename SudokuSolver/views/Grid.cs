@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
+using SolverLibrary.model.field;
+
 
 namespace SudokuSolver
 {
@@ -936,7 +938,7 @@ namespace SudokuSolver
             }
 
             //обновить ячейку в соответствии с ячейкой поля
-            internal void UpdateCell(Field.Cell cell)
+            internal void UpdateCell(SolverLibrary.model.field.Cell cell)
             {
                 if (cell.value >= 0)
                 {

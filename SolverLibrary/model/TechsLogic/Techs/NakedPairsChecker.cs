@@ -23,7 +23,6 @@ namespace SolverLibrary.model.TechsLogic.Techs
 
         protected override string[] GroupDescriptions => new string[3] { "Строка", "Столбец", "Регион" };
 
-        protected override string Discription => "Открытая пара";
 
         private FieldScanner FieldScanner => new FieldScanner();
     }

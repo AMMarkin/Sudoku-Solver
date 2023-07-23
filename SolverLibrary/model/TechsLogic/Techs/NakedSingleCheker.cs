@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using SolverLibrary.model.field;
+
 
 namespace SolverLibrary.model.TechsLogic.Techs
 {
@@ -8,12 +10,11 @@ namespace SolverLibrary.model.TechsLogic.Techs
     {
         public override TechType Type => TechType.NakedSingle;
 
-        protected override string Discription => "Открытые одиночки: ";
 
 
         protected override AnswerOfTech FindElimination(Field field)
         {
-            List<Field.Cell> list = (new FieldScanner()).FindXValueCells(field, 1);
+            List<Cell> list = (new FieldScanner()).FindXValueCells(field, 1);
 
             if (list.Count == 0) return null;
 
@@ -21,7 +22,7 @@ namespace SolverLibrary.model.TechsLogic.Techs
 
             StringBuilder stringBuilder = new StringBuilder().AppendLine(Discription);
 
-            foreach (Field.Cell cell in list)
+            foreach (Cell cell in list)
             {
                 value = Array.FindIndex(cell.candidates, (x) => x == true);
 

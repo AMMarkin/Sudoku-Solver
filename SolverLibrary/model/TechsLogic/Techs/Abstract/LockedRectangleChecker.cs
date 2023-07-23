@@ -1,5 +1,7 @@
 ﻿using SolverLibrary.model.Utilits;
 using System.Linq;
+using SolverLibrary.model.field;
+
 
 namespace SolverLibrary.model.TechsLogic.Techs
 {

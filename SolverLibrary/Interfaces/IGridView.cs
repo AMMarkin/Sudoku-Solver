@@ -1,5 +1,7 @@
 ﻿using SolverLibrary.model;
 using System.Collections.Generic;
+using SolverLibrary.model.field;
+
 
 namespace SolverLibrary.Interfaces
 {

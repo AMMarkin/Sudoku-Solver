@@ -1,4 +1,6 @@
 ﻿using System.Linq;
+using SolverLibrary.model.field;
+
 
 namespace SolverLibrary.model.TechsLogic.Techs
 {
@@ -6,7 +8,6 @@ namespace SolverLibrary.model.TechsLogic.Techs
     {
         public override TechType Type => TechType.HiddenSingle;
 
-        protected override string Discription => "Скрытая одиночка : ";
 
         protected override Splitter[] Splitters => new Splitter[3] 
         { 
@@ -19,7 +20,7 @@ namespace SolverLibrary.model.TechsLogic.Techs
 
         private FieldScanner FieldScanner => new FieldScanner();
 
-        protected override AnswerOfTech FindEliminationInGroup(Field.Cell[] group)
+        protected override AnswerOfTech FindEliminationInGroup(Cell[] group)
         {
             AnswerOfTech answer = null;
             string message;
@@ -29,7 +30,7 @@ namespace SolverLibrary.model.TechsLogic.Techs
 
                 if (candidatCounter == 1)
                 {
-                    Field.Cell cell = group.First((x) => x.candidates[digit] == true);
+                    Cell cell = group.First((x) => x.candidates[digit] == true);
                     AddSetingValue(cell.ind, digit);
                     AddClueMark(cell.ind, digit);
                     for (int k = 0; k < Field.Digits_Count; k++)
@@ -42,7 +43,7 @@ namespace SolverLibrary.model.TechsLogic.Techs
 
                     message = $"({cell.row + 1};{cell.column + 1}) => {digit + 1}";
 
-                    answer = MakeAnswer(Discription + message);
+                    answer = MakeAnswer($"{Discription}: {message}");
                     break;
                 }
             }

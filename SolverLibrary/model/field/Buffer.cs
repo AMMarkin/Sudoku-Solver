@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using SolverLibrary.model.TechsLogic;
+using System.Collections.Generic;
 
 namespace SolverLibrary.model
 {
@@ -31,8 +32,28 @@ namespace SolverLibrary.model
         public IEnumerable<Mark> Clues => _clues;
         public IEnumerable<Mark> Removed => _removed;
 
+        
 
-        //очистка заполненных частей 
+        //создание буффера 
+        public void Init()
+        {
+            sudoku = new int[9][];
+            for (int i = 0; i < sudoku.Length; i++)
+            {
+                sudoku[i] = new int[9];
+            }
+        }
+
+        public void InitChangeStorage()
+        {
+            fieldChanges = fieldChanges ?? new List<Change>();
+            fieldChanges?.Clear();
+
+            fieldStorage = fieldStorage ?? new List<Change[]>();
+            fieldStorage?.Clear();
+        }
+
+
         public void ClearChainBuffer()
         {
             _clues?.Clear();
@@ -57,41 +78,12 @@ namespace SolverLibrary.model
             OFF = OFF ?? new List<int[]>();
         }
 
-        //создание буффера 
-        public void Init()
-        {
-            sudoku = new int[9][];
-            for (int i = 0; i < sudoku.Length; i++)
-            {
-                sudoku[i] = new int[9];
-            }
-        }
-
-        public void InitChangeStorage()
-        {
-            fieldChanges = fieldChanges ?? new List<Change>();
-            fieldChanges?.Clear();
-
-            fieldStorage = fieldStorage ?? new List<Change[]>();
-            fieldStorage?.Clear();
-        }
-
-
-        //было установлено значение по i j
-        public void AddSettingValueChange(int i, int j, int digit)
-        {
-            fieldChanges.Add(new Change(i, j, digit, ChangeType.SettingValue));
-        }
         //было установлено значение по ind
         public void AddSettingValueChange(int ind, int digit)
         {
             fieldChanges.Add(new Change(ind, digit, ChangeType.SettingValue));
         }
-        //был исключен кандидат по i j
-        public void AddRemovingChange(int i, int j, int digit)
-        {
-            fieldChanges.Add(new Change(i, j, digit, ChangeType.RemovingDigit));
-        }
+
         //был исключен кандидат по ind
         public void AddRemovingChange(int ind, int digit)
         {
@@ -119,6 +111,32 @@ namespace SolverLibrary.model
             _removed.Add(new Mark(index, digit, Mark.MarkType.Digit));
         }
 
+        public void AddStrongLinkToChain(int[] strongLink)
+        {
+            chain.Add(strongLink);
+        }
+
+        public void AddWeakLinkToChain(int[] weakLink)
+        {
+            weak.Add(weakLink);
+        }
+        
+        public void AddUnitToChain(int[] unit)
+        {
+            chainUnits.Add(unit);
+        }
+
+        public void AddColoredUnit(int[] unit, Color color)
+        {
+            if(color == Color.ON)
+            {
+                ON.Add(unit);
+            }
+            else
+            {
+                OFF.Add(unit);
+            }
+        }
 
         public void SaveChanges()
         {
