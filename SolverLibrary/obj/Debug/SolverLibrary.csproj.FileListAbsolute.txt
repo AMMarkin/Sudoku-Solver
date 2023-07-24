@@ -4,3 +4,13 @@ E:\SudokuSolver\SolverLibrary\obj\Debug\SolverLibrary.csproj.AssemblyReference.c
 E:\SudokuSolver\SolverLibrary\obj\Debug\SolverLibrary.csproj.CoreCompileInputs.cache
 E:\SudokuSolver\SolverLibrary\obj\Debug\SolverLibrary.dll
 E:\SudokuSolver\SolverLibrary\obj\Debug\SolverLibrary.pdb
+E:\SudokuSolver\SolverLibrary\bin\Debug\Newtonsoft.Json.dll
+E:\SudokuSolver\SolverLibrary\bin\Debug\System.Buffers.dll
+E:\SudokuSolver\SolverLibrary\bin\Debug\System.Text.Encodings.Web.dll
+E:\SudokuSolver\SolverLibrary\bin\Debug\Microsoft.Bcl.AsyncInterfaces.dll
+E:\SudokuSolver\SolverLibrary\bin\Debug\Newtonsoft.Json.xml
+E:\SudokuSolver\SolverLibrary\obj\Debug\SolverLibrary.csproj.CopyComplete
+E:\SudokuSolver\SolverLibrary\bin\Debug\System.Numerics.Vectors.dll
+E:\SudokuSolver\SolverLibrary\bin\Debug\System.Runtime.CompilerServices.Unsafe.dll
+E:\SudokuSolver\SolverLibrary\bin\Debug\System.ValueTuple.dll
+E:\SudokuSolver\SolverLibrary\bin\Debug\System.Threading.Tasks.Extensions.dll

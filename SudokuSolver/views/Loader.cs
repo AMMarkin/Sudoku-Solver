@@ -177,7 +177,7 @@ namespace SudokuSolver
 
         private void AddLine(string name)
         {
-            ListViewItem line = new ListViewItem(name.Split('.')[0]);
+            ListViewItem line = new ListViewItem(name);
 
             list.Items.Add(line);
         }

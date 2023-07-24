@@ -45,6 +45,7 @@ namespace SudokuSolver.controller
             _logic = logic;
 
             storage = new FileSystemStorage();
+
         }
 
         //cледующий шаг решения

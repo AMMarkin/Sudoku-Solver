@@ -13,3 +13,13 @@ E:\SudokuSolver\SudokuSolver\bin\Debug\SudokuSolver.pdb
 E:\SudokuSolver\SudokuSolver\bin\Debug\SolverLibrary.dll
 E:\SudokuSolver\SudokuSolver\bin\Debug\SolverLibrary.pdb
 E:\SudokuSolver\SudokuSolver\obj\Debug\WFSolver.csproj.CopyComplete
+E:\SudokuSolver\SudokuSolver\bin\Debug\System.Text.Json.dll
+E:\SudokuSolver\SudokuSolver\bin\Debug\System.Memory.dll
+E:\SudokuSolver\SudokuSolver\bin\Debug\System.Text.Encodings.Web.dll
+E:\SudokuSolver\SudokuSolver\bin\Debug\Microsoft.Bcl.AsyncInterfaces.dll
+E:\SudokuSolver\SudokuSolver\bin\Debug\System.Buffers.dll
+E:\SudokuSolver\SudokuSolver\obj\Debug\SudokuSolver.exe.config
+E:\SudokuSolver\SudokuSolver\bin\Debug\System.ValueTuple.dll
+E:\SudokuSolver\SudokuSolver\bin\Debug\System.Numerics.Vectors.dll
+E:\SudokuSolver\SudokuSolver\bin\Debug\System.Threading.Tasks.Extensions.dll
+E:\SudokuSolver\SudokuSolver\bin\Debug\System.Runtime.CompilerServices.Unsafe.dll

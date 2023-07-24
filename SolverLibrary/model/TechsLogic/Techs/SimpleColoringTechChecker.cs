@@ -138,7 +138,7 @@ namespace SolverLibrary.model.TechsLogic.Techs
                 ON.AddRange(OFF);
                 OFF.Clear();
 
-                answer = MakeAnswer($"повторение цвета в {groupName} {(targetParam + 1)}");
+                answer = MakeAnswer($"повторение цвета в {groupName} {(targetParam + 1)}: {digit+1} в нескольких ячейках одного цвета");
                 AddChainLists(answer);
                 return answer;
             }
@@ -152,7 +152,7 @@ namespace SolverLibrary.model.TechsLogic.Techs
             {
                 OFF.Clear();
 
-                answer = MakeAnswer($"повторение цвета в {groupName} {(targetParam + 1)}");
+                answer = MakeAnswer($"повторение цвета в {groupName} {(targetParam + 1)}: {digit+1} в нескольких ячейках одного цвета");
                 AddChainLists(answer);
                 return answer;
             }
@@ -192,6 +192,15 @@ namespace SolverLibrary.model.TechsLogic.Techs
                         AddElimination(rem[0], rem[1]);
                         AddRemovingMark(rem[0], rem[1]);
                     }
+
+                    foreach (int[] rem in chainOfColor)
+                    {
+                        if (GetParam(rem[0]) == targetParam && rem[1]==digit)
+                        {
+                            AddClueMark(rem[0]);
+                        }
+                    }
+
                     break;
                 }
             }
