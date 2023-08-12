@@ -1,10 +1,10 @@
 ﻿using SolverLibrary.Interfaces;
 using SolverLibrary.model;
+using SolverLibrary.model.field;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
-using SolverLibrary.model.field;
 
 
 namespace SudokuSolver
@@ -126,7 +126,7 @@ namespace SudokuSolver
                     //клик по заполненному лейблу
                     if (!label.Text.Equals(""))
                     {
-                        int digit = Convert.ToInt32(label.Text)-1;
+                        int digit = Convert.ToInt32(label.Text) - 1;
 
                         //если уже выбранное число кликом поменялось
                         if (selectedDigitByClick != digit)
@@ -346,36 +346,43 @@ namespace SudokuSolver
         //подсветка исключений
         public void HighlighteRemoved(IEnumerable<Mark> clues, IEnumerable<Mark> removed, IEnumerable<int[]> ON, IEnumerable<int[]> OFF)
         {
-            foreach (Mark clue in clues)
-            {
-                cells[clue.I][clue.J].HighlighteAsClue();
-                if (clue.Type == Mark.MarkType.Digit)
+            if (clues != null) 
+            { 
+                foreach (Mark clue in clues)
                 {
-                    cells[clue.I][clue.J].HighlighteDigitsAsClue(clue.Digit);
+                    cells[clue.I][clue.J].HighlighteAsClue();
+                    if (clue.Type == Mark.MarkType.Digit)
+                    {
+                        cells[clue.I][clue.J].HighlighteDigitsAsClue(clue.Digit);
+                    }
                 }
             }
-
-
-            foreach (Mark mark in removed)
-            {
-                cells[mark.I][mark.J].HighlighteRemoving(mark.Digit);
+            if (removed != null) 
+            { 
+                foreach (Mark mark in removed)
+                {
+                    cells[mark.I][mark.J].HighlighteRemoving(mark.Digit);
+                }
             }
-
-            //если цепь не null и не пустая то отмечаем звенья
-            foreach (int[] unit in ON)
-            {
-                int i1 = unit[0] / 9;
-                int j1 = unit[0] % 9;
-                cells[i1][j1].HighlighteAsUnit(unit[1], true);
+            if (ON != null) 
+            { 
+                foreach (int[] unit in ON)
+                {
+                    int i1 = unit[0] / 9;
+                    int j1 = unit[0] % 9;
+                    cells[i1][j1].HighlighteAsUnit(unit[1], true);
+                }
             }
-            foreach (int[] unit in OFF)
-            {
-                int i1 = unit[0] / 9;
-                int j1 = unit[0] % 9;
-                cells[i1][j1].HighlighteAsUnit(unit[1], false);
+            if (OFF != null) 
+            { 
+                foreach (int[] unit in OFF)
+                {
+                    int i1 = unit[0] / 9;
+                    int j1 = unit[0] % 9;
+                    cells[i1][j1].HighlighteAsUnit(unit[1], false);
+                }
             }
         }
-
 
         //обновить сетку
         public void UpdateGrid(Field field)
@@ -718,7 +725,7 @@ namespace SudokuSolver
                     if (flags[i])
                     {
                         //если ячейка заполнена и нужно выделить
-                        if (digit-1 == i)
+                        if (digit - 1 == i)
                         {
                             //выделяю основное число
                             value.BackColor = highlightedColor;
@@ -739,7 +746,7 @@ namespace SudokuSolver
                     else
                     {
                         //если ячейка заполнена
-                        if (digit -1 == i)
+                        if (digit - 1 == i)
                         {
                             //снимаю выделение
                             if (!seen)
@@ -921,13 +928,13 @@ namespace SudokuSolver
                 {
                     candidates[i].Visible = false;
                 }
-                value.Text = (v+1).ToString();
+                value.Text = (v + 1).ToString();
                 if (candidates[v].BackColor == highlightedColor)
                 {
                     value.BackColor = highlightedColor;
                 }
                 value.Visible = true;
-                digit = v+1;
+                digit = v + 1;
             }
 
             //скрыть кандидата

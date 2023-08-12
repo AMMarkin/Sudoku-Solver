@@ -30,7 +30,5 @@
                 type = MarkType.Digit;
             _type = type;
         }
-
-        
     }
 }

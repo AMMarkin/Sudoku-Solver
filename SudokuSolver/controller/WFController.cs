@@ -76,7 +76,7 @@ namespace SudokuSolver.controller
             //убираю исключенных кандидатов
             _grid.UpdateGrid(_field);
             //выделяю найденные исключения
-            _grid.HighlighteRemoved(_field.Buffer.Clues, _field.Buffer.Removed, _field.Buffer.ON, _field.Buffer.OFF);
+            _grid.HighlighteRemoved(answer.Clues, answer.Removed, answer.ON, answer.OFF);
 
             //сохраняю сделанные изменения
             _field.Buffer.SaveChanges();
@@ -111,15 +111,15 @@ namespace SudokuSolver.controller
         //предыдущий шаг решения
         public void Undo()
         {
-            //если есть куда откатывать
-            if (_field.Buffer.fieldStorage.Count > 3)
-            {
-                done = false;
-                _field.CancelChanges();
-                _field.CancelChanges();
-                _grid.UpdateGrid(_field);
-                Do(usedtechs);
-            }
+            //если некуда откатывать
+            if (_field.Buffer.fieldStorage.Count < 3)
+                return;
+
+            done = false;
+            _field.CancelChanges();
+            _field.CancelChanges();
+            _grid.UpdateGrid(_field);
+            Do(usedtechs);
         }
 
         //подсветка числа

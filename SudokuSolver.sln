@@ -7,8 +7,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WFSolver", "SudokuSolver\WF
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SolverLibrary", "SolverLibrary\SolverLibrary.csproj", "{E3E821CD-D26A-4B92-A273-404857DF9DD0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WPFSolver", "WPFSolver\WPFSolver.csproj", "{F905C797-98B6-4D52-9BFF-6A844DA5D8D2}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,10 +21,6 @@ Global
 		{E3E821CD-D26A-4B92-A273-404857DF9DD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E3E821CD-D26A-4B92-A273-404857DF9DD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E3E821CD-D26A-4B92-A273-404857DF9DD0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F905C797-98B6-4D52-9BFF-6A844DA5D8D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F905C797-98B6-4D52-9BFF-6A844DA5D8D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F905C797-98B6-4D52-9BFF-6A844DA5D8D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F905C797-98B6-4D52-9BFF-6A844DA5D8D2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
